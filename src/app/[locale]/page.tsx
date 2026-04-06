@@ -1,9 +1,10 @@
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import PhotoPlaceholder from '@/components/PhotoPlaceholder';
+import { createServerClient } from '@/lib/supabase-server';
+import type { Review } from '@/lib/supabase';
 
 function JsonLd() {
   const structuredData = {
@@ -62,11 +63,12 @@ function JsonLd() {
   );
 }
 
-export default function HomePage() {
-  const t = useTranslations('hero');
-  const f = useTranslations('features');
-  const h = useTranslations('home');
-  const r = useTranslations('reviews');
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'hero' });
+  const f = await getTranslations({ locale, namespace: 'features' });
+  const h = await getTranslations({ locale, namespace: 'home' });
+  const r = await getTranslations({ locale, namespace: 'reviews' });
 
   const features = [
     { icon: BedDouble, title: f('bedrooms'), desc: f('bedroomsDesc') },
@@ -75,11 +77,28 @@ export default function HomePage() {
     { icon: Star, title: f('rating'), desc: f('ratingDesc') },
   ];
 
-  const reviews = [
-    { name: r('review1Name'), country: r('review1Country'), text: r('review1Text'), rating: r('review1Rating') },
-    { name: r('review2Name'), country: r('review2Country'), text: r('review2Text'), rating: r('review2Rating') },
-    { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
-  ];
+  // Fetch reviews from Supabase
+  const supabase = createServerClient();
+  const { data: dbReviews } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('visible', true)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  const reviews =
+    dbReviews && dbReviews.length > 0
+      ? (dbReviews as Review[]).map((rv) => ({
+          name: rv.guest_name,
+          country: rv.country,
+          text: rv.comment,
+          rating: String(rv.rating),
+        }))
+      : [
+          { name: r('review1Name'), country: r('review1Country'), text: r('review1Text'), rating: r('review1Rating') },
+          { name: r('review2Name'), country: r('review2Country'), text: r('review2Text'), rating: r('review2Rating') },
+          { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
+        ];
 
   const photoLabels = [
     'Living Room', 'Ria Formosa View', 'Master Bedroom',

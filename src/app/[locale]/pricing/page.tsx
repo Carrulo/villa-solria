@@ -1,7 +1,8 @@
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Info } from 'lucide-react';
 import BookingForm from '@/components/BookingForm';
+import { createServerClient } from '@/lib/supabase-server';
+import type { Season } from '@/lib/supabase';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -13,36 +14,37 @@ export async function generateMetadata({ params }: Props) {
   return { title: t('pricingTitle'), description: t('pricingDescription') };
 }
 
-export default function PricingPage() {
-  const t = useTranslations('pricing');
+const seasonStyles = [
+  { color: 'border-gray-200', bg: 'bg-gray-50', badge: 'bg-gray-100 text-gray-600' },
+  { color: 'border-accent/30', bg: 'bg-accent/5', badge: 'bg-accent/10 text-accent', featured: true },
+  { color: 'border-sand/40', bg: 'bg-sand/5', badge: 'bg-sand/20 text-sand' },
+];
 
-  const seasons = [
-    {
-      name: t('lowSeason'),
-      period: t('lowSeasonPeriod'),
-      price: '90',
-      color: 'border-gray-200',
-      bg: 'bg-gray-50',
-      badge: 'bg-gray-100 text-gray-600',
-    },
-    {
-      name: t('midSeason'),
-      period: t('midSeasonPeriod'),
-      price: '130',
-      color: 'border-accent/30',
-      bg: 'bg-accent/5',
-      badge: 'bg-accent/10 text-accent',
-      featured: true,
-    },
-    {
-      name: t('highSeason'),
-      period: t('highSeasonPeriod'),
-      price: '180',
-      color: 'border-sand/40',
-      bg: 'bg-sand/5',
-      badge: 'bg-sand/20 text-sand',
-    },
-  ];
+function formatDate(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleDateString(locale === 'pt' ? 'pt-PT' : locale === 'es' ? 'es-ES' : locale === 'de' ? 'de-DE' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+export default async function PricingPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'pricing' });
+
+  // Fetch seasons from Supabase
+  const supabase = createServerClient();
+  const { data: dbSeasons } = await supabase
+    .from('seasons')
+    .select('*')
+    .order('price_per_night', { ascending: true });
+
+  const seasons: (Season & { style: typeof seasonStyles[number] })[] = (dbSeasons || []).map((s: Season, i: number) => ({
+    ...s,
+    style: seasonStyles[i % seasonStyles.length],
+  }));
+
+  // Fallback to hardcoded if no DB seasons
+  const hasSeasons = seasons.length > 0;
 
   return (
     <div className="py-12 lg:py-20">
@@ -55,21 +57,48 @@ export default function PricingPage() {
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
-          {seasons.map((season) => (
-            <div
-              key={season.name}
-              className={`rounded-2xl p-8 border-2 ${season.color} ${season.bg} text-center ${season.featured ? 'ring-2 ring-accent/20 scale-[1.02]' : ''} transition-transform`}
-            >
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${season.badge}`}>
-                {season.period}
-              </span>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{season.name}</h3>
-              <div className="mb-2">
-                <span className="text-4xl font-bold text-gray-900">{season.price}&euro;</span>
-                <span className="text-gray-500 text-sm">{t('perNight')}</span>
+          {hasSeasons ? (
+            seasons.map((season) => (
+              <div
+                key={season.id}
+                className={`rounded-2xl p-8 border-2 ${season.style.color} ${season.style.bg} text-center ${season.style.featured ? 'ring-2 ring-accent/20 scale-[1.02]' : ''} transition-transform`}
+              >
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${season.style.badge}`}>
+                  {formatDate(season.start_date, locale)} - {formatDate(season.end_date, locale)}
+                </span>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{season.name}</h3>
+                <div className="mb-2">
+                  <span className="text-4xl font-bold text-gray-900">{season.price_per_night}&euro;</span>
+                  <span className="text-gray-500 text-sm">{t('perNight')}</span>
+                </div>
+                {season.min_nights > 1 && (
+                  <p className="text-xs text-gray-400 mt-2">Min. {season.min_nights} {locale === 'pt' ? 'noites' : 'nights'}</p>
+                )}
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <>
+              {[
+                { name: t('lowSeason'), period: t('lowSeasonPeriod'), price: '90', ...seasonStyles[0] },
+                { name: t('midSeason'), period: t('midSeasonPeriod'), price: '130', ...seasonStyles[1] },
+                { name: t('highSeason'), period: t('highSeasonPeriod'), price: '180', ...seasonStyles[2] },
+              ].map((season) => (
+                <div
+                  key={season.name}
+                  className={`rounded-2xl p-8 border-2 ${season.color} ${season.bg} text-center ${season.featured ? 'ring-2 ring-accent/20 scale-[1.02]' : ''} transition-transform`}
+                >
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${season.badge}`}>
+                    {season.period}
+                  </span>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{season.name}</h3>
+                  <div className="mb-2">
+                    <span className="text-4xl font-bold text-gray-900">{season.price}&euro;</span>
+                    <span className="text-gray-500 text-sm">{t('perNight')}</span>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         <div className="max-w-2xl mx-auto space-y-3 mb-16">
