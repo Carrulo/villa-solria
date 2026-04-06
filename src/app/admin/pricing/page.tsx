@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import type { Season } from '@/lib/supabase';
 import { Plus, Pencil, Trash2, X, Save } from 'lucide-react';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00e1b', 'Dom'];
 
 const emptySeason: Omit<Season, 'id' | 'created_at'> = {
   name: '',
@@ -13,7 +13,7 @@ const emptySeason: Omit<Season, 'id' | 'created_at'> = {
   end_date: '',
   price_per_night: 0,
   min_nights: 2,
-  allowed_checkin_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  allowed_checkin_days: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'S\u00e1b', 'Dom'],
   cleaning_fee: 50,
   weekly_discount: 0,
 };
@@ -60,17 +60,17 @@ export default function AdminPricingPage() {
     if (editing.id) {
       const { error } = await supabase.from('seasons').update(payload).eq('id', editing.id);
       if (error) {
-        showToast('Failed to update season', 'error');
+        showToast('Erro ao atualizar \u00e9poca', 'error');
         return;
       }
-      showToast('Season updated', 'success');
+      showToast('\u00c9poca atualizada', 'success');
     } else {
       const { error } = await supabase.from('seasons').insert(payload);
       if (error) {
-        showToast('Failed to create season', 'error');
+        showToast('Erro ao criar \u00e9poca', 'error');
         return;
       }
-      showToast('Season created', 'success');
+      showToast('\u00c9poca criada', 'success');
     }
 
     setEditing(null);
@@ -78,13 +78,13 @@ export default function AdminPricingPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this season?')) return;
+    if (!confirm('Eliminar esta \u00e9poca?')) return;
     const { error } = await supabase.from('seasons').delete().eq('id', id);
     if (error) {
-      showToast('Failed to delete', 'error');
+      showToast('Erro ao eliminar', 'error');
       return;
     }
-    showToast('Season deleted', 'success');
+    showToast('\u00c9poca eliminada', 'success');
     fetchSeasons();
   }
 
@@ -98,7 +98,7 @@ export default function AdminPricingPage() {
   }
 
   if (loading) {
-    return <div className="text-gray-400">Loading seasons...</div>;
+    return <div className="text-gray-400">A carregar \u00e9pocas...</div>;
   }
 
   return (
@@ -116,13 +116,13 @@ export default function AdminPricingPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Seasons & Pricing</h1>
+        <h1 className="text-2xl font-bold text-white">\u00c9pocas e Pre\u00e7os</h1>
         <button
           onClick={() => setEditing({ ...emptySeason } as Omit<Season, 'created_at'> & { id?: string })}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           <Plus size={16} />
-          Add Season
+          Adicionar \u00c9poca
         </button>
       </div>
 
@@ -132,21 +132,21 @@ export default function AdminPricingPage() {
           <table className="w-full">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-white/5">
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Dates</th>
-                <th className="px-6 py-4">Price/Night</th>
-                <th className="px-6 py-4">Min Nights</th>
-                <th className="px-6 py-4">Check-in Days</th>
-                <th className="px-6 py-4">Cleaning Fee</th>
-                <th className="px-6 py-4">Weekly Discount</th>
-                <th className="px-6 py-4">Actions</th>
+                <th className="px-6 py-4">Nome</th>
+                <th className="px-6 py-4">Datas</th>
+                <th className="px-6 py-4">Pre\u00e7o/Noite</th>
+                <th className="px-6 py-4">Noites M\u00edn.</th>
+                <th className="px-6 py-4">Dias de Check-in</th>
+                <th className="px-6 py-4">Taxa de Limpeza</th>
+                <th className="px-6 py-4">Desconto Semanal</th>
+                <th className="px-6 py-4">A\u00e7\u00f5es</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {seasons.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                    No seasons configured
+                    Nenhuma \u00e9poca configurada
                   </td>
                 </tr>
               ) : (
@@ -199,7 +199,7 @@ export default function AdminPricingPage() {
           <div className="bg-[#16213e] rounded-2xl p-8 w-full max-w-lg border border-white/10 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">
-                {editing.id ? 'Edit Season' : 'Add Season'}
+                {editing.id ? 'Editar \u00c9poca' : 'Adicionar \u00c9poca'}
               </h2>
               <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-white">
                 <X size={20} />
@@ -208,19 +208,19 @@ export default function AdminPricingPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
                 <input
                   type="text"
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                  placeholder="e.g. High Season"
+                  placeholder="ex: \u00c9poca Alta"
                   className="w-full px-4 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Data In\u00edcio</label>
                   <input
                     type="date"
                     value={editing.start_date}
@@ -229,7 +229,7 @@ export default function AdminPricingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">End Date</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Data Fim</label>
                   <input
                     type="date"
                     value={editing.end_date}
@@ -241,7 +241,7 @@ export default function AdminPricingPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Price/Night (EUR)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Pre\u00e7o/Noite (EUR)</label>
                   <input
                     type="number"
                     value={editing.price_per_night}
@@ -250,7 +250,7 @@ export default function AdminPricingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Min Nights</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Noites M\u00edn.</label>
                   <input
                     type="number"
                     value={editing.min_nights}
@@ -262,7 +262,7 @@ export default function AdminPricingPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Cleaning Fee (EUR)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Taxa de Limpeza (EUR)</label>
                   <input
                     type="number"
                     value={editing.cleaning_fee}
@@ -271,7 +271,7 @@ export default function AdminPricingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Weekly Discount (%)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Desconto Semanal (%)</label>
                   <input
                     type="number"
                     value={editing.weekly_discount}
@@ -282,7 +282,7 @@ export default function AdminPricingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Allowed Check-in Days</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Dias de Check-in Permitidos</label>
                 <div className="flex flex-wrap gap-2">
                   {DAYS.map((day) => {
                     const selected = (editing.allowed_checkin_days || []).includes(day);
@@ -310,14 +310,14 @@ export default function AdminPricingPage() {
                 onClick={() => setEditing(null)}
                 className="flex-1 py-2.5 bg-white/5 text-gray-300 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 onClick={handleSave}
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Save size={16} />
-                Save
+                Guardar
               </button>
             </div>
           </div>

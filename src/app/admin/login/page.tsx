@@ -33,11 +33,11 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Villa Solria</h1>
-          <p className="text-gray-400">Admin Panel</p>
+          <p className="text-gray-400">Painel Admin</p>
         </div>
 
         <div className="bg-[#16213e] rounded-2xl p-8 shadow-2xl border border-white/5">
-          <h2 className="text-xl font-semibold text-white mb-6">Sign In</h2>
+          <h2 className="text-xl font-semibold text-white mb-6">Entrar</h2>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">
-                Password
+                Palavra-passe
               </label>
               <input
                 type="password"
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Enter your password"
+                placeholder="Introduza a sua palavra-passe"
                 className="w-full px-4 py-3 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm placeholder-gray-500 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none transition-all"
               />
             </div>
@@ -81,11 +81,11 @@ export default function AdminLoginPage() {
               className="w-full py-3.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
-                'Signing in...'
+                'A entrar...'
               ) : (
                 <>
                   <LogIn size={18} />
-                  Sign In
+                  Entrar
                 </>
               )}
             </button>

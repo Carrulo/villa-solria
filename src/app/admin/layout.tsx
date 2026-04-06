@@ -18,12 +18,12 @@ import {
 import '../globals.css';
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/bookings', label: 'Bookings', icon: BookOpen },
-  { href: '/admin/pricing', label: 'Seasons & Pricing', icon: DollarSign },
-  { href: '/admin/reviews', label: 'Reviews', icon: Star },
-  { href: '/admin/photos', label: 'Photos', icon: ImageIcon },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin', label: 'Painel', icon: LayoutDashboard },
+  { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
+  { href: '/admin/pricing', label: '\u00c9pocas e Pre\u00e7os', icon: DollarSign },
+  { href: '/admin/reviews', label: 'Avalia\u00e7\u00f5es', icon: Star },
+  { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
+  { href: '/admin/settings', label: 'Defini\u00e7\u00f5es', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -68,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoginPage) {
     return (
-      <html lang="en">
+      <html lang="pt">
         <body>{children}</body>
       </html>
     );
@@ -76,16 +76,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <html lang="en">
+      <html lang="pt">
         <body className="bg-[#1a1a2e] min-h-screen flex items-center justify-center">
-          <div className="text-white">Loading...</div>
+          <div className="text-white">A carregar...</div>
         </body>
       </html>
     );
   }
 
   return (
-    <html lang="en">
+    <html lang="pt">
       <body className="bg-[#1a1a2e] min-h-screen text-white">
         <div className="flex h-screen overflow-hidden">
           {/* Mobile sidebar overlay */}
@@ -104,7 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <div className="p-6 border-b border-white/5">
               <h1 className="text-xl font-bold text-white">Villa Solria</h1>
-              <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+              <p className="text-xs text-gray-400 mt-1">Painel Admin</p>
             </div>
 
             <nav className="flex-1 p-4 space-y-1">
@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all w-full"
               >
                 <LogOut size={18} />
-                Logout
+                Sair
               </button>
             </div>
           </aside>
@@ -150,7 +150,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Menu size={24} />
               </button>
               <div className="hidden lg:block text-sm text-gray-400">
-                {navItems.find((i) => i.href === pathname)?.label || 'Admin'}
+                {navItems.find((i) => i.href === pathname)?.label || 'Painel'}
               </div>
               <div className="text-xs text-gray-500">
                 Villa Solria Admin

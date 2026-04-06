@@ -49,16 +49,16 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
-    { label: 'Total Bookings', value: stats.total, icon: CalendarDays, color: 'text-blue-400' },
-    { label: 'Upcoming', value: stats.upcoming, icon: Users, color: 'text-green-400' },
-    { label: 'Revenue (Month)', value: `${stats.revenueMonth.toFixed(0)}EUR`, icon: TrendingUp, color: 'text-yellow-400' },
-    { label: 'Occupancy', value: `${stats.occupancy}%`, icon: Percent, color: 'text-purple-400' },
+    { label: 'Total de Reservas', value: stats.total, icon: CalendarDays, color: 'text-blue-400' },
+    { label: 'Pr\u00f3ximas', value: stats.upcoming, icon: Users, color: 'text-green-400' },
+    { label: 'Receita (M\u00eas)', value: `${stats.revenueMonth.toFixed(0)}EUR`, icon: TrendingUp, color: 'text-yellow-400' },
+    { label: 'Taxa de Ocupa\u00e7\u00e3o', value: `${stats.occupancy}%`, icon: Percent, color: 'text-purple-400' },
   ];
 
   const recentBookings = bookings.slice(0, 5);
 
   if (loading) {
-    return <div className="text-gray-400">Loading dashboard...</div>;
+    return <div className="text-gray-400">A carregar painel...</div>;
   }
 
   return (
@@ -79,27 +79,27 @@ export default function AdminDashboard() {
       {/* Recent Bookings */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5">
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Recent Bookings</h2>
+          <h2 className="text-lg font-semibold text-white">Reservas Recentes</h2>
           <a href="/admin/bookings" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1">
-            View all <ArrowRight size={14} />
+            Ver todas <ArrowRight size={14} />
           </a>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider">
-                <th className="px-6 py-3">Guest</th>
+                <th className="px-6 py-3">H\u00f3spede</th>
                 <th className="px-6 py-3">Check-in</th>
-                <th className="px-6 py-3">Nights</th>
+                <th className="px-6 py-3">Noites</th>
                 <th className="px-6 py-3">Total</th>
-                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {recentBookings.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    No bookings yet
+                    Ainda sem reservas
                   </td>
                 </tr>
               ) : (
@@ -131,15 +131,15 @@ export default function AdminDashboard() {
           href="/admin/pricing"
           className="bg-[#16213e] rounded-2xl p-6 border border-white/5 hover:border-blue-500/30 transition-colors group"
         >
-          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Manage Seasons</h3>
-          <p className="text-sm text-gray-400">Add or edit pricing seasons</p>
+          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Gerir \u00c9pocas</h3>
+          <p className="text-sm text-gray-400">Adicionar ou editar \u00e9pocas de pre\u00e7os</p>
         </a>
         <a
           href="/admin/reviews"
           className="bg-[#16213e] rounded-2xl p-6 border border-white/5 hover:border-blue-500/30 transition-colors group"
         >
-          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Manage Reviews</h3>
-          <p className="text-sm text-gray-400">Add or manage guest reviews</p>
+          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Gerir Avalia\u00e7\u00f5es</h3>
+          <p className="text-sm text-gray-400">Adicionar ou gerir avalia\u00e7\u00f5es de h\u00f3spedes</p>
         </a>
       </div>
     </div>

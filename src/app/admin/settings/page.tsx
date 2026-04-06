@@ -6,13 +6,13 @@ import type { Setting } from '@/lib/supabase';
 import { Save, Plus, Trash2 } from 'lucide-react';
 
 const DEFAULT_SETTINGS = [
-  { key: 'whatsapp_number', label: 'WhatsApp Number', placeholder: '+351912345678' },
-  { key: 'checkin_time', label: 'Check-in Time', placeholder: '16:00' },
-  { key: 'checkout_time', label: 'Check-out Time', placeholder: '10:30' },
-  { key: 'max_guests', label: 'Max Guests', placeholder: '6' },
-  { key: 'booking_mode', label: 'Booking Mode (inquiry/instant)', placeholder: 'inquiry' },
-  { key: 'ical_airbnb', label: 'iCal URL - Airbnb', placeholder: 'https://...' },
-  { key: 'ical_booking', label: 'iCal URL - Booking.com', placeholder: 'https://...' },
+  { key: 'whatsapp_number', label: 'N\u00famero WhatsApp', placeholder: '+351912345678' },
+  { key: 'checkin_time', label: 'Hora de Check-in', placeholder: '16:00' },
+  { key: 'checkout_time', label: 'Hora de Check-out', placeholder: '10:30' },
+  { key: 'max_guests', label: 'M\u00e1x. H\u00f3spedes', placeholder: '6' },
+  { key: 'booking_mode', label: 'Modo de Reserva (consulta/instant\u00e2neo)', placeholder: 'consulta' },
+  { key: 'ical_airbnb', label: 'URL iCal - Airbnb', placeholder: 'https://...' },
+  { key: 'ical_booking', label: 'URL iCal - Booking.com', placeholder: 'https://...' },
 ];
 
 export default function AdminSettingsPage() {
@@ -72,14 +72,14 @@ export default function AdminSettingsPage() {
     }
 
     setSaving(false);
-    showToast('Settings saved', 'success');
+    showToast('Defini\u00e7\u00f5es guardadas', 'success');
   }
 
   function addCustomKey() {
     if (!newKey.trim()) return;
     const k = newKey.trim().toLowerCase().replace(/\s+/g, '_');
     if (DEFAULT_SETTINGS.find((d) => d.key === k) || customKeys.find((c) => c.key === k)) {
-      showToast('Key already exists', 'error');
+      showToast('Chave j\u00e1 existe', 'error');
       return;
     }
     setCustomKeys([...customKeys, { key: k, label: k, placeholder: '' }]);
@@ -92,11 +92,11 @@ export default function AdminSettingsPage() {
     const updated = { ...settings };
     delete updated[key];
     setSettings(updated);
-    showToast('Setting removed', 'success');
+    showToast('Defini\u00e7\u00e3o removida', 'success');
   }
 
   if (loading) {
-    return <div className="text-gray-400">Loading settings...</div>;
+    return <div className="text-gray-400">A carregar defini\u00e7\u00f5es...</div>;
   }
 
   return (
@@ -113,20 +113,20 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <h1 className="text-2xl font-bold text-white">Defini\u00e7\u00f5es</h1>
         <button
           onClick={handleSave}
           disabled={saving}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
         >
           <Save size={16} />
-          {saving ? 'Saving...' : 'Save All'}
+          {saving ? 'A guardar...' : 'Guardar Tudo'}
         </button>
       </div>
 
       {/* Default Settings */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Property Settings</h2>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Defini\u00e7\u00f5es da Propriedade</h2>
 
         {DEFAULT_SETTINGS.map(({ key, label, placeholder }) => (
           <div key={key}>
@@ -144,7 +144,7 @@ export default function AdminSettingsPage() {
 
       {/* Custom Settings */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Custom Settings</h2>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Defini\u00e7\u00f5es Personalizadas</h2>
 
         {customKeys.map(({ key, label }) => (
           <div key={key} className="flex items-end gap-3">
@@ -168,7 +168,7 @@ export default function AdminSettingsPage() {
 
         <div className="flex items-end gap-3 pt-2 border-t border-white/5">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-400 mb-1.5">Add custom key</label>
+            <label className="block text-sm font-medium text-gray-400 mb-1.5">Adicionar chave personalizada</label>
             <input
               type="text"
               value={newKey}

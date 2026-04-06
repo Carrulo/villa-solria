@@ -56,7 +56,7 @@ export default function AdminPhotosPage() {
       .order('sort_order', { ascending: true });
 
     if (error) {
-      showToast('Failed to load photos', 'error');
+      showToast('Erro ao carregar fotos', 'error');
     } else {
       setPhotos((data || []) as Photo[]);
     }
@@ -72,7 +72,7 @@ export default function AdminPhotosPage() {
   async function handleUpload(files: FileList | File[]) {
     const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (fileArray.length === 0) {
-      showToast('No valid image files selected', 'error');
+      showToast('Nenhum ficheiro de imagem v\u00e1lido selecionado', 'error');
       return;
     }
 
@@ -90,7 +90,7 @@ export default function AdminPhotosPage() {
         .upload(storagePath, file, { contentType: file.type });
 
       if (uploadError) {
-        showToast(`Failed to upload ${file.name}: ${uploadError.message}`, 'error');
+        showToast(`Erro ao carregar ${file.name}: ${uploadError.message}`, 'error');
         continue;
       }
 
@@ -107,14 +107,14 @@ export default function AdminPhotosPage() {
       });
 
       if (dbError) {
-        showToast(`DB error for ${file.name}: ${dbError.message}`, 'error');
+        showToast(`Erro BD para ${file.name}: ${dbError.message}`, 'error');
       }
 
       uploaded++;
       setUploadProgress(Math.round((uploaded / fileArray.length) * 100));
     }
 
-    showToast(`Uploaded ${uploaded} of ${fileArray.length} photos`, 'success');
+    showToast(`Carregadas ${uploaded} de ${fileArray.length} fotos`, 'success');
     setUploading(false);
     setUploadProgress(0);
     fetchPhotos();
@@ -151,11 +151,11 @@ export default function AdminPhotosPage() {
       .eq('id', photo.id);
 
     if (error) {
-      showToast('Failed to update', 'error');
+      showToast('Erro ao atualizar', 'error');
       return;
     }
     fetchPhotos();
-    showToast(photo.is_hero ? 'Hero removed' : 'Set as hero photo', 'success');
+    showToast(photo.is_hero ? 'Principal removida' : 'Definida como foto principal', 'success');
   }
 
   // Toggle visibility
@@ -166,18 +166,18 @@ export default function AdminPhotosPage() {
       .eq('id', id);
 
     if (error) {
-      showToast('Failed to update', 'error');
+      showToast('Erro ao atualizar', 'error');
       return;
     }
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, is_visible: !visible } : p)));
-    showToast(visible ? 'Photo hidden' : 'Photo visible', 'success');
+    showToast(visible ? 'Foto oculta' : 'Foto vis\u00edvel', 'success');
   }
 
   // Update category
   async function updateCategory(id: string, category: string) {
     const { error } = await supabase.from('photos').update({ category }).eq('id', id);
     if (error) {
-      showToast('Failed to update category', 'error');
+      showToast('Erro ao atualizar categoria', 'error');
       return;
     }
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, category } : p)));
@@ -187,7 +187,7 @@ export default function AdminPhotosPage() {
   async function updateSortOrder(id: string, sort_order: number) {
     const { error } = await supabase.from('photos').update({ sort_order }).eq('id', id);
     if (error) {
-      showToast('Failed to update order', 'error');
+      showToast('Erro ao atualizar ordem', 'error');
       return;
     }
     setPhotos((prev) =>
@@ -199,17 +199,17 @@ export default function AdminPhotosPage() {
   async function saveAltText(id: string) {
     const { error } = await supabase.from('photos').update({ alt_text: altText }).eq('id', id);
     if (error) {
-      showToast('Failed to update alt text', 'error');
+      showToast('Erro ao atualizar texto alternativo', 'error');
       return;
     }
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, alt_text: altText } : p)));
     setEditingAlt(null);
-    showToast('Alt text updated', 'success');
+    showToast('Texto alternativo atualizado', 'success');
   }
 
   // Delete photo
   async function handleDelete(photo: Photo) {
-    if (!confirm(`Delete "${photo.filename}"?`)) return;
+    if (!confirm(`Eliminar "${photo.filename}"?`)) return;
 
     // Delete from storage if it's a storage photo
     if (photo.source === 'storage') {
@@ -218,7 +218,7 @@ export default function AdminPhotosPage() {
 
     const { error } = await supabase.from('photos').delete().eq('id', photo.id);
     if (error) {
-      showToast('Failed to delete', 'error');
+      showToast('Erro ao eliminar', 'error');
       return;
     }
     setSelected((prev) => {
@@ -226,14 +226,14 @@ export default function AdminPhotosPage() {
       next.delete(photo.id);
       return next;
     });
-    showToast('Photo deleted', 'success');
+    showToast('Foto eliminada', 'success');
     fetchPhotos();
   }
 
   // Bulk delete
   async function bulkDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} selected photos?`)) return;
+    if (!confirm(`Eliminar ${selected.size} fotos selecionadas?`)) return;
 
     const toDelete = photos.filter((p) => selected.has(p.id));
     const storageToDelete = toDelete.filter((p) => p.source === 'storage').map((p) => p.storage_path);
@@ -247,7 +247,7 @@ export default function AdminPhotosPage() {
     }
 
     setSelected(new Set());
-    showToast(`Deleted ${toDelete.length} photos`, 'success');
+    showToast(`Eliminadas ${toDelete.length} fotos`, 'success');
     fetchPhotos();
   }
 
@@ -257,7 +257,7 @@ export default function AdminPhotosPage() {
     for (const id of selected) {
       await supabase.from('photos').update({ category: bulkCategory }).eq('id', id);
     }
-    showToast(`Updated ${selected.size} photos to ${bulkCategory}`, 'success');
+    showToast(`Atualizadas ${selected.size} fotos para ${bulkCategory}`, 'success');
     setBulkCategory('');
     setSelected(new Set());
     fetchPhotos();
@@ -312,7 +312,7 @@ export default function AdminPhotosPage() {
     }
 
     showToast(
-      imported > 0 ? `Imported ${imported} local photos` : 'All local photos already imported',
+      imported > 0 ? `Importadas ${imported} fotos locais` : 'Todas as fotos locais j\u00e1 importadas',
       'success'
     );
     setImporting(false);
@@ -332,8 +332,8 @@ export default function AdminPhotosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Photos</h1>
-          <p className="text-gray-400 text-sm mt-1">{photos.length} photos</p>
+          <h1 className="text-2xl font-bold text-white">Fotos</h1>
+          <p className="text-gray-400 text-sm mt-1">{photos.length} fotos</p>
         </div>
         <div className="flex gap-3">
           {photos.length === 0 && (
@@ -343,7 +343,7 @@ export default function AdminPhotosPage() {
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50"
             >
               {importing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Import existing photos
+              Importar fotos existentes
             </button>
           )}
           {photos.length > 0 && (
@@ -353,7 +353,7 @@ export default function AdminPhotosPage() {
               className="flex items-center gap-2 px-4 py-2 bg-white/5 text-gray-300 rounded-xl hover:bg-white/10 transition-colors text-sm disabled:opacity-50"
             >
               {importing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Import local
+              Importar locais
             </button>
           )}
         </div>
@@ -382,7 +382,7 @@ export default function AdminPhotosPage() {
         {uploading ? (
           <div className="space-y-3">
             <Loader2 size={32} className="animate-spin text-blue-400 mx-auto" />
-            <p className="text-gray-400">Uploading... {uploadProgress}%</p>
+            <p className="text-gray-400">A carregar... {uploadProgress}%</p>
             <div className="w-48 mx-auto bg-white/10 rounded-full h-2">
               <div
                 className="bg-blue-500 h-2 rounded-full transition-all"
@@ -394,9 +394,9 @@ export default function AdminPhotosPage() {
           <div className="space-y-2">
             <Upload size={32} className="text-gray-500 mx-auto" />
             <p className="text-gray-400">
-              Drag & drop photos here, or <span className="text-blue-400">click to browse</span>
+              Arraste e solte fotos aqui, ou <span className="text-blue-400">clique para procurar</span>
             </p>
-            <p className="text-gray-600 text-xs">Supports JPG, PNG, WebP</p>
+            <p className="text-gray-600 text-xs">Suporta JPG, PNG, WebP</p>
           </div>
         )}
       </div>
@@ -404,14 +404,14 @@ export default function AdminPhotosPage() {
       {/* Bulk Actions */}
       {selected.size > 0 && (
         <div className="flex items-center gap-4 bg-blue-600/10 border border-blue-500/20 rounded-xl px-4 py-3">
-          <span className="text-blue-400 text-sm font-medium">{selected.size} selected</span>
+          <span className="text-blue-400 text-sm font-medium">{selected.size} selecionadas</span>
 
           <select
             value={bulkCategory}
             onChange={(e) => setBulkCategory(e.target.value)}
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white"
           >
-            <option value="">Change category...</option>
+            <option value="">Alterar categoria...</option>
             {PHOTO_CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -424,7 +424,7 @@ export default function AdminPhotosPage() {
               onClick={bulkChangeCategory}
               className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
             >
-              Apply
+              Aplicar
             </button>
           )}
 
@@ -433,7 +433,7 @@ export default function AdminPhotosPage() {
             className="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-lg text-sm hover:bg-red-600/30 ml-auto"
           >
             <Trash2 size={14} className="inline mr-1" />
-            Delete selected
+            Eliminar selecionadas
           </button>
         </div>
       )}
@@ -442,8 +442,8 @@ export default function AdminPhotosPage() {
       {photos.length === 0 ? (
         <div className="text-center py-20 text-gray-500">
           <ImageIcon size={48} className="mx-auto mb-4 opacity-50" />
-          <p className="text-lg">No photos yet</p>
-          <p className="text-sm mt-1">Upload photos or import the existing local ones</p>
+          <p className="text-lg">Ainda sem fotos</p>
+          <p className="text-sm mt-1">Carregue fotos ou importe as locais existentes</p>
         </div>
       ) : (
         <>
@@ -451,7 +451,7 @@ export default function AdminPhotosPage() {
           <div className="flex items-center gap-2">
             <button onClick={selectAll} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white">
               {selected.size === photos.length ? <CheckSquare size={16} /> : <Square size={16} />}
-              {selected.size === photos.length ? 'Deselect all' : 'Select all'}
+              {selected.size === photos.length ? 'Desselecionar tudo' : 'Selecionar tudo'}
             </button>
           </div>
 
@@ -554,21 +554,21 @@ function PhotoCard({
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
               photo.is_hero ? 'bg-yellow-500 text-black' : 'bg-white/20 text-white hover:bg-white/30'
             }`}
-            title={photo.is_hero ? 'Remove hero' : 'Set as hero'}
+            title={photo.is_hero ? 'Remover principal' : 'Definir como principal'}
           >
             {photo.is_hero ? <Star size={16} /> : <StarOff size={16} />}
           </button>
           <button
             onClick={onToggleVisibility}
             className="w-9 h-9 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center"
-            title={photo.is_visible ? 'Hide' : 'Show'}
+            title={photo.is_visible ? 'Ocultar' : 'Mostrar'}
           >
             {photo.is_visible ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
           <button
             onClick={onDelete}
             className="w-9 h-9 rounded-lg bg-red-500/80 text-white hover:bg-red-600 flex items-center justify-center"
-            title="Delete"
+            title="Eliminar"
           >
             <Trash2 size={16} />
           </button>
@@ -637,9 +637,9 @@ function PhotoCard({
           <p
             onClick={onStartEditAlt}
             className="text-xs text-gray-500 truncate cursor-pointer hover:text-gray-300"
-            title="Click to edit alt text"
+            title="Clique para editar texto alternativo"
           >
-            {photo.alt_text || 'Click to add alt text'}
+            {photo.alt_text || 'Clique para adicionar texto alternativo'}
           </p>
         )}
 
@@ -661,7 +661,7 @@ function PhotoCard({
             value={photo.sort_order}
             onChange={(e) => onUpdateSortOrder(parseInt(e.target.value) || 0)}
             className="w-14 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white text-center"
-            title="Sort order"
+            title="Ordem"
           />
         </div>
       </div>

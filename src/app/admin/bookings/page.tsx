@@ -32,12 +32,12 @@ export default function AdminBookingsPage() {
       .eq('id', id);
 
     if (error) {
-      showToast('Failed to update status', 'error');
+      showToast('Erro ao atualizar estado', 'error');
       return;
     }
 
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
-    showToast(`Booking ${status}`, 'success');
+    showToast(`Reserva ${status === 'confirmed' ? 'confirmada' : 'cancelada'}`, 'success');
   }
 
   function showToast(message: string, type: 'success' | 'error') {
@@ -48,7 +48,7 @@ export default function AdminBookingsPage() {
   const filteredBookings = filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
 
   if (loading) {
-    return <div className="text-gray-400">Loading bookings...</div>;
+    return <div className="text-gray-400">A carregar reservas...</div>;
   }
 
   return (
@@ -66,10 +66,12 @@ export default function AdminBookingsPage() {
 
       {/* Header + Filter */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Bookings</h1>
+        <h1 className="text-2xl font-bold text-white">Reservas</h1>
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-gray-400" />
-          {['all', 'pending', 'confirmed', 'cancelled'].map((f) => (
+          {(['all', 'pending', 'confirmed', 'cancelled'] as const).map((f) => {
+            const labels: Record<string, string> = { all: 'Todos', pending: 'Pendente', confirmed: 'Confirmada', cancelled: 'Cancelada' };
+            return (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -79,9 +81,10 @@ export default function AdminBookingsPage() {
                   : 'bg-white/5 text-gray-400 hover:bg-white/10'
               }`}
             >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {labels[f]}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -91,22 +94,22 @@ export default function AdminBookingsPage() {
           <table className="w-full">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-white/5">
-                <th className="px-6 py-4">Guest</th>
-                <th className="px-6 py-4">Dates</th>
-                <th className="px-6 py-4">Nights</th>
-                <th className="px-6 py-4">Guests</th>
+                <th className="px-6 py-4">H\u00f3spede</th>
+                <th className="px-6 py-4">Datas</th>
+                <th className="px-6 py-4">Noites</th>
+                <th className="px-6 py-4">H\u00f3spedes</th>
                 <th className="px-6 py-4">Total</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Payment</th>
-                <th className="px-6 py-4">Source</th>
-                <th className="px-6 py-4">Actions</th>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4">Pagamento</th>
+                <th className="px-6 py-4">Origem</th>
+                <th className="px-6 py-4">A\u00e7\u00f5es</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredBookings.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
-                    No bookings found
+                    Nenhuma reserva encontrada
                   </td>
                 </tr>
               ) : (
@@ -121,7 +124,7 @@ export default function AdminBookingsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-300">{booking.check_in}</p>
-                      <p className="text-xs text-gray-500">to {booking.check_out}</p>
+                      <p className="text-xs text-gray-500">at\u00e9 {booking.check_out}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.nights}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.guests}</td>
@@ -140,14 +143,14 @@ export default function AdminBookingsPage() {
                             <button
                               onClick={() => updateStatus(booking.id, 'confirmed')}
                               className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
-                              title="Confirm"
+                              title="Confirmar"
                             >
                               <CheckCircle size={16} />
                             </button>
                             <button
                               onClick={() => updateStatus(booking.id, 'cancelled')}
                               className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                              title="Cancel"
+                              title="Cancelar"
                             >
                               <XCircle size={16} />
                             </button>
@@ -157,7 +160,7 @@ export default function AdminBookingsPage() {
                           <button
                             onClick={() => updateStatus(booking.id, 'cancelled')}
                             className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                            title="Cancel"
+                            title="Cancelar"
                           >
                             <XCircle size={16} />
                           </button>
