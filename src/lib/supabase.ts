@@ -53,3 +53,31 @@ export interface Setting {
   value: string;
   created_at: string;
 }
+
+export interface Photo {
+  id: string;
+  filename: string;
+  storage_path: string;
+  alt_text: string;
+  category: string; // 'hero' | 'bedroom' | 'living' | 'kitchen' | 'bathroom' | 'outdoor' | 'view' | 'general'
+  sort_order: number;
+  is_hero: boolean;
+  is_visible: boolean;
+  source: 'local' | 'storage';
+  width?: number;
+  height?: number;
+  created_at: string;
+}
+
+export const PHOTO_CATEGORIES = [
+  'hero', 'bedroom', 'living', 'kitchen', 'bathroom', 'outdoor', 'view', 'general',
+] as const;
+
+export type PhotoCategory = typeof PHOTO_CATEGORIES[number];
+
+export function getPhotoUrl(photo: Photo): string {
+  if (photo.source === 'storage') {
+    return `https://esqkhahcifdtthnvlyos.supabase.co/storage/v1/object/public/property-photos/${photo.storage_path}`;
+  }
+  return `/images/property/${photo.storage_path}`;
+}

@@ -4,7 +4,8 @@ import Image from 'next/image';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import { createServerClient } from '@/lib/supabase-server';
-import type { Review } from '@/lib/supabase';
+import type { Review, Photo } from '@/lib/supabase';
+import { getPhotoUrl } from '@/lib/supabase';
 
 function JsonLd() {
   const structuredData = {
@@ -100,12 +101,30 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
         ];
 
-  const previewPhotos = [
-    { src: '/images/property/living-room.jpg', alt: 'Living Room' },
-    { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
-    { src: '/images/property/bedroom-master.jpg', alt: 'Master Bedroom' },
-    { src: '/images/property/aerial-view.jpg', alt: 'Aerial View' },
-  ];
+  // Fetch photos from Supabase
+  const { data: dbPhotos } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('is_visible', true)
+    .order('sort_order', { ascending: true });
+
+  const allPhotos = (dbPhotos || []) as Photo[];
+  const heroPhoto = allPhotos.find((p) => p.is_hero);
+  const heroSrc = heroPhoto ? getPhotoUrl(heroPhoto) : '/images/property/hero-ria-formosa.jpg';
+  const heroAlt = heroPhoto?.alt_text || 'Ria Formosa panoramic view from Villa Solria';
+
+  const previewPhotos =
+    allPhotos.length > 0
+      ? allPhotos
+          .filter((p) => !p.is_hero)
+          .slice(0, 4)
+          .map((p) => ({ src: getPhotoUrl(p), alt: p.alt_text || p.filename }))
+      : [
+          { src: '/images/property/living-room.jpg', alt: 'Living Room' },
+          { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
+          { src: '/images/property/bedroom-master.jpg', alt: 'Master Bedroom' },
+          { src: '/images/property/aerial-view.jpg', alt: 'Aerial View' },
+        ];
 
   return (
     <>
@@ -114,12 +133,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
         <Image
-          src="/images/property/hero-ria-formosa.jpg"
-          alt="Ria Formosa panoramic view from Villa Solria"
+          src={heroSrc}
+          alt={heroAlt}
           fill
           priority
           className="object-cover"
           sizes="100vw"
+          unoptimized={heroSrc.startsWith('http')}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
 
@@ -199,6 +219,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-500"
                   sizes={i === 0 ? '(max-width: 1024px) 50vw, 66vw' : '(max-width: 1024px) 50vw, 33vw'}
+                  unoptimized={photo.src.startsWith('http')}
                 />
               </div>
             ))}

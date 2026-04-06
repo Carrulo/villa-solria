@@ -1,11 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import type { Photo } from '@/lib/supabase';
+import { getPhotoUrl } from '@/lib/supabase';
 
-const galleryPhotos = [
+const fallbackPhotos = [
   { src: '/images/property/hero-ria-formosa.jpg', key: 'riaView', fallbackLabel: 'Vista Ria Formosa' },
   { src: '/images/property/aerial-view.jpg', key: 'aerialView', fallbackLabel: 'Vista Aerea' },
   { src: '/images/property/living-room.jpg', key: 'livingRoom', fallbackLabel: 'Sala de Estar' },
@@ -28,21 +30,50 @@ const galleryPhotos = [
 export default function GalleryPage() {
   const t = useTranslations('gallery');
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [galleryPhotos, setGalleryPhotos] = useState(
+    fallbackPhotos.map((p) => ({ src: p.src, label: p.fallbackLabel, key: p.key }))
+  );
 
-  const getLabel = (photo: typeof galleryPhotos[number]) => {
+  useEffect(() => {
+    fetch('/api/photos')
+      .then((r) => r.json())
+      .then((data: Photo[]) => {
+        if (data && data.length > 0) {
+          setGalleryPhotos(
+            data.map((p) => ({
+              src: getPhotoUrl(p),
+              label: p.alt_text || p.filename,
+              key: p.id,
+            }))
+          );
+        }
+      })
+      .catch(() => {
+        // Keep fallback photos
+      });
+  }, []);
+
+  const getLabel = (photo: { label: string; key: string }) => {
+    // Try translation by key, fall back to label from DB/fallback
     try {
       return t(photo.key);
     } catch {
-      return photo.fallbackLabel;
+      return photo.label;
     }
   };
 
   const goNext = useCallback(() => {
-    setLightbox((prev) => (prev !== null ? (prev + 1) % galleryPhotos.length : null));
+    setGalleryPhotos((current) => {
+      setLightbox((prev) => (prev !== null ? (prev + 1) % current.length : null));
+      return current;
+    });
   }, []);
 
   const goPrev = useCallback(() => {
-    setLightbox((prev) => (prev !== null ? (prev - 1 + galleryPhotos.length) % galleryPhotos.length : null));
+    setGalleryPhotos((current) => {
+      setLightbox((prev) => (prev !== null ? (prev - 1 + current.length) % current.length : null));
+      return current;
+    });
   }, []);
 
   return (
@@ -68,6 +99,7 @@ export default function GalleryPage() {
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes={i === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 50vw, 25vw'}
+                unoptimized={photo.src.startsWith('http')}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <span className="absolute bottom-3 left-3 text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
@@ -116,6 +148,7 @@ export default function GalleryPage() {
               className="object-contain"
               sizes="90vw"
               priority
+              unoptimized={galleryPhotos[lightbox].src.startsWith('http')}
             />
           </div>
           <p className="absolute bottom-8 text-white/70 text-sm font-medium">

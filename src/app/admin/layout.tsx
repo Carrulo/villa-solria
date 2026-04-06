@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   BookOpen,
+  ImageIcon,
 } from 'lucide-react';
 import '../globals.css';
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/admin/bookings', label: 'Bookings', icon: BookOpen },
   { href: '/admin/pricing', label: 'Seasons & Pricing', icon: DollarSign },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
+  { href: '/admin/photos', label: 'Photos', icon: ImageIcon },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
