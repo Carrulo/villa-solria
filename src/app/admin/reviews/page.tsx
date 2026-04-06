@@ -47,40 +47,40 @@ export default function AdminReviewsPage() {
       return;
     }
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, visible: !visible } : r)));
-    showToast(visible ? 'Avalia\u00e7\u00e3o oculta' : 'Avalia\u00e7\u00e3o vis\u00edvel', 'success');
+    showToast(visible ? 'Avaliação oculta' : 'Avaliação visível', 'success');
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Eliminar esta avalia\u00e7\u00e3o?')) return;
+    if (!confirm('Eliminar esta avaliação?')) return;
     const { error } = await supabase.from('reviews').delete().eq('id', id);
     if (error) {
       showToast('Erro ao eliminar', 'error');
       return;
     }
-    showToast('Avalia\u00e7\u00e3o eliminada', 'success');
+    showToast('Avaliação eliminada', 'success');
     fetchReviews();
   }
 
   async function handleAdd() {
     if (!form.guest_name || !form.comment) {
-      showToast('Nome e coment\u00e1rio obrigat\u00f3rios', 'error');
+      showToast('Nome e comentário obrigatórios', 'error');
       return;
     }
 
     const { error } = await supabase.from('reviews').insert(form);
     if (error) {
-      showToast('Erro ao adicionar avalia\u00e7\u00e3o', 'error');
+      showToast('Erro ao adicionar avaliação', 'error');
       return;
     }
 
-    showToast('Avalia\u00e7\u00e3o adicionada', 'success');
+    showToast('Avaliação adicionada', 'success');
     setForm(emptyReview);
     setAdding(false);
     fetchReviews();
   }
 
   if (loading) {
-    return <div className="text-gray-400">A carregar avalia\u00e7\u00f5es...</div>;
+    return <div className="text-gray-400">A carregar avaliações...</div>;
   }
 
   return (
@@ -98,13 +98,13 @@ export default function AdminReviewsPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Avalia\u00e7\u00f5es</h1>
+        <h1 className="text-2xl font-bold text-white">Avaliações</h1>
         <button
           onClick={() => setAdding(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           <Plus size={16} />
-          Adicionar Avalia\u00e7\u00e3o
+          Adicionar Avaliação
         </button>
       </div>
 
@@ -112,7 +112,7 @@ export default function AdminReviewsPage() {
       <div className="space-y-4">
         {reviews.length === 0 ? (
           <div className="bg-[#16213e] rounded-2xl border border-white/5 p-12 text-center text-gray-500">
-            Ainda sem avalia\u00e7\u00f5es
+            Ainda sem avaliações
           </div>
         ) : (
           reviews.map((review) => (
@@ -172,7 +172,7 @@ export default function AdminReviewsPage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-[#16213e] rounded-2xl p-8 w-full max-w-lg border border-white/10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-white">Adicionar Avalia\u00e7\u00e3o</h2>
+              <h2 className="text-lg font-semibold text-white">Adicionar Avaliação</h2>
               <button onClick={() => setAdding(false)} className="text-gray-400 hover:text-white">
                 <X size={20} />
               </button>
@@ -181,7 +181,7 @@ export default function AdminReviewsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Nome do H\u00f3spede</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nome do Hóspede</label>
                   <input
                     type="text"
                     value={form.guest_name}
@@ -191,7 +191,7 @@ export default function AdminReviewsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Pa\u00eds</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">País</label>
                   <input
                     type="text"
                     value={form.country}
@@ -204,7 +204,7 @@ export default function AdminReviewsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Classifica\u00e7\u00e3o (1-10)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Classificação (1-10)</label>
                   <input
                     type="number"
                     min={1}
@@ -231,12 +231,12 @@ export default function AdminReviewsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Coment\u00e1rio</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Comentário</label>
                 <textarea
                   value={form.comment}
                   onChange={(e) => setForm({ ...form, comment: e.target.value })}
                   rows={4}
-                  placeholder="Texto da avalia\u00e7\u00e3o do h\u00f3spede..."
+                  placeholder="Texto da avaliação do hóspede..."
                   className="w-full px-4 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none resize-none"
                 />
               </div>
@@ -254,7 +254,7 @@ export default function AdminReviewsPage() {
                 className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
               >
                 <Save size={16} />
-                Adicionar Avalia\u00e7\u00e3o
+                Adicionar Avaliação
               </button>
             </div>
           </div>

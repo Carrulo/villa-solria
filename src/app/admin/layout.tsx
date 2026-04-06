@@ -20,10 +20,10 @@ import '../globals.css';
 const navItems = [
   { href: '/admin', label: 'Painel', icon: LayoutDashboard },
   { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
-  { href: '/admin/pricing', label: '\u00c9pocas e Pre\u00e7os', icon: DollarSign },
-  { href: '/admin/reviews', label: 'Avalia\u00e7\u00f5es', icon: Star },
+  { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
+  { href: '/admin/reviews', label: 'Avaliações', icon: Star },
   { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
-  { href: '/admin/settings', label: 'Defini\u00e7\u00f5es', icon: Settings },
+  { href: '/admin/settings', label: 'Definições', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

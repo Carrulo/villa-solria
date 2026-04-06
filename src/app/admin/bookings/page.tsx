@@ -94,15 +94,15 @@ export default function AdminBookingsPage() {
           <table className="w-full">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-white/5">
-                <th className="px-6 py-4">H\u00f3spede</th>
+                <th className="px-6 py-4">Hóspede</th>
                 <th className="px-6 py-4">Datas</th>
                 <th className="px-6 py-4">Noites</th>
-                <th className="px-6 py-4">H\u00f3spedes</th>
+                <th className="px-6 py-4">Hóspedes</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4">Estado</th>
                 <th className="px-6 py-4">Pagamento</th>
                 <th className="px-6 py-4">Origem</th>
-                <th className="px-6 py-4">A\u00e7\u00f5es</th>
+                <th className="px-6 py-4">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -124,7 +124,7 @@ export default function AdminBookingsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-300">{booking.check_in}</p>
-                      <p className="text-xs text-gray-500">at\u00e9 {booking.check_out}</p>
+                      <p className="text-xs text-gray-500">até {booking.check_out}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.nights}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.guests}</td>

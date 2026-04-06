@@ -72,7 +72,7 @@ export default function AdminPhotosPage() {
   async function handleUpload(files: FileList | File[]) {
     const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (fileArray.length === 0) {
-      showToast('Nenhum ficheiro de imagem v\u00e1lido selecionado', 'error');
+      showToast('Nenhum ficheiro de imagem válido selecionado', 'error');
       return;
     }
 
@@ -170,7 +170,7 @@ export default function AdminPhotosPage() {
       return;
     }
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, is_visible: !visible } : p)));
-    showToast(visible ? 'Foto oculta' : 'Foto vis\u00edvel', 'success');
+    showToast(visible ? 'Foto oculta' : 'Foto visível', 'success');
   }
 
   // Update category
@@ -312,7 +312,7 @@ export default function AdminPhotosPage() {
     }
 
     showToast(
-      imported > 0 ? `Importadas ${imported} fotos locais` : 'Todas as fotos locais j\u00e1 importadas',
+      imported > 0 ? `Importadas ${imported} fotos locais` : 'Todas as fotos locais já importadas',
       'success'
     );
     setImporting(false);

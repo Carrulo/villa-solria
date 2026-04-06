@@ -6,10 +6,10 @@ import type { Setting } from '@/lib/supabase';
 import { Save, Plus, Trash2 } from 'lucide-react';
 
 const DEFAULT_SETTINGS = [
-  { key: 'whatsapp_number', label: 'N\u00famero WhatsApp', placeholder: '+351912345678' },
+  { key: 'whatsapp_number', label: 'Número WhatsApp', placeholder: '+351912345678' },
   { key: 'checkin_time', label: 'Hora de Check-in', placeholder: '16:00' },
   { key: 'checkout_time', label: 'Hora de Check-out', placeholder: '10:30' },
-  { key: 'max_guests', label: 'M\u00e1x. H\u00f3spedes', placeholder: '6' },
+  { key: 'max_guests', label: 'Máx. Hóspedes', placeholder: '6' },
   { key: 'booking_mode', label: 'Modo de Reserva (consulta/instant\u00e2neo)', placeholder: 'consulta' },
   { key: 'ical_airbnb', label: 'URL iCal - Airbnb', placeholder: 'https://...' },
   { key: 'ical_booking', label: 'URL iCal - Booking.com', placeholder: 'https://...' },
@@ -72,14 +72,14 @@ export default function AdminSettingsPage() {
     }
 
     setSaving(false);
-    showToast('Defini\u00e7\u00f5es guardadas', 'success');
+    showToast('Definições guardadas', 'success');
   }
 
   function addCustomKey() {
     if (!newKey.trim()) return;
     const k = newKey.trim().toLowerCase().replace(/\s+/g, '_');
     if (DEFAULT_SETTINGS.find((d) => d.key === k) || customKeys.find((c) => c.key === k)) {
-      showToast('Chave j\u00e1 existe', 'error');
+      showToast('Chave já existe', 'error');
       return;
     }
     setCustomKeys([...customKeys, { key: k, label: k, placeholder: '' }]);
@@ -92,11 +92,11 @@ export default function AdminSettingsPage() {
     const updated = { ...settings };
     delete updated[key];
     setSettings(updated);
-    showToast('Defini\u00e7\u00e3o removida', 'success');
+    showToast('Definição removida', 'success');
   }
 
   if (loading) {
-    return <div className="text-gray-400">A carregar defini\u00e7\u00f5es...</div>;
+    return <div className="text-gray-400">A carregar definições...</div>;
   }
 
   return (
@@ -113,7 +113,7 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Defini\u00e7\u00f5es</h1>
+        <h1 className="text-2xl font-bold text-white">Definições</h1>
         <button
           onClick={handleSave}
           disabled={saving}
@@ -126,7 +126,7 @@ export default function AdminSettingsPage() {
 
       {/* Default Settings */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Defini\u00e7\u00f5es da Propriedade</h2>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Definições da Propriedade</h2>
 
         {DEFAULT_SETTINGS.map(({ key, label, placeholder }) => (
           <div key={key}>
@@ -144,7 +144,7 @@ export default function AdminSettingsPage() {
 
       {/* Custom Settings */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6 space-y-5">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Defini\u00e7\u00f5es Personalizadas</h2>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Definições Personalizadas</h2>
 
         {customKeys.map(({ key, label }) => (
           <div key={key} className="flex items-end gap-3">

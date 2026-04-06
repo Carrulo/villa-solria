@@ -13,7 +13,7 @@ export interface Season {
   end_date: string;
   price_per_night: number;
   min_nights: number;
-  allowed_checkin_days: string[];
+  allowed_checkin_days: number[];
   cleaning_fee: number;
   weekly_discount: number;
   created_at: string;

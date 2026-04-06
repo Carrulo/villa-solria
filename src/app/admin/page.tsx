@@ -50,9 +50,9 @@ export default function AdminDashboard() {
 
   const statCards = [
     { label: 'Total de Reservas', value: stats.total, icon: CalendarDays, color: 'text-blue-400' },
-    { label: 'Pr\u00f3ximas', value: stats.upcoming, icon: Users, color: 'text-green-400' },
-    { label: 'Receita (M\u00eas)', value: `${stats.revenueMonth.toFixed(0)}EUR`, icon: TrendingUp, color: 'text-yellow-400' },
-    { label: 'Taxa de Ocupa\u00e7\u00e3o', value: `${stats.occupancy}%`, icon: Percent, color: 'text-purple-400' },
+    { label: 'Próximas', value: stats.upcoming, icon: Users, color: 'text-green-400' },
+    { label: 'Receita (Mês)', value: `${stats.revenueMonth.toFixed(0)}EUR`, icon: TrendingUp, color: 'text-yellow-400' },
+    { label: 'Taxa de Ocupação', value: `${stats.occupancy}%`, icon: Percent, color: 'text-purple-400' },
   ];
 
   const recentBookings = bookings.slice(0, 5);
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
           <table className="w-full">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider">
-                <th className="px-6 py-3">H\u00f3spede</th>
+                <th className="px-6 py-3">Hóspede</th>
                 <th className="px-6 py-3">Check-in</th>
                 <th className="px-6 py-3">Noites</th>
                 <th className="px-6 py-3">Total</th>
@@ -131,15 +131,15 @@ export default function AdminDashboard() {
           href="/admin/pricing"
           className="bg-[#16213e] rounded-2xl p-6 border border-white/5 hover:border-blue-500/30 transition-colors group"
         >
-          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Gerir \u00c9pocas</h3>
-          <p className="text-sm text-gray-400">Adicionar ou editar \u00e9pocas de pre\u00e7os</p>
+          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Gerir Épocas</h3>
+          <p className="text-sm text-gray-400">Adicionar ou editar épocas de preços</p>
         </a>
         <a
           href="/admin/reviews"
           className="bg-[#16213e] rounded-2xl p-6 border border-white/5 hover:border-blue-500/30 transition-colors group"
         >
-          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Gerir Avalia\u00e7\u00f5es</h3>
-          <p className="text-sm text-gray-400">Adicionar ou gerir avalia\u00e7\u00f5es de h\u00f3spedes</p>
+          <h3 className="text-white font-medium mb-1 group-hover:text-blue-400 transition-colors">Gerir Avaliações</h3>
+          <p className="text-sm text-gray-400">Adicionar ou gerir avaliações de hóspedes</p>
         </a>
       </div>
     </div>
