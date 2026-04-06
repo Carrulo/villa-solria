@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
 import { MapPin, Umbrella, Building2, Plane, Palmtree, UtensilsCrossed, Bike, Landmark } from 'lucide-react';
 
 type Props = {
@@ -30,13 +31,26 @@ export default function LocationPage() {
   ];
 
   return (
-    <div className="py-12 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{t('title')}</h1>
-          <p className="text-lg text-gray-500">{t('subtitle')}</p>
+    <div>
+      {/* Hero Image */}
+      <div className="relative h-[35vh] lg:h-[45vh] w-full">
+        <Image
+          src="/images/property/beach-view.jpg"
+          alt="Beach view near Villa Solria"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+        <div className="absolute bottom-8 left-0 right-0 text-center">
+          <h1 className="text-3xl lg:text-4xl font-bold text-white drop-shadow-lg">{t('title')}</h1>
+          <p className="text-lg text-white/80 mt-2 drop-shadow-md">{t('subtitle')}</p>
         </div>
+      </div>
+
+      <div className="py-12 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Map + Address */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
@@ -103,6 +117,7 @@ export default function LocationPage() {
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

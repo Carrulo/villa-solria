@@ -110,7 +110,12 @@
     "riaView": "Vista Ria Formosa",
     "exterior": "Exterior",
     "balcony": "Balcón",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "aerialView": "Vista Aerea",
+    "diningArea": "Zona de Comedor",
+    "sunsetView": "Puesta de Sol",
+    "beachView": "Vista Playa",
+    "entrance": "Entrada"
   },
   "location": {
     "title": "Ubicación",

@@ -110,7 +110,12 @@
     "riaView": "Blick auf die Ria Formosa",
     "exterior": "Außenansicht",
     "balcony": "Balkon",
-    "close": "Schließen"
+    "close": "Schließen",
+    "aerialView": "Luftaufnahme",
+    "diningArea": "Essbereich",
+    "sunsetView": "Sonnenuntergang",
+    "beachView": "Strandblick",
+    "entrance": "Eingang"
   },
   "location": {
     "title": "Lage",

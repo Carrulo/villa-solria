@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
 import AmenityIcon from '@/components/AmenityIcon';
 import {
   AirVent, Wifi, UtensilsCrossed, GlassWater, WashingMachine,
@@ -51,34 +52,122 @@ export default function VillaPage() {
   ];
 
   return (
-    <div className="py-12 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{t('title')}</h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('subtitle')}</p>
+    <div>
+      {/* Hero Image */}
+      <div className="relative h-[40vh] lg:h-[50vh] w-full">
+        <Image
+          src="/images/property/aerial-view.jpg"
+          alt="Villa Solria aerial view"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+        <div className="absolute bottom-8 left-0 right-0 text-center">
+          <h1 className="text-3xl lg:text-4xl font-bold text-white drop-shadow-lg">{t('title')}</h1>
+          <p className="text-lg text-white/80 mt-2 drop-shadow-md max-w-2xl mx-auto px-4">{t('subtitle')}</p>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
         {/* Description */}
         <div className="max-w-3xl mx-auto mb-16">
           <p className="text-gray-600 leading-relaxed text-lg text-center">{t('description')}</p>
         </div>
 
-        {/* Floor plans */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-20">
-          {[
-            { icon: Home, title: t('groundFloor'), desc: t('groundFloorDesc'), gradient: 'from-primary/5 to-primary/10' },
-            { icon: ArrowUp, title: t('firstFloor'), desc: t('firstFloorDesc'), gradient: 'from-accent/5 to-accent/10' },
-            { icon: Sun, title: t('outdoor'), desc: t('outdoorDesc'), gradient: 'from-sand/10 to-sand/20' },
-          ].map((floor) => (
-            <div key={floor.title} className={`bg-gradient-to-br ${floor.gradient} rounded-2xl p-8 border border-gray-100`}>
+        {/* Floor plans with images */}
+        <div className="mb-20 space-y-12">
+          {/* Ground Floor */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-8 border border-gray-100">
               <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm">
-                <floor.icon size={24} className="text-primary" />
+                <Home size={24} className="text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">{floor.title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{floor.desc}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('groundFloor')}</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{t('groundFloorDesc')}</p>
             </div>
-          ))}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                <Image
+                  src="/images/property/living-room.jpg"
+                  alt="Living room"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                />
+              </div>
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                <Image
+                  src="/images/property/kitchen.jpg"
+                  alt="Kitchen"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* First Floor */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="grid grid-cols-2 gap-3 lg:order-1 order-2">
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                <Image
+                  src="/images/property/bedroom-master.jpg"
+                  alt="Master bedroom"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                />
+              </div>
+              <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                <Image
+                  src="/images/property/bedroom-double.jpg"
+                  alt="Double bedroom"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                />
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-accent/5 to-accent/10 rounded-2xl p-8 border border-gray-100 lg:order-2 order-1">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm">
+                <ArrowUp size={24} className="text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('firstFloor')}</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{t('firstFloorDesc')}</p>
+            </div>
+          </div>
+
+          {/* Outdoor */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-sand/10 to-sand/20 rounded-2xl p-8 border border-gray-100">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm">
+                <Sun size={24} className="text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('outdoor')}</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{t('outdoorDesc')}</p>
+            </div>
+            <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
+              <Image
+                src="/images/property/rooftop.jpg"
+                alt="Rooftop terrace"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 33vw"
+              />
+            </div>
+            <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
+              <Image
+                src="/images/property/garden.jpg"
+                alt="Garden"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 33vw"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Amenities */}

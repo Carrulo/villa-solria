@@ -110,7 +110,12 @@
     "riaView": "Ria Formosa View",
     "exterior": "Exterior",
     "balcony": "Balcony",
-    "close": "Close"
+    "close": "Close",
+    "aerialView": "Aerial View",
+    "diningArea": "Dining Area",
+    "sunsetView": "Sunset",
+    "beachView": "Beach View",
+    "entrance": "Entrance"
   },
   "location": {
     "title": "Location",

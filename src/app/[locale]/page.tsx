@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import Image from 'next/image';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
-import PhotoPlaceholder from '@/components/PhotoPlaceholder';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review } from '@/lib/supabase';
 
@@ -100,9 +100,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
         ];
 
-  const photoLabels = [
-    'Living Room', 'Ria Formosa View', 'Master Bedroom',
-    'Rooftop Terrace', 'Kitchen', 'Garden & BBQ',
+  const previewPhotos = [
+    { src: '/images/property/living-room.jpg', alt: 'Living Room' },
+    { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
+    { src: '/images/property/bedroom-master.jpg', alt: 'Master Bedroom' },
+    { src: '/images/property/aerial-view.jpg', alt: 'Aerial View' },
   ];
 
   return (
@@ -110,11 +112,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <JsonLd />
 
       {/* Hero */}
-      <section className="relative min-h-[85vh] flex items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary-light overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50" />
+      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
+        <Image
+          src="/images/property/hero-ria-formosa.jpg"
+          alt="Ria Formosa panoramic view from Villa Solria"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6">
             <Star size={14} className="text-sand fill-sand" />
             <span className="text-white/80 text-sm font-medium">9.4/10 Booking.com</span>
           </div>
@@ -125,7 +135,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <p className="text-xl sm:text-2xl text-sand font-light mb-4">
             {t('tagline')}
           </p>
-          <p className="text-white/60 text-base sm:text-lg max-w-2xl mx-auto mb-10">
+          <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto mb-10">
             {t('subtitle')}
           </p>
 
@@ -178,12 +188,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </h2>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-            {photoLabels.map((label, i) => (
-              <PhotoPlaceholder
-                key={label}
-                label={label}
-                className={`${i === 0 ? 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto lg:min-h-[400px]' : 'aspect-[4/3]'}`}
-              />
+            {previewPhotos.map((photo, i) => (
+              <div
+                key={photo.src}
+                className={`relative overflow-hidden rounded-2xl ${i === 0 ? 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto lg:min-h-[400px]' : 'aspect-[4/3]'}`}
+              >
+                <Image
+                  src={photo.src}
+                  alt={photo.alt}
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                  sizes={i === 0 ? '(max-width: 1024px) 50vw, 66vw' : '(max-width: 1024px) 50vw, 33vw'}
+                />
+              </div>
             ))}
           </div>
           <div className="text-center mt-8">
