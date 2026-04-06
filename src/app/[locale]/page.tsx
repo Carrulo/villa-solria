@@ -208,7 +208,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               href="/gallery"
               className="inline-flex items-center gap-2 text-accent font-medium hover:underline"
             >
-              View full gallery <ArrowRight size={16} />
+              {t('home.viewGallery')} <ArrowRight size={16} />
             </Link>
           </div>
         </div>
