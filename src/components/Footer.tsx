@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { MapPin, Mail, Phone } from 'lucide-react';
@@ -31,10 +33,15 @@ interface FooterProps {
 export default function Footer({ settings: overrides }: FooterProps) {
   const t = useTranslations('footer');
   const nav = useTranslations('nav');
+  const cookies = useTranslations('cookies');
 
   const s: FooterSettings = { ...DEFAULTS, ...overrides };
 
   const phoneHref = `tel:${s.phone.replace(/\s+/g, '')}`;
+
+  const handleManageCookies = () => {
+    window.dispatchEvent(new CustomEvent('villa-solria-reopen-cookies'));
+  };
 
   return (
     <footer className="bg-primary text-white">
@@ -112,32 +119,23 @@ export default function Footer({ settings: overrides }: FooterProps) {
                 )}
               </li>
               <li>
-                {s.privacyUrl ? (
-                  <a
-                    href={s.privacyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white/60 text-sm hover:text-white transition-colors"
-                  >
-                    {t('privacy')}
-                  </a>
-                ) : (
-                  <span className="text-white/60 text-sm">{t('privacy')}</span>
-                )}
+                <Link
+                  href={'/legal/privacy' as never}
+                  className="text-white/60 text-sm hover:text-white transition-colors"
+                >
+                  {t('privacy')}
+                </Link>
               </li>
               <li>
-                {s.termsUrl ? (
-                  <a
-                    href={s.termsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white/60 text-sm hover:text-white transition-colors"
-                  >
-                    {t('terms')}
-                  </a>
-                ) : (
-                  <span className="text-white/60 text-sm">{t('terms')}</span>
-                )}
+                <Link
+                  href={'/legal/terms' as never}
+                  className="text-white/60 text-sm hover:text-white transition-colors"
+                >
+                  {t('terms')}
+                </Link>
+              </li>
+              <li>
+                <CookieManageButton label={cookies('manage')} onClick={handleManageCookies} />
               </li>
             </ul>
           </div>
@@ -150,5 +148,17 @@ export default function Footer({ settings: overrides }: FooterProps) {
         </div>
       </div>
     </footer>
+  );
+}
+
+// Client component for cookie button click handler
+function CookieManageButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-white/60 text-sm hover:text-white transition-colors text-left"
+    >
+      {label}
+    </button>
   );
 }

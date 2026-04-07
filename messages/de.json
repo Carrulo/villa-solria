@@ -237,9 +237,30 @@
     "privacy": "Datenschutzrichtlinie",
     "terms": "Allgemeine Geschäftsbedingungen"
   },
+  "cookies": {
+    "title": "Wir verwenden Cookies",
+    "description": "Wir verwenden Cookies, um Ihre Erfahrung zu verbessern. Sie konnen wahlen, welche Cookies Sie akzeptieren.",
+    "acceptAll": "Alle akzeptieren",
+    "rejectAll": "Nur notwendige",
+    "customize": "Anpassen",
+    "save": "Einstellungen speichern",
+    "necessary": "Notwendige",
+    "necessaryDesc": "Wesentlich fur die Funktion der Website",
+    "analytics": "Analytische",
+    "analyticsDesc": "Helfen uns zu verstehen, wie Sie die Website nutzen (Google Analytics)",
+    "marketing": "Marketing",
+    "marketingDesc": "Verwendet fur personalisierte Werbung (Meta Pixel)",
+    "manage": "Cookies verwalten"
+  },
+  "legal": {
+    "privacyTitle": "Datenschutzrichtlinie",
+    "termsTitle": "Allgemeine Geschaftsbedingungen",
+    "lastUpdated": "Letzte Aktualisierung",
+    "backToHome": "Zuruck zur Startseite"
+  },
   "common": {
     "learnMore": "Mehr erfahren",
     "viewAll": "Alle anzeigen",
-    "back": "Zurück"
+    "back": "Zuruck"
   }
 }

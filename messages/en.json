@@ -237,6 +237,27 @@
     "privacy": "Privacy Policy",
     "terms": "Terms and Conditions"
   },
+  "cookies": {
+    "title": "We use cookies",
+    "description": "We use cookies to improve your experience. You can choose which cookies to accept.",
+    "acceptAll": "Accept all",
+    "rejectAll": "Necessary only",
+    "customize": "Customize",
+    "save": "Save preferences",
+    "necessary": "Necessary",
+    "necessaryDesc": "Essential for the website to function",
+    "analytics": "Analytics",
+    "analyticsDesc": "Help us understand how you use the site (Google Analytics)",
+    "marketing": "Marketing",
+    "marketingDesc": "Used for personalized advertising (Meta Pixel)",
+    "manage": "Manage cookies"
+  },
+  "legal": {
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms and Conditions",
+    "lastUpdated": "Last updated",
+    "backToHome": "Back to home"
+  },
   "common": {
     "learnMore": "Learn More",
     "viewAll": "View All",

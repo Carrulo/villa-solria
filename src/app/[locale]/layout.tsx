@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import type { FooterSettings } from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import CookieConsent from '@/components/CookieConsent';
 import '../globals.css';
 
 type Props = {
@@ -122,6 +123,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <main className="flex-1 pt-16 lg:pt-20">{children}</main>
           <Footer settings={footerSettings} />
           <WhatsAppButton />
+          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>
