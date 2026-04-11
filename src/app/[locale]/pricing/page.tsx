@@ -9,6 +9,15 @@ import {
   Wifi,
   ChefHat,
   Car,
+  Calendar,
+  CalendarDays,
+  CalendarCheck,
+  Star,
+  Shield,
+  Clock,
+  Phone,
+  Check,
+  MapPin,
 } from 'lucide-react';
 import BookingForm from '@/components/BookingForm';
 import { createServerClient } from '@/lib/supabase-server';
@@ -23,12 +32,6 @@ export async function generateMetadata({ params }: Props) {
   const t = await getTranslations({ locale, namespace: 'meta' });
   return { title: t('pricingTitle'), description: t('pricingDescription') };
 }
-
-const seasonStyles = [
-  { color: 'border-gray-200', bg: 'bg-gray-50', badge: 'bg-gray-100 text-gray-600' },
-  { color: 'border-accent/30', bg: 'bg-accent/5', badge: 'bg-accent/10 text-accent', featured: true },
-  { color: 'border-sand/40', bg: 'bg-sand/5', badge: 'bg-sand/20 text-sand' },
-];
 
 // Translate common season names based on locale
 const seasonNameTranslations: Record<string, Record<string, string>> = {
@@ -67,21 +70,24 @@ function translateSeasonName(name: string, locale: string): string {
   return localeMap[name] || name;
 }
 
-function translateNights(count: number, locale: string): string {
-  const labels: Record<string, string> = {
-    pt: count === 1 ? 'noite' : 'noites',
-    en: count === 1 ? 'night' : 'nights',
-    es: count === 1 ? 'noche' : 'noches',
-    de: count === 1 ? 'Nacht' : 'Nächte',
-  };
-  return labels[locale] || labels.en;
+function formatDate(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleDateString(
+    locale === 'pt' ? 'pt-PT' : locale === 'es' ? 'es-ES' : locale === 'de' ? 'de-DE' : 'en-GB',
+    { day: 'numeric', month: 'short' },
+  );
 }
 
-function formatDate(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleDateString(locale === 'pt' ? 'pt-PT' : locale === 'es' ? 'es-ES' : locale === 'de' ? 'de-DE' : 'en-GB', {
-    day: 'numeric',
-    month: 'short',
-  });
+// Classify seasons into 3 visual tiers: low, mid (featured), high.
+// Sorted ascending by price, we collapse any extras into the nearest tier.
+type SeasonTier = 'low' | 'mid' | 'high';
+
+function tierForIndex(index: number, total: number): SeasonTier {
+  if (total <= 1) return 'mid';
+  if (total === 2) return index === 0 ? 'low' : 'high';
+  // 3+: first = low, last = high, middle = mid
+  if (index === 0) return 'low';
+  if (index === total - 1) return 'high';
+  return 'mid';
 }
 
 export default async function PricingPage({ params }: Props) {
@@ -96,12 +102,103 @@ export default async function PricingPage({ params }: Props) {
     .select('*')
     .order('price_per_night', { ascending: true });
 
-  const seasons: (Season & { style: typeof seasonStyles[number] })[] = (dbSeasons || []).map((s: Season, i: number) => ({
-    ...s,
-    style: seasonStyles[i % seasonStyles.length],
-  }));
+  const rawSeasons: Season[] = dbSeasons || [];
+  const hasSeasons = rawSeasons.length > 0;
 
-  const hasSeasons = seasons.length > 0;
+  // Starting-from price (minimum)
+  const startingPrice = hasSeasons
+    ? Math.min(...rawSeasons.map((s) => s.price_per_night))
+    : 90;
+
+  // Build a 3-tier display set
+  type DisplaySeason = {
+    id: string;
+    name: string;
+    period: string;
+    price: number;
+    minNights: number;
+    tier: SeasonTier;
+  };
+
+  let displaySeasons: DisplaySeason[] = [];
+  if (hasSeasons) {
+    // Group by tier, keep the first season encountered per tier (cheapest for low, most expensive for high)
+    const total = rawSeasons.length;
+    const byTier: Record<SeasonTier, DisplaySeason | null> = { low: null, mid: null, high: null };
+    rawSeasons.forEach((s, i) => {
+      const tier = tierForIndex(i, total);
+      const entry: DisplaySeason = {
+        id: s.id,
+        name: translateSeasonName(s.name, locale),
+        period: `${formatDate(s.start_date, locale)} – ${formatDate(s.end_date, locale)}`,
+        price: s.price_per_night,
+        minNights: s.min_nights || 1,
+        tier,
+      };
+      // Keep the cheapest representative for 'low', most expensive for 'high', and middle/first for 'mid'
+      if (!byTier[tier]) {
+        byTier[tier] = entry;
+      } else if (tier === 'high' && entry.price > byTier[tier]!.price) {
+        byTier[tier] = entry;
+      } else if (tier === 'low' && entry.price < byTier[tier]!.price) {
+        byTier[tier] = entry;
+      }
+    });
+    displaySeasons = (['low', 'mid', 'high'] as SeasonTier[])
+      .map((tier) => byTier[tier])
+      .filter((x): x is DisplaySeason => x !== null);
+  } else {
+    displaySeasons = [
+      {
+        id: 'fallback-low',
+        name: t('lowSeason'),
+        period: t('lowSeasonPeriod'),
+        price: 90,
+        minNights: 1,
+        tier: 'low',
+      },
+      {
+        id: 'fallback-mid',
+        name: t('midSeason'),
+        period: t('midSeasonPeriod'),
+        price: 130,
+        minNights: 3,
+        tier: 'mid',
+      },
+      {
+        id: 'fallback-high',
+        name: t('highSeason'),
+        period: t('highSeasonPeriod'),
+        price: 210,
+        minNights: 7,
+        tier: 'high',
+      },
+    ];
+  }
+
+  const tierStyles: Record<
+    SeasonTier,
+    { border: string; bg: string; badge: string; featured: boolean }
+  > = {
+    low: {
+      border: 'border-gray-200',
+      bg: 'bg-white',
+      badge: 'bg-gray-100 text-gray-600',
+      featured: false,
+    },
+    mid: {
+      border: 'border-accent',
+      bg: 'bg-accent/5',
+      badge: 'bg-accent/10 text-accent',
+      featured: true,
+    },
+    high: {
+      border: 'border-sand/40',
+      bg: 'bg-white',
+      badge: 'bg-sand/20 text-sand',
+      featured: false,
+    },
+  };
 
   const features = [
     { icon: Users, title: tf('guests'), desc: tf('guestsDesc'), color: 'bg-accent/10 text-accent' },
@@ -114,20 +211,96 @@ export default async function PricingPage({ params }: Props) {
     { icon: Car, title: tf('parking'), desc: tf('parkingDesc'), color: 'bg-violet-100 text-violet-600' },
   ];
 
-  return (
-    <div className="py-12 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{t('title')}</h1>
-          <p className="text-lg text-gray-500">{t('subtitle')}</p>
-        </div>
+  const longStayDiscounts = [
+    {
+      icon: Calendar,
+      title: t('discount7Title'),
+      percent: 10,
+      desc: t('discount7Desc'),
+      cleaning: false,
+      color: 'bg-emerald-50 border-emerald-100 text-emerald-700',
+      iconBg: 'bg-emerald-100 text-emerald-600',
+    },
+    {
+      icon: CalendarDays,
+      title: t('discount14Title'),
+      percent: 15,
+      desc: t('discount14Desc'),
+      cleaning: true,
+      color: 'bg-sky-50 border-sky-100 text-sky-700',
+      iconBg: 'bg-sky-100 text-sky-600',
+    },
+    {
+      icon: CalendarCheck,
+      title: t('discount28Title'),
+      percent: 25,
+      desc: t('discount28Desc'),
+      cleaning: true,
+      color: 'bg-accent/10 border-accent/30 text-accent',
+      iconBg: 'bg-accent/20 text-accent',
+    },
+  ];
 
-        {/* Property Features Section */}
+  return (
+    <div className="pb-24 lg:pb-12">
+      {/* ─── HERO BANNER ─────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-accent/5 via-white to-sand/10 border-b border-gray-100">
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 20% 20%, #000 1px, transparent 1px), radial-gradient(circle at 80% 70%, #000 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+          }}
+        />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-accent mb-3">
+              {t('brand')}
+            </p>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
+              {t('startingAt')}{' '}
+              <span className="text-accent">{startingPrice}€</span>
+              <span className="text-gray-500 text-2xl sm:text-3xl lg:text-4xl font-semibold">
+                {t('perNight')}
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg text-gray-600 mb-6">{t('noFees')}</p>
+
+            {/* Rating + pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-8">
+              <span className="inline-flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1.5 text-sm font-semibold text-gray-900 shadow-sm">
+                <Star size={15} className="fill-amber-400 text-amber-400" />
+                {t('ratingBadge')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-white/70 border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-700">
+                <Users size={14} /> {t('pillGuests')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-white/70 border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-700">
+                <BedDouble size={14} /> {t('pillBedrooms')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-white/70 border border-gray-200 rounded-full px-3 py-1.5 text-sm text-gray-700">
+                <MapPin size={14} /> {t('pillLocation')}
+              </span>
+            </div>
+
+            <a
+              href="#availability"
+              className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-8 py-4 text-base shadow-lg shadow-accent/25 transition-all hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-accent/30"
+            >
+              <Calendar size={18} />
+              {t('checkAvailability')}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        {/* ─── PROPERTY FEATURES ─────────────────────────────────── */}
         <section className="mb-16">
           <div className="text-center mb-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{tf('title')}</h2>
-            <p className="text-gray-500">{tf('subtitle')}</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{tf('title')}</h2>
+            <p className="text-gray-500 text-base lg:text-lg">{tf('subtitle')}</p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {features.map((f) => {
@@ -148,85 +321,170 @@ export default async function PricingPage({ params }: Props) {
           </div>
         </section>
 
-        {/* Booking Form (includes calendar + price breakdown) */}
-        <div className="max-w-3xl mx-auto mb-16">
-          <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">{t('inquiryTitle')}</h2>
-            <p className="text-gray-500 text-center mb-6">{t('inquirySubtitle')}</p>
-            <BookingForm />
+        {/* ─── PRICING TABLE (3 tiers) ───────────────────────────── */}
+        <section className="mb-16">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              {t('pricingTableTitle')}
+            </h2>
+            <p className="text-gray-500 text-base lg:text-lg">{t('pricingTableSubtitle')}</p>
           </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto items-stretch">
+            {displaySeasons.map((season) => {
+              const style = tierStyles[season.tier];
+              const featured = style.featured;
+              const minLabel =
+                season.minNights === 1
+                  ? t('minNightsShort', { count: season.minNights })
+                  : t('minNightsShortPlural', { count: season.minNights });
+              const checkInLabel =
+                season.tier === 'high' ? t('checkInSaturday') : t('checkInFlexible');
 
-        {/* Pricing Reference Title */}
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">{t('title')} {t('perNight')}</h2>
-        </div>
-
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
-          {hasSeasons ? (
-            seasons.map((season) => (
-              <div
-                key={season.id}
-                className={`rounded-2xl p-8 border-2 ${season.style.color} ${season.style.bg} text-center ${season.style.featured ? 'ring-2 ring-accent/20 scale-[1.02]' : ''} transition-transform`}
-              >
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${season.style.badge}`}>
-                  {formatDate(season.start_date, locale)} - {formatDate(season.end_date, locale)}
-                </span>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{translateSeasonName(season.name, locale)}</h3>
-                <div className="mb-2">
-                  <span className="text-4xl font-bold text-gray-900">{season.price_per_night}&euro;</span>
-                  <span className="text-gray-500 text-sm">{t('perNight')}</span>
-                </div>
-                {season.min_nights > 1 && (
-                  <p className="text-xs text-gray-400 mt-2">Min. {season.min_nights} {translateNights(season.min_nights, locale)}</p>
-                )}
-              </div>
-            ))
-          ) : (
-            <>
-              {[
-                { name: t('lowSeason'), period: t('lowSeasonPeriod'), price: '90', ...seasonStyles[0] },
-                { name: t('midSeason'), period: t('midSeasonPeriod'), price: '130', ...seasonStyles[1] },
-                { name: t('highSeason'), period: t('highSeasonPeriod'), price: '180', ...seasonStyles[2] },
-              ].map((season) => (
+              return (
                 <div
-                  key={season.name}
-                  className={`rounded-2xl p-8 border-2 ${season.color} ${season.bg} text-center ${season.featured ? 'ring-2 ring-accent/20 scale-[1.02]' : ''} transition-transform`}
+                  key={season.id}
+                  className={`relative rounded-2xl p-6 lg:p-8 border-2 ${style.border} ${style.bg} flex flex-col ${
+                    featured
+                      ? 'md:scale-[1.04] shadow-xl shadow-accent/10 ring-1 ring-accent/20'
+                      : 'shadow-sm hover:shadow-md'
+                  } transition-all`}
                 >
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${season.badge}`}>
+                  {featured && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md">
+                      {t('featuredBadge')}
+                    </span>
+                  )}
+                  <span
+                    className={`inline-block self-center px-3 py-1 rounded-full text-xs font-medium mb-4 ${style.badge}`}
+                  >
                     {season.period}
                   </span>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">{season.name}</h3>
-                  <div className="mb-2">
-                    <span className="text-4xl font-bold text-gray-900">{season.price}&euro;</span>
-                    <span className="text-gray-500 text-sm">{t('perNight')}</span>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+                    {season.name}
+                  </h3>
+                  <div className="text-center mb-5">
+                    <span className="text-5xl lg:text-6xl font-bold text-gray-900 leading-none">
+                      {season.price}€
+                    </span>
+                    <span className="text-gray-500 text-sm block mt-1">{t('perNight')}</span>
+                  </div>
+                  <div className="space-y-2.5 text-sm text-gray-700 border-t border-gray-100 pt-4 mt-auto">
+                    <div className="flex items-center gap-2">
+                      <Calendar size={15} className="text-gray-400 shrink-0" />
+                      <span>{minLabel}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock size={15} className="text-gray-400 shrink-0" />
+                      <span>{checkInLabel}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check size={15} className="text-emerald-500 shrink-0" />
+                      <span className="text-gray-600">{t('longStayHint')}</span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        </section>
 
-        <div className="max-w-2xl mx-auto space-y-3">
-          <p className="text-center text-gray-500 text-sm">{t('minimumStay')}</p>
+        {/* ─── LONG-STAY DISCOUNTS ───────────────────────────────── */}
+        <section className="mb-16">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              {t('discountsTitle')}
+            </h2>
+            <p className="text-gray-500 text-base lg:text-lg">{t('discountsSubtitle')}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+            {longStayDiscounts.map((d) => {
+              const Icon = d.icon;
+              return (
+                <div
+                  key={d.title}
+                  className={`rounded-2xl p-6 border ${d.color} shadow-sm hover:shadow-md transition-shadow`}
+                >
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${d.iconBg}`}
+                  >
+                    <Icon size={22} />
+                  </div>
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <h3 className="text-xl font-bold text-gray-900">{d.title}</h3>
+                    <span className="text-2xl font-bold">-{d.percent}%</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{d.desc}</p>
+                  {d.cleaning && (
+                    <p className="mt-3 pt-3 border-t border-current/10 text-xs font-medium flex items-center gap-1.5">
+                      <Check size={13} /> {t('cleaningIncluded')}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-          {/* Long-stay discounts banner */}
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-            <p className="text-sm font-semibold text-green-800 mb-2">
-              💰 {t('discountsAvailable')}
+        {/* ─── AVAILABILITY + INQUIRY FORM ───────────────────────── */}
+        <section id="availability" className="mb-16 scroll-mt-24">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              {t('availabilityTitle')}
+            </h2>
+            <p className="text-gray-500 text-base lg:text-lg">{t('availabilitySubtitle')}</p>
+          </div>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-lg shadow-gray-200/50 border border-gray-100">
+              <BookingForm />
+            </div>
+            <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4 max-w-3xl mx-auto">
+              <Info size={18} className="text-accent shrink-0 mt-0.5" />
+              <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── TRUST SIGNALS ─────────────────────────────────────── */}
+        <section>
+          <div className="text-center mb-6">
+            <h2 className="text-xl lg:text-2xl font-semibold text-gray-900">{t('trustTitle')}</h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {[
+              { icon: Star, label: t('trustRating'), color: 'text-amber-500', bg: 'bg-amber-50' },
+              { icon: Shield, label: t('trustSecure'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { icon: Check, label: t('trustInstant'), color: 'text-sky-600', bg: 'bg-sky-50' },
+              { icon: Phone, label: t('trustSupport'), color: 'text-violet-600', bg: 'bg-violet-50' },
+            ].map(({ icon: Icon, label, color, bg }) => (
+              <div
+                key={label}
+                className={`flex items-center gap-3 rounded-xl p-4 border border-gray-100 ${bg}`}
+              >
+                <Icon size={20} className={color} />
+                <span className="text-sm font-medium text-gray-800">{label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ─── STICKY MOBILE BOOK BAR ────────────────────────────── */}
+      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
+          <div className="min-w-0">
+            <p className="text-xs text-gray-500 leading-tight">{t('startingAt')}</p>
+            <p className="text-lg font-bold text-gray-900 leading-tight">
+              {startingPrice}€
+              <span className="text-xs font-normal text-gray-500">{t('perNight')}</span>
             </p>
-            <ul className="text-sm text-green-700 space-y-1">
-              <li>• {t('discountWeekly', { percent: 10 })}</li>
-              <li>• {t('discountBiweekly', { percent: 15 })}</li>
-              <li>• {t('discountMonthly', { percent: 25 })}</li>
-            </ul>
           </div>
-
-          <div className="flex items-start gap-2 bg-accent/5 rounded-xl p-4">
-            <Info size={18} className="text-accent shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
-          </div>
+          <a
+            href="#availability"
+            className="inline-flex items-center justify-center gap-1.5 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-5 py-3 text-sm shadow-md shadow-accent/25 transition-all shrink-0"
+          >
+            <Calendar size={16} />
+            {t('reserveNow')}
+          </a>
         </div>
       </div>
     </div>
