@@ -1,0 +1,35 @@
+name: iCal Sync
+
+on:
+  schedule:
+    # Every 4 hours
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call sync endpoint
+        run: |
+          echo "Triggering iCal sync at $(date)"
+          response=$(curl -s -w "\n%{http_code}" https://villa-solria.vercel.app/api/ical/sync)
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "Status: $status"
+          echo "Response: $body"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Sync failed with status $status"
+            exit 1
+          fi
+
+          # Check if sync was successful
+          if echo "$body" | grep -q '"success":true'; then
+            echo "::notice::iCal sync completed successfully"
+          else
+            echo "::error::Sync returned success:false"
+            exit 1
+          fi
