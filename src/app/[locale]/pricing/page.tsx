@@ -20,6 +20,53 @@ const seasonStyles = [
   { color: 'border-sand/40', bg: 'bg-sand/5', badge: 'bg-sand/20 text-sand' },
 ];
 
+// Translate common season names based on locale
+const seasonNameTranslations: Record<string, Record<string, string>> = {
+  pt: {
+    'Low Season': 'Época Baixa',
+    'Mid Season': 'Época Média',
+    'High Season': 'Época Alta',
+    'Low Season Winter': 'Época Baixa (Inverno)',
+    'Mid Season Autumn': 'Época Média (Outono)',
+  },
+  en: {
+    'Low Season': 'Low Season',
+    'Mid Season': 'Mid Season',
+    'High Season': 'High Season',
+    'Low Season Winter': 'Low Season (Winter)',
+    'Mid Season Autumn': 'Mid Season (Autumn)',
+  },
+  es: {
+    'Low Season': 'Temporada Baja',
+    'Mid Season': 'Temporada Media',
+    'High Season': 'Temporada Alta',
+    'Low Season Winter': 'Temporada Baja (Invierno)',
+    'Mid Season Autumn': 'Temporada Media (Otoño)',
+  },
+  de: {
+    'Low Season': 'Nebensaison',
+    'Mid Season': 'Zwischensaison',
+    'High Season': 'Hauptsaison',
+    'Low Season Winter': 'Nebensaison (Winter)',
+    'Mid Season Autumn': 'Zwischensaison (Herbst)',
+  },
+};
+
+function translateSeasonName(name: string, locale: string): string {
+  const localeMap = seasonNameTranslations[locale] || seasonNameTranslations.en;
+  return localeMap[name] || name;
+}
+
+function translateNights(count: number, locale: string): string {
+  const labels: Record<string, string> = {
+    pt: count === 1 ? 'noite' : 'noites',
+    en: count === 1 ? 'night' : 'nights',
+    es: count === 1 ? 'noche' : 'noches',
+    de: count === 1 ? 'Nacht' : 'Nächte',
+  };
+  return labels[locale] || labels.en;
+}
+
 function formatDate(dateStr: string, locale: string) {
   return new Date(dateStr).toLocaleDateString(locale === 'pt' ? 'pt-PT' : locale === 'es' ? 'es-ES' : locale === 'de' ? 'de-DE' : 'en-GB', {
     day: 'numeric',
@@ -66,13 +113,13 @@ export default async function PricingPage({ params }: Props) {
                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${season.style.badge}`}>
                   {formatDate(season.start_date, locale)} - {formatDate(season.end_date, locale)}
                 </span>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{season.name}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{translateSeasonName(season.name, locale)}</h3>
                 <div className="mb-2">
                   <span className="text-4xl font-bold text-gray-900">{season.price_per_night}&euro;</span>
                   <span className="text-gray-500 text-sm">{t('perNight')}</span>
                 </div>
                 {season.min_nights > 1 && (
-                  <p className="text-xs text-gray-400 mt-2">Min. {season.min_nights} {locale === 'pt' ? 'noites' : 'nights'}</p>
+                  <p className="text-xs text-gray-400 mt-2">Min. {season.min_nights} {translateNights(season.min_nights, locale)}</p>
                 )}
               </div>
             ))
