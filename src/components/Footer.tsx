@@ -7,6 +7,7 @@ import { MapPin, Mail, Phone } from 'lucide-react';
 export interface FooterSettings {
   email: string;
   phone: string;
+  whatsapp: string;
   address1: string;
   address2: string;
   complaintsUrl: string;
@@ -18,6 +19,7 @@ export interface FooterSettings {
 const DEFAULTS: FooterSettings = {
   email: 'bruno@kontrolsat.com',
   phone: '+351 912 345 678',
+  whatsapp: '+351 912 345 678',
   address1: 'Rua do Junco 3.5B',
   address2: '8800-591 Tavira, Portugal',
   complaintsUrl: 'https://www.livroreclamacoes.pt',

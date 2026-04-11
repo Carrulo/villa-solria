@@ -18,6 +18,7 @@ type Props = {
 const FOOTER_DEFAULTS: FooterSettings = {
   email: 'bruno@kontrolsat.com',
   phone: '+351 912 345 678',
+  whatsapp: '+351 912 345 678',
   address1: 'Rua do Junco 3.5B',
   address2: '8800-591 Tavira, Portugal',
   complaintsUrl: 'https://www.livroreclamacoes.pt',
@@ -40,6 +41,7 @@ async function getFooterSettings(): Promise<Partial<FooterSettings>> {
       .in('key', [
         'contact_email',
         'contact_phone',
+        'whatsapp_number',
         'address_line1',
         'address_line2',
         'complaints_url',
@@ -58,6 +60,7 @@ async function getFooterSettings(): Promise<Partial<FooterSettings>> {
     return {
       email: map.contact_email || FOOTER_DEFAULTS.email,
       phone: map.contact_phone || FOOTER_DEFAULTS.phone,
+      whatsapp: map.whatsapp_number || map.contact_phone || FOOTER_DEFAULTS.phone,
       address1: map.address_line1 || FOOTER_DEFAULTS.address1,
       address2: map.address_line2 || FOOTER_DEFAULTS.address2,
       complaintsUrl: map.complaints_url ?? FOOTER_DEFAULTS.complaintsUrl,
@@ -122,7 +125,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <Header />
           <main className="flex-1 pt-16 lg:pt-20">{children}</main>
           <Footer settings={footerSettings} />
-          <WhatsAppButton />
+          <WhatsAppButton phoneNumber={footerSettings.whatsapp} />
           <CookieConsent />
         </NextIntlClientProvider>
       </body>

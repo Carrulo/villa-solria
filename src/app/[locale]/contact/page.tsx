@@ -1,7 +1,7 @@
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Mail, Phone, MapPin, MessageCircle, Clock } from 'lucide-react';
 import BookingForm from '@/components/BookingForm';
+import { createServerClient } from '@/lib/supabase-server';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -13,8 +13,42 @@ export async function generateMetadata({ params }: Props) {
   return { title: t('contactTitle'), description: t('contactDescription') };
 }
 
-export default function ContactPage() {
-  const t = useTranslations('contact');
+type SettingsMap = Record<string, string>;
+
+async function fetchSettings(): Promise<SettingsMap> {
+  try {
+    const supabase = createServerClient();
+    const { data } = await supabase.from('settings').select('key, value');
+    const map: SettingsMap = {};
+    (data || []).forEach((row: { key: string; value: unknown }) => {
+      map[row.key] = typeof row.value === 'string' ? row.value : String(row.value ?? '');
+    });
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+function sanitizePhone(phone: string): string {
+  return phone.replace(/[^\d+]/g, '');
+}
+
+export default async function ContactPage({ params }: Props) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'contact' });
+  const settings = await fetchSettings();
+
+  const email = settings.contact_email || 'bruno@kontrolsat.com';
+  const phone = settings.contact_phone || '+351 912 345 678';
+  const whatsapp = settings.whatsapp_number || phone;
+  const address1 = settings.address_line1 || 'Rua do Junco 3.5B';
+  const address2 = settings.address_line2 || '8800-591 Tavira, Portugal';
+
+  const phoneTel = sanitizePhone(phone);
+  const whatsappNumber = sanitizePhone(whatsapp).replace(/^\+/, '');
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    "Hello, I'm interested in Villa Solria",
+  )}`;
 
   return (
     <div className="py-12 lg:py-20">
@@ -28,7 +62,7 @@ export default function ContactPage() {
           {/* Contact Info */}
           <div className="lg:col-span-2 space-y-4">
             <a
-              href="https://wa.me/351912345678?text=Hello%2C%20I%27m%20interested%20in%20Villa%20Solria"
+              href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 bg-whatsapp/10 rounded-2xl p-5 hover:bg-whatsapp/15 transition-colors"
@@ -38,7 +72,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-semibold text-gray-900 text-sm">{t('whatsapp')}</p>
-                <p className="text-gray-500 text-xs">+351 912 345 678</p>
+                <p className="text-gray-500 text-xs">{whatsapp}</p>
               </div>
             </a>
 
@@ -49,8 +83,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700">{t('email')}</p>
-                  <a href="mailto:bruno@kontrolsat.com" className="text-accent text-sm hover:underline">
-                    bruno@kontrolsat.com
+                  <a href={`mailto:${email}`} className="text-accent text-sm hover:underline">
+                    {email}
                   </a>
                 </div>
               </div>
@@ -61,8 +95,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700">{t('phone')}</p>
-                  <a href="tel:+351912345678" className="text-accent text-sm hover:underline">
-                    +351 912 345 678
+                  <a href={`tel:${phoneTel}`} className="text-accent text-sm hover:underline">
+                    {phone}
                   </a>
                 </div>
               </div>
@@ -74,8 +108,9 @@ export default function ContactPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-700">{t('addressLabel')}</p>
                   <p className="text-gray-500 text-sm">
-                    Rua do Junco 3.5B<br />
-                    8800-591 Tavira, Portugal
+                    {address1}
+                    <br />
+                    {address2}
                   </p>
                 </div>
               </div>
