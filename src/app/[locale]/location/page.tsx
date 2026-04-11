@@ -57,7 +57,7 @@ export default function LocationPage() {
           <div className="lg:col-span-2">
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-100">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3193.5!2d-7.5947!3d37.1278!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDA3JzQwLjEiTiA3wrAzNSc0MS4wIlc!5e0!3m2!1spt-PT!2spt!4v1"
+                src="https://maps.google.com/maps?q=Rua%20do%20Junco%203.5B%2C%208800-591%20Tavira%2C%20Portugal&t=&z=16&ie=UTF8&iwloc=&output=embed"
                 width="100%"
                 height="400"
                 style={{ border: 0 }}
@@ -65,6 +65,7 @@ export default function LocationPage() {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 className="w-full"
+                title="Villa Solria — Cabanas de Tavira"
               />
             </div>
           </div>

@@ -23,8 +23,8 @@ function JsonLd() {
     },
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: 37.1278,
-      longitude: -7.5947,
+      latitude: 37.1353,
+      longitude: -7.5996,
     },
     numberOfBedrooms: 3,
     numberOfBathroomsTotal: 2,
