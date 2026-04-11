@@ -117,13 +117,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     allPhotos.length > 0
       ? allPhotos
           .filter((p) => !p.is_hero)
-          .slice(0, 4)
+          .slice(0, 7)
           .map((p) => ({ src: getPhotoUrl(p), alt: p.alt_text || p.filename }))
       : [
-          { src: '/images/property/living-room.jpg', alt: 'Living Room' },
-          { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
-          { src: '/images/property/bedroom-master.jpg', alt: 'Master Bedroom' },
           { src: '/images/property/aerial-view.jpg', alt: 'Aerial View' },
+          { src: '/images/property/living-room.jpg', alt: 'Living Room' },
+          { src: '/images/property/bedroom-master.jpg', alt: 'Master Bedroom' },
+          { src: '/images/property/bedroom-twin.jpg', alt: 'Twin Bedroom' },
+          { src: '/images/property/kitchen.jpg', alt: 'Kitchen' },
+          { src: '/images/property/bathroom.jpg', alt: 'Bathroom' },
+          { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
         ];
 
   return (
@@ -207,18 +210,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {h('photosTitle')}
             </h2>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
             {previewPhotos.map((photo, i) => (
               <div
-                key={photo.src}
-                className={`relative overflow-hidden rounded-2xl ${i === 0 ? 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto lg:min-h-[400px]' : 'aspect-[4/3]'}`}
+                key={photo.src + i}
+                className={`relative overflow-hidden rounded-2xl ${i === 0 ? 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto' : 'aspect-[4/3]'}`}
               >
                 <Image
                   src={photo.src}
                   alt={photo.alt}
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-500"
-                  sizes={i === 0 ? '(max-width: 1024px) 50vw, 66vw' : '(max-width: 1024px) 50vw, 33vw'}
+                  sizes={i === 0 ? '(max-width: 1024px) 100vw, 50vw' : '(max-width: 1024px) 50vw, 25vw'}
                   unoptimized={photo.src.startsWith('http')}
                 />
               </div>
@@ -229,7 +232,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               href="/gallery"
               className="inline-flex items-center gap-2 text-accent font-medium hover:underline"
             >
-              {t('home.viewGallery')} <ArrowRight size={16} />
+              {h('viewGallery')} <ArrowRight size={16} />
             </Link>
           </div>
         </div>
