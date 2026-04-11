@@ -262,5 +262,44 @@
     "learnMore": "Learn More",
     "viewAll": "View All",
     "back": "Back"
+  },
+  "propertyFeatures": {
+    "title": "About Villa Solria",
+    "subtitle": "Everything you need for a perfect holiday",
+    "guests": "6 Guests",
+    "guestsDesc": "Sleeps up to 6",
+    "bedrooms": "3 Bedrooms",
+    "bedroomsDesc": "2 bathrooms",
+    "ac": "Air Conditioning",
+    "acDesc": "In every bedroom",
+    "view": "Ria Formosa View",
+    "viewDesc": "Stunning frontline",
+    "beach": "Beach 700m",
+    "beachDesc": "10 min walk",
+    "wifi": "Free Wi-Fi",
+    "wifiDesc": "Throughout the house",
+    "kitchen": "Equipped Kitchen",
+    "kitchenDesc": "With washing machine",
+    "parking": "Parking",
+    "parkingDesc": "Free on the street"
+  },
+  "calendar": {
+    "title": "Availability",
+    "subtitle": "Select your dates",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "nights": "nights",
+    "unavailable": "Unavailable",
+    "selectDates": "Select dates",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "minNightsWarning": "Minimum stay of {count} nights"
+  },
+  "priceBreakdown": {
+    "title": "Price details",
+    "perNight": "per night",
+    "cleaningFee": "Cleaning fee",
+    "total": "Total",
+    "proceedBooking": "Proceed with booking"
   }
 }

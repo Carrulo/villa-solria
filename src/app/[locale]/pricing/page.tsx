@@ -1,5 +1,15 @@
 import { getTranslations } from 'next-intl/server';
-import { Info } from 'lucide-react';
+import {
+  Info,
+  Users,
+  BedDouble,
+  Wind,
+  Waves,
+  Umbrella,
+  Wifi,
+  ChefHat,
+  Car,
+} from 'lucide-react';
 import BookingForm from '@/components/BookingForm';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Season } from '@/lib/supabase';
@@ -77,6 +87,7 @@ function formatDate(dateStr: string, locale: string) {
 export default async function PricingPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'pricing' });
+  const tf = await getTranslations({ locale, namespace: 'propertyFeatures' });
 
   // Fetch seasons from Supabase
   const supabase = createServerClient();
@@ -90,8 +101,18 @@ export default async function PricingPage({ params }: Props) {
     style: seasonStyles[i % seasonStyles.length],
   }));
 
-  // Fallback to hardcoded if no DB seasons
   const hasSeasons = seasons.length > 0;
+
+  const features = [
+    { icon: Users, title: tf('guests'), desc: tf('guestsDesc'), color: 'bg-accent/10 text-accent' },
+    { icon: BedDouble, title: tf('bedrooms'), desc: tf('bedroomsDesc'), color: 'bg-sand/20 text-sand' },
+    { icon: Wind, title: tf('ac'), desc: tf('acDesc'), color: 'bg-sky-100 text-sky-600' },
+    { icon: Waves, title: tf('view'), desc: tf('viewDesc'), color: 'bg-blue-100 text-blue-600' },
+    { icon: Umbrella, title: tf('beach'), desc: tf('beachDesc'), color: 'bg-amber-100 text-amber-600' },
+    { icon: Wifi, title: tf('wifi'), desc: tf('wifiDesc'), color: 'bg-emerald-100 text-emerald-600' },
+    { icon: ChefHat, title: tf('kitchen'), desc: tf('kitchenDesc'), color: 'bg-rose-100 text-rose-600' },
+    { icon: Car, title: tf('parking'), desc: tf('parkingDesc'), color: 'bg-violet-100 text-violet-600' },
+  ];
 
   return (
     <div className="py-12 lg:py-20">
@@ -101,6 +122,31 @@ export default async function PricingPage({ params }: Props) {
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{t('title')}</h1>
           <p className="text-lg text-gray-500">{t('subtitle')}</p>
         </div>
+
+        {/* Property Features Section */}
+        <section className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{tf('title')}</h2>
+            <p className="text-gray-500">{tf('subtitle')}</p>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {features.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.title}
+                  className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${f.color}`}>
+                    <Icon size={22} />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{f.title}</h3>
+                  <p className="text-xs text-gray-500">{f.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
@@ -157,9 +203,9 @@ export default async function PricingPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Booking Form */}
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+        {/* Booking Form (includes calendar + price breakdown) */}
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-transparent">
             <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">{t('inquiryTitle')}</h2>
             <p className="text-gray-500 text-center mb-8">{t('inquirySubtitle')}</p>
             <BookingForm />

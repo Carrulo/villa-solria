@@ -262,5 +262,44 @@
     "learnMore": "Saber Mais",
     "viewAll": "Ver Tudo",
     "back": "Voltar"
+  },
+  "propertyFeatures": {
+    "title": "Sobre a Villa Solria",
+    "subtitle": "Tudo o que precisa para umas férias perfeitas",
+    "guests": "6 Hóspedes",
+    "guestsDesc": "Até 6 pessoas",
+    "bedrooms": "3 Quartos",
+    "bedroomsDesc": "2 casas de banho",
+    "ac": "Ar Condicionado",
+    "acDesc": "Em todos os quartos",
+    "view": "Vista Ria Formosa",
+    "viewDesc": "Frontal deslumbrante",
+    "beach": "Praia 700m",
+    "beachDesc": "A 10 min a pé",
+    "wifi": "Wi-Fi Grátis",
+    "wifiDesc": "Em toda a casa",
+    "kitchen": "Cozinha Equipada",
+    "kitchenDesc": "Máquina de lavar",
+    "parking": "Estacionamento",
+    "parkingDesc": "Gratuito na rua"
+  },
+  "calendar": {
+    "title": "Disponibilidade",
+    "subtitle": "Selecione as suas datas",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "nights": "noites",
+    "unavailable": "Indisponível",
+    "selectDates": "Selecione datas",
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Mês seguinte",
+    "minNightsWarning": "Estadia mínima de {count} noites"
+  },
+  "priceBreakdown": {
+    "title": "Detalhe do preço",
+    "perNight": "por noite",
+    "cleaningFee": "Taxa de limpeza",
+    "total": "Total",
+    "proceedBooking": "Prosseguir reserva"
   }
 }
