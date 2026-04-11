@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 interface BookingRow {
   id: string;
-  check_in: string;
-  check_out: string;
+  checkin_date: string;
+  checkout_date: string;
   guest_name: string | null;
 }
 
@@ -35,7 +35,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from('bookings')
-      .select('id, check_in, check_out, guest_name')
+      .select('id, checkin_date, checkout_date, guest_name')
       .eq('status', 'confirmed');
 
     if (error) {
@@ -54,12 +54,12 @@ export async function GET() {
     lines.push('X-WR-CALNAME:Villa Solria Bookings');
 
     for (const b of bookings) {
-      if (!b.check_in || !b.check_out) continue;
+      if (!b.checkin_date || !b.checkout_date) continue;
       lines.push('BEGIN:VEVENT');
       lines.push(`UID:booking-${b.id}@villasolria.com`);
       lines.push(`DTSTAMP:${dtstamp}`);
-      lines.push(`DTSTART;VALUE=DATE:${toICalDate(b.check_in)}`);
-      lines.push(`DTEND;VALUE=DATE:${toICalDate(b.check_out)}`);
+      lines.push(`DTSTART;VALUE=DATE:${toICalDate(b.checkin_date)}`);
+      lines.push(`DTEND;VALUE=DATE:${toICalDate(b.checkout_date)}`);
       lines.push('SUMMARY:Booked');
       lines.push('STATUS:CONFIRMED');
       lines.push('TRANSP:OPAQUE');
