@@ -456,11 +456,9 @@ export default async function PricingPage({ params }: Props) {
             </h2>
             <p className="text-gray-500 text-base lg:text-lg">{t('availabilitySubtitle')}</p>
           </div>
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-lg shadow-gray-200/50 border border-gray-100">
-              <BookingForm />
-            </div>
-            <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4 max-w-3xl mx-auto">
+          <div className="max-w-5xl mx-auto">
+            <BookingForm />
+            <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4">
               <Info size={18} className="text-accent shrink-0 mt-0.5" />
               <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
             </div>

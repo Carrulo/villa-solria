@@ -167,17 +167,17 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
 
     return (
       <div className="flex-1 min-w-0">
-        <div className="text-center text-sm font-semibold text-gray-900 mb-3 capitalize">
+        <div className="text-center text-base lg:text-lg font-semibold text-gray-900 mb-4 capitalize">
           {monthLabel(base, locale)}
         </div>
-        <div className="grid grid-cols-7 gap-1 text-[10px] text-gray-400 uppercase mb-1">
+        <div className="grid grid-cols-7 gap-1.5 text-xs text-gray-500 uppercase mb-2 font-medium">
           {weekdays.map((w, i) => (
-            <div key={i} className="text-center py-1">
+            <div key={i} className="text-center py-1.5">
               {w}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1.5">
           {cells.map((d, i) => {
             if (!d) return <div key={i} className="aspect-square" />;
             const iso = toISO(d);
@@ -196,7 +196,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
             const disabled = isPast || isBlocked;
 
             let classes =
-              'aspect-square flex items-center justify-center text-xs rounded-lg transition-colors select-none ';
+              'aspect-square flex items-center justify-center text-sm lg:text-base rounded-lg transition-colors select-none font-medium ';
             if (disabled) {
               if (isBlocked) {
                 classes += 'bg-red-50 text-red-400 line-through cursor-not-allowed';
@@ -204,7 +204,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
                 classes += 'text-gray-300 cursor-not-allowed';
               }
             } else if (isCheckIn || isCheckOut) {
-              classes += 'bg-accent text-white font-semibold cursor-pointer';
+              classes += 'bg-accent text-white font-semibold cursor-pointer shadow-md';
             } else if (inRange) {
               classes += 'bg-accent/15 text-gray-900 cursor-pointer';
             } else {
@@ -235,35 +235,35 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
   const nights = checkIn && checkOut ? diffNights(checkIn, checkOut) : 0;
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-      <div className="text-center mb-4">
-        <h3 className="text-xl font-bold text-gray-900">{t('title')}</h3>
-        <p className="text-sm text-gray-500">{t('subtitle')}</p>
+    <div className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm">
+      <div className="text-center mb-6">
+        <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{t('title')}</h3>
+        <p className="text-base text-gray-500">{t('subtitle')}</p>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <div className="text-[11px] uppercase tracking-wide text-gray-500">{t('checkIn')}</div>
-          <div className="text-sm font-semibold text-gray-900 mt-0.5">
+      <div className="grid grid-cols-2 gap-3 mb-5 max-w-md mx-auto">
+        <div className="bg-gray-50 rounded-xl p-4 text-center">
+          <div className="text-xs uppercase tracking-wide text-gray-500 font-medium">{t('checkIn')}</div>
+          <div className="text-base font-semibold text-gray-900 mt-1">
             {checkIn ? formatDateDisplay(checkIn, locale) : '—'}
           </div>
         </div>
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <div className="text-[11px] uppercase tracking-wide text-gray-500">{t('checkOut')}</div>
-          <div className="text-sm font-semibold text-gray-900 mt-0.5">
+        <div className="bg-gray-50 rounded-xl p-4 text-center">
+          <div className="text-xs uppercase tracking-wide text-gray-500 font-medium">{t('checkOut')}</div>
+          <div className="text-base font-semibold text-gray-900 mt-1">
             {checkOut ? formatDateDisplay(checkOut, locale) : '—'}
           </div>
         </div>
       </div>
       {nights > 0 && (
-        <div className="text-center text-sm text-gray-600 mb-4">
+        <div className="text-center text-base text-gray-700 font-medium mb-5">
           {nights} {t('nights')}
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto">
         <button
           type="button"
           onClick={() => {
@@ -271,23 +271,23 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
             const earliest = new Date(today.getFullYear(), today.getMonth(), 1);
             if (prev >= earliest) setViewMonth(prev);
           }}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+          className="p-2.5 rounded-lg hover:bg-gray-100 text-gray-600 border border-gray-200"
           aria-label={t('previousMonth')}
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={20} />
         </button>
         <button
           type="button"
           onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+          className="p-2.5 rounded-lg hover:bg-gray-100 text-gray-600 border border-gray-200"
           aria-label={t('nextMonth')}
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={20} />
         </button>
       </div>
 
       {/* Calendars */}
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-8 lg:gap-12 max-w-4xl mx-auto">
         {renderMonth(viewMonth)}
         <div className="hidden md:block">{renderMonth(nextMonth)}</div>
       </div>
