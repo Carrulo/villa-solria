@@ -2,7 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { Send, AlertCircle } from 'lucide-react';
+import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
 import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
 
 type Season = {
@@ -61,6 +61,7 @@ export default function BookingForm() {
   const [range, setRange] = useState<DateRange>({ checkIn: null, checkOut: null });
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [midStayOptIn, setMidStayOptIn] = useState<boolean | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     fetch('/api/seasons')
@@ -112,7 +113,7 @@ export default function BookingForm() {
 
   const minNightsViolated = nights > 0 && nights < minNights;
   const datesComplete = Boolean(range.checkIn && range.checkOut);
-  const canSubmit = datesComplete && !minNightsViolated && !loading;
+  const canSubmit = datesComplete && !minNightsViolated && termsAccepted && !loading;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -345,6 +346,52 @@ export default function BookingForm() {
             placeholder={t('messagePlaceholder')}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all bg-white resize-none"
           />
+        </div>
+
+        {/* Cancellation policy summary */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <ShieldCheck size={18} className="text-blue-600 shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-900">
+            <p className="font-medium">{t('cancellationTitle')}</p>
+            <p className="text-blue-700 text-xs mt-0.5">{t('cancellationDesc')}</p>
+          </div>
+        </div>
+
+        {/* Terms acceptance */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              required
+              className="mt-0.5 w-4 h-4 accent-accent rounded cursor-pointer shrink-0"
+            />
+            <span className="text-xs text-gray-700 leading-relaxed">
+              {t.rich('acceptTerms', {
+                terms: (chunks) => (
+                  <a
+                    href={`/${locale}/legal/terms`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent underline hover:no-underline font-medium"
+                  >
+                    {chunks}
+                  </a>
+                ),
+                privacy: (chunks) => (
+                  <a
+                    href={`/${locale}/legal/privacy`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent underline hover:no-underline font-medium"
+                  >
+                    {chunks}
+                  </a>
+                ),
+              })}
+            </span>
+          </label>
         </div>
 
         <button

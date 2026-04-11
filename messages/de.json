@@ -242,7 +242,10 @@
     "messagePlaceholder": "Erzählen Sie uns von Ihrem Aufenthalt...",
     "cribLabel": "Ich benötige ein Babybett",
     "cribDesc": "Wir stellen ein Babybett kostenlos zur Verfügung",
-    "cribRequested": "Babybett angefordert"
+    "cribRequested": "Babybett angefordert",
+    "cancellationTitle": "Kostenlose Stornierung bis 14 Tage vor Check-in",
+    "cancellationDesc": "Nach dieser Frist gelten die in den AGB beschriebenen Bedingungen. Diese Buchung ist eine Anfrage; sie wird erst nach unserer Antwort bestätigt.",
+    "acceptTerms": "Ich habe die <terms>Allgemeinen Geschäftsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und akzeptiere sie. Ich stimme der Verarbeitung meiner Daten zur Bearbeitung dieser Buchungsanfrage zu."
   },
   "faq": {
     "title": "FAQ",

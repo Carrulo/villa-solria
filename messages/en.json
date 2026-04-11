@@ -242,7 +242,10 @@
     "messagePlaceholder": "Tell us about your stay...",
     "cribLabel": "I need a baby crib",
     "cribDesc": "We provide a baby crib at no extra cost",
-    "cribRequested": "Crib requested"
+    "cribRequested": "Crib requested",
+    "cancellationTitle": "Free cancellation up to 14 days before check-in",
+    "cancellationDesc": "After this period, the conditions described in the Terms and Conditions apply. This booking is a request; it is only confirmed after our reply.",
+    "acceptTerms": "I have read and accept the <terms>Terms and Conditions</terms> and the <privacy>Privacy Policy</privacy>. I authorize the processing of my data to manage this booking request."
   },
   "faq": {
     "title": "FAQ",

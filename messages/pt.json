@@ -242,7 +242,10 @@
     "messagePlaceholder": "Conte-nos sobre a sua estadia...",
     "cribLabel": "Preciso de berço",
     "cribDesc": "Disponibilizamos um berço para bebé sem custo adicional",
-    "cribRequested": "Berço solicitado"
+    "cribRequested": "Berço solicitado",
+    "cancellationTitle": "Cancelamento gratuito até 14 dias antes do check-in",
+    "cancellationDesc": "Após este prazo, aplicam-se as condições descritas nos Termos e Condições. Esta reserva é um pedido; só é confirmada após a nossa resposta.",
+    "acceptTerms": "Li e aceito os <terms>Termos e Condições</terms> e a <privacy>Política de Privacidade</privacy>. Autorizo o tratamento dos meus dados para gestão do pedido de reserva."
   },
   "faq": {
     "title": "Perguntas Frequentes",
