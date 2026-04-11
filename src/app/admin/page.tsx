@@ -30,13 +30,13 @@ export default function AdminDashboard() {
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const upcoming = bks.filter((b) => b.check_in >= now.toISOString().split('T')[0] && b.status !== 'cancelled');
+    const upcoming = bks.filter((b) => b.checkin_date >= now.toISOString().split('T')[0] && b.status !== 'cancelled');
     const monthBookings = bks.filter((b) => b.created_at >= monthStart && b.status !== 'cancelled');
     const revenueMonth = monthBookings.reduce((sum, b) => sum + (b.total_price || 0), 0);
 
     // Simple occupancy: booked nights this month / days in month
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const bookedNightsMonth = monthBookings.reduce((sum, b) => sum + (b.nights || 0), 0);
+    const bookedNightsMonth = monthBookings.reduce((sum, b) => sum + (b.num_nights || 0), 0);
     const occupancy = Math.min(100, Math.round((bookedNightsMonth / daysInMonth) * 100));
 
     setStats({
@@ -111,8 +111,8 @@ export default function AdminDashboard() {
                         <p className="text-xs text-gray-500">{booking.guest_email}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{booking.check_in}</td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{booking.nights}</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{booking.checkin_date}</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{booking.num_nights}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.total_price}EUR</td>
                     <td className="px-6 py-4">
                       <StatusBadge status={booking.status} />

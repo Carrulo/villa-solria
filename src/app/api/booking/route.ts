@@ -12,13 +12,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient();
 
-    // Check for overlapping confirmed bookings
+    // Check for overlapping non-cancelled bookings
     const { data: conflicts } = await supabase
       .from('bookings')
       .select('id')
       .neq('status', 'cancelled')
-      .lt('check_in', checkOut)
-      .gt('check_out', checkIn);
+      .lt('checkin_date', checkOut)
+      .gt('checkout_date', checkIn);
 
     if (conflicts && conflicts.length > 0) {
       return NextResponse.json({ error: 'Dates not available' }, { status: 409 });
@@ -62,11 +62,13 @@ export async function POST(request: NextRequest) {
         guest_name: name,
         guest_email: email,
         guest_phone: phone || null,
-        check_in: checkIn,
-        check_out: checkOut,
-        guests: parseInt(guests),
+        checkin_date: checkIn,
+        checkout_date: checkOut,
+        num_guests: parseInt(guests),
         message: message || null,
-        nights,
+        num_nights: nights,
+        price_per_night: pricePerNight,
+        cleaning_fee: cleaningFee,
         total_price: Math.round(totalPrice * 100) / 100,
         status: 'pending',
         payment_status: 'pending',
@@ -77,7 +79,10 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Booking insert error:', error);
-      return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to create booking', details: error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, booking: data });

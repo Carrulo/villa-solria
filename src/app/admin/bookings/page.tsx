@@ -182,11 +182,11 @@ export default function AdminBookingsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-300">{booking.check_in}</p>
-                      <p className="text-xs text-gray-500">até {booking.check_out}</p>
+                      <p className="text-sm text-gray-300">{booking.checkin_date}</p>
+                      <p className="text-xs text-gray-500">até {booking.checkout_date}</p>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{booking.nights}</td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{booking.guests}</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{booking.num_nights}</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{booking.num_guests}</td>
                     <td className="px-6 py-4 text-sm text-white font-medium">{booking.total_price}EUR</td>
                     <td className="px-6 py-4">
                       <StatusBadge status={booking.status} />

@@ -39,11 +39,13 @@ export interface Booking {
   guest_name: string;
   guest_email: string;
   guest_phone: string | null;
-  check_in: string;
-  check_out: string;
-  guests: number;
+  checkin_date: string;
+  checkout_date: string;
+  num_guests: number;
   message: string | null;
-  nights: number;
+  num_nights: number;
+  price_per_night: number | null;
+  cleaning_fee: number | null;
   total_price: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'refunded';
