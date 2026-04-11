@@ -77,17 +77,12 @@ function formatDate(dateStr: string, locale: string) {
   );
 }
 
-// Classify seasons into 3 visual tiers: low, mid (featured), high.
-// Sorted ascending by price, we collapse any extras into the nearest tier.
+// Classify seasons into 3 visual tiers based on unique price points
 type SeasonTier = 'low' | 'mid' | 'high';
 
-function tierForIndex(index: number, total: number): SeasonTier {
-  if (total <= 1) return 'mid';
-  if (total === 2) return index === 0 ? 'low' : 'high';
-  // 3+: first = low, last = high, middle = mid
-  if (index === 0) return 'low';
-  if (index === total - 1) return 'high';
-  return 'mid';
+function isSeasonActive(s: { start_date: string; end_date: string }): boolean {
+  const today = new Date().toISOString().substring(0, 10);
+  return s.start_date <= today && today <= s.end_date;
 }
 
 export default async function PricingPage({ params }: Props) {
@@ -110,7 +105,7 @@ export default async function PricingPage({ params }: Props) {
     ? Math.min(...rawSeasons.map((s) => s.price_per_night))
     : 90;
 
-  // Build a 3-tier display set
+  // Build display set: group seasons by unique price (not index), show up to 3 tiers
   type DisplaySeason = {
     id: string;
     name: string;
@@ -118,35 +113,61 @@ export default async function PricingPage({ params }: Props) {
     price: number;
     minNights: number;
     tier: SeasonTier;
+    isActive: boolean;
+  };
+
+  // Fixed season labels for display (translated keys)
+  const tierLabels: Record<SeasonTier, string> = {
+    low: t('lowSeason'),
+    mid: t('midSeason'),
+    high: t('highSeason'),
   };
 
   let displaySeasons: DisplaySeason[] = [];
   if (hasSeasons) {
-    // Group by tier, keep the first season encountered per tier (cheapest for low, most expensive for high)
-    const total = rawSeasons.length;
-    const byTier: Record<SeasonTier, DisplaySeason | null> = { low: null, mid: null, high: null };
-    rawSeasons.forEach((s, i) => {
-      const tier = tierForIndex(i, total);
-      const entry: DisplaySeason = {
-        id: s.id,
-        name: translateSeasonName(s.name, locale),
-        period: `${formatDate(s.start_date, locale)} – ${formatDate(s.end_date, locale)}`,
-        price: s.price_per_night,
-        minNights: s.min_nights || 1,
-        tier,
-      };
-      // Keep the cheapest representative for 'low', most expensive for 'high', and middle/first for 'mid'
-      if (!byTier[tier]) {
-        byTier[tier] = entry;
-      } else if (tier === 'high' && entry.price > byTier[tier]!.price) {
-        byTier[tier] = entry;
-      } else if (tier === 'low' && entry.price < byTier[tier]!.price) {
-        byTier[tier] = entry;
-      }
+    // Group all seasons by their price (unique prices = unique tiers)
+    const priceGroups = new Map<number, Season[]>();
+    rawSeasons.forEach((s) => {
+      const existing = priceGroups.get(s.price_per_night) || [];
+      existing.push(s);
+      priceGroups.set(s.price_per_night, existing);
     });
-    displaySeasons = (['low', 'mid', 'high'] as SeasonTier[])
-      .map((tier) => byTier[tier])
-      .filter((x): x is DisplaySeason => x !== null);
+
+    // Sort prices ascending: cheapest = low, middle = mid, highest = high
+    const sortedPrices = Array.from(priceGroups.keys()).sort((a, b) => a - b);
+    const priceCount = sortedPrices.length;
+
+    sortedPrices.forEach((price, i) => {
+      let tier: SeasonTier;
+      if (priceCount === 1) tier = 'mid';
+      else if (priceCount === 2) tier = i === 0 ? 'low' : 'high';
+      else if (i === 0) tier = 'low';
+      else if (i === priceCount - 1) tier = 'high';
+      else tier = 'mid';
+
+      const seasonsAtPrice = priceGroups.get(price) || [];
+      // Join all date ranges for this price tier (e.g. "Jan-May, Nov-Dec")
+      const period = seasonsAtPrice
+        .map((s) => `${formatDate(s.start_date, locale)} – ${formatDate(s.end_date, locale)}`)
+        .join(' · ');
+      // Active if today falls in ANY of the ranges for this price
+      const isActive = seasonsAtPrice.some(isSeasonActive);
+      // Min nights = minimum across all seasons at this price
+      const minNights = Math.min(...seasonsAtPrice.map((s) => s.min_nights || 1));
+
+      displaySeasons.push({
+        id: `tier-${tier}`,
+        name: tierLabels[tier],
+        period,
+        price,
+        minNights,
+        tier,
+        isActive,
+      });
+    });
+
+    // Take max 3 tiers (low, mid, high)
+    displaySeasons = displaySeasons.slice(0, 3);
   } else {
     displaySeasons = [
       {
@@ -156,6 +177,7 @@ export default async function PricingPage({ params }: Props) {
         price: 90,
         minNights: 1,
         tier: 'low',
+        isActive: false,
       },
       {
         id: 'fallback-mid',
@@ -164,6 +186,7 @@ export default async function PricingPage({ params }: Props) {
         price: 130,
         minNights: 3,
         tier: 'mid',
+        isActive: false,
       },
       {
         id: 'fallback-high',
@@ -172,31 +195,29 @@ export default async function PricingPage({ params }: Props) {
         price: 210,
         minNights: 7,
         tier: 'high',
+        isActive: false,
       },
     ];
   }
 
   const tierStyles: Record<
     SeasonTier,
-    { border: string; bg: string; badge: string; featured: boolean }
+    { border: string; bg: string; badge: string }
   > = {
     low: {
       border: 'border-gray-200',
       bg: 'bg-white',
       badge: 'bg-gray-100 text-gray-600',
-      featured: false,
     },
     mid: {
-      border: 'border-accent',
-      bg: 'bg-accent/5',
-      badge: 'bg-accent/10 text-accent',
-      featured: true,
-    },
-    high: {
-      border: 'border-sand/40',
+      border: 'border-gray-200',
       bg: 'bg-white',
       badge: 'bg-sand/20 text-sand',
-      featured: false,
+    },
+    high: {
+      border: 'border-gray-200',
+      bg: 'bg-white',
+      badge: 'bg-red-50 text-red-700',
     },
   };
 
@@ -332,7 +353,7 @@ export default async function PricingPage({ params }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto items-stretch">
             {displaySeasons.map((season) => {
               const style = tierStyles[season.tier];
-              const featured = style.featured;
+              const isActive = season.isActive;
               const minLabel =
                 season.minNights === 1
                   ? t('minNightsShort', { count: season.minNights })
@@ -343,15 +364,17 @@ export default async function PricingPage({ params }: Props) {
               return (
                 <div
                   key={season.id}
-                  className={`relative rounded-2xl p-6 lg:p-8 border-2 ${style.border} ${style.bg} flex flex-col ${
-                    featured
-                      ? 'md:scale-[1.04] shadow-xl shadow-accent/10 ring-1 ring-accent/20'
+                  className={`relative rounded-2xl p-6 lg:p-8 border-2 ${
+                    isActive ? 'border-accent ring-2 ring-accent/20' : style.border
+                  } ${style.bg} flex flex-col ${
+                    isActive
+                      ? 'md:scale-[1.04] shadow-xl shadow-accent/10'
                       : 'shadow-sm hover:shadow-md'
                   } transition-all`}
                 >
-                  {featured && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md">
-                      {t('featuredBadge')}
+                  {isActive && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                      {t('currentSeasonBadge')}
                     </span>
                   )}
                   <span
