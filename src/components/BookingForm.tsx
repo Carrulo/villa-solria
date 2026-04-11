@@ -94,6 +94,14 @@ export default function BookingForm() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const cribRequested = formData.get('crib') === 'on';
+    const userMessage = (formData.get('message') as string) || '';
+    const finalMessage = cribRequested
+      ? userMessage
+        ? `${userMessage}\n\n[${t('cribRequested')}]`
+        : `[${t('cribRequested')}]`
+      : userMessage;
+
     const data = {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
@@ -101,7 +109,8 @@ export default function BookingForm() {
       checkIn: range.checkIn,
       checkOut: range.checkOut,
       guests: formData.get('guests') as string,
-      message: formData.get('message') as string,
+      message: finalMessage,
+      needsCrib: cribRequested,
       nights,
       price_per_night: pricePerNight,
       cleaning_fee: cleaningFee,
@@ -253,6 +262,23 @@ export default function BookingForm() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Crib option */}
+        <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="crib"
+              className="mt-0.5 w-4 h-4 accent-accent rounded cursor-pointer"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-900 block">
+                👶 {t('cribLabel')}
+              </span>
+              <span className="text-xs text-gray-500">{t('cribDesc')}</span>
+            </div>
+          </label>
         </div>
 
         <div>

@@ -187,7 +187,10 @@
     "namePlaceholder": "Your name",
     "emailPlaceholder": "your@email.com",
     "phonePlaceholder": "+351 912 345 678",
-    "messagePlaceholder": "Tell us about your stay..."
+    "messagePlaceholder": "Tell us about your stay...",
+    "cribLabel": "I need a baby crib",
+    "cribDesc": "We provide a baby crib at no extra cost",
+    "cribRequested": "Crib requested"
   },
   "faq": {
     "title": "FAQ",

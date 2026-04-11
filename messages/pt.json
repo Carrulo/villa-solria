@@ -187,7 +187,10 @@
     "namePlaceholder": "O seu nome",
     "emailPlaceholder": "o.seu@email.com",
     "phonePlaceholder": "+351 912 345 678",
-    "messagePlaceholder": "Conte-nos sobre a sua estadia..."
+    "messagePlaceholder": "Conte-nos sobre a sua estadia...",
+    "cribLabel": "Preciso de berço",
+    "cribDesc": "Disponibilizamos um berço para bebé sem custo adicional",
+    "cribRequested": "Berço solicitado"
   },
   "faq": {
     "title": "Perguntas Frequentes",

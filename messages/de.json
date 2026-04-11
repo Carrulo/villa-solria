@@ -187,7 +187,10 @@
     "namePlaceholder": "Ihr Name",
     "emailPlaceholder": "ihre@email.de",
     "phonePlaceholder": "+49 170 1234567",
-    "messagePlaceholder": "Erzählen Sie uns von Ihrem Aufenthalt..."
+    "messagePlaceholder": "Erzählen Sie uns von Ihrem Aufenthalt...",
+    "cribLabel": "Ich benötige ein Babybett",
+    "cribDesc": "Wir stellen ein Babybett kostenlos zur Verfügung",
+    "cribRequested": "Babybett angefordert"
   },
   "faq": {
     "title": "FAQ",

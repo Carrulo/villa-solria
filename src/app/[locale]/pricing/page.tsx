@@ -148,6 +148,20 @@ export default async function PricingPage({ params }: Props) {
           </div>
         </section>
 
+        {/* Booking Form (includes calendar + price breakdown) */}
+        <div className="max-w-3xl mx-auto mb-16">
+          <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">{t('inquiryTitle')}</h2>
+            <p className="text-gray-500 text-center mb-6">{t('inquirySubtitle')}</p>
+            <BookingForm />
+          </div>
+        </div>
+
+        {/* Pricing Reference Title */}
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">{t('title')} {t('perNight')}</h2>
+        </div>
+
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
           {hasSeasons ? (
@@ -194,21 +208,11 @@ export default async function PricingPage({ params }: Props) {
           )}
         </div>
 
-        <div className="max-w-2xl mx-auto space-y-3 mb-16">
+        <div className="max-w-2xl mx-auto space-y-3">
           <p className="text-center text-gray-500 text-sm">{t('minimumStay')}</p>
-          <p className="text-center text-gray-500 text-sm">{t('cleaningFee')}</p>
           <div className="flex items-start gap-2 bg-accent/5 rounded-xl p-4">
             <Info size={18} className="text-accent shrink-0 mt-0.5" />
             <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
-          </div>
-        </div>
-
-        {/* Booking Form (includes calendar + price breakdown) */}
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-transparent">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">{t('inquiryTitle')}</h2>
-            <p className="text-gray-500 text-center mb-8">{t('inquirySubtitle')}</p>
-            <BookingForm />
           </div>
         </div>
       </div>

@@ -187,7 +187,10 @@
     "namePlaceholder": "Tu nombre",
     "emailPlaceholder": "tu@email.com",
     "phonePlaceholder": "+34 612 345 678",
-    "messagePlaceholder": "Cuéntanos sobre tu estancia..."
+    "messagePlaceholder": "Cuéntanos sobre tu estancia...",
+    "cribLabel": "Necesito cuna de bebé",
+    "cribDesc": "Proporcionamos una cuna sin costo adicional",
+    "cribRequested": "Cuna solicitada"
   },
   "faq": {
     "title": "Preguntas Frecuentes",
