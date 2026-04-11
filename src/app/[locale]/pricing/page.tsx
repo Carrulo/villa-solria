@@ -210,6 +210,19 @@ export default async function PricingPage({ params }: Props) {
 
         <div className="max-w-2xl mx-auto space-y-3">
           <p className="text-center text-gray-500 text-sm">{t('minimumStay')}</p>
+
+          {/* Long-stay discounts banner */}
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+            <p className="text-sm font-semibold text-green-800 mb-2">
+              💰 {t('discountsAvailable')}
+            </p>
+            <ul className="text-sm text-green-700 space-y-1">
+              <li>• {t('discountWeekly', { percent: 10 })}</li>
+              <li>• {t('discountBiweekly', { percent: 15 })}</li>
+              <li>• {t('discountMonthly', { percent: 25 })}</li>
+            </ul>
+          </div>
+
           <div className="flex items-start gap-2 bg-accent/5 rounded-xl p-4">
             <Info size={18} className="text-accent shrink-0 mt-0.5" />
             <p className="text-sm text-gray-600">{t('availabilityNote')}</p>

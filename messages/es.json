@@ -159,9 +159,26 @@
     "perNight": "/noche",
     "minimumStay": "Estancia mínima: 3 noches (7 noches en temporada alta)",
     "cleaningFee": "Tasa de limpieza: incluida",
+    "discountsAvailable": "Descuentos por estancia larga disponibles",
+    "discountWeekly": "7+ noches: -{percent}%",
+    "discountBiweekly": "14+ noches: -{percent}%",
+    "discountMonthly": "28+ noches: -{percent}%",
     "inquiryTitle": "Solicitar Reserva",
     "inquirySubtitle": "Rellena el formulario y te responderemos en menos de 24 horas",
     "availabilityNote": "Los precios pueden variar según la temporada y duración de la estancia. Contáctanos para un presupuesto personalizado."
+  },
+  "discounts": {
+    "title": "Descuentos por estancia larga",
+    "weekly": "7+ noches",
+    "biweekly": "14+ noches",
+    "monthly": "28+ noches",
+    "off": "de descuento"
+  },
+  "midStayCleaning": {
+    "label": "Limpieza intermedia semanal",
+    "description": "Incluida automáticamente en estancias de {threshold}+ noches",
+    "optional": "Añadir limpieza intermedia (+{price}€)",
+    "countSuffix": "×"
   },
   "contact": {
     "title": "Contacto",
@@ -303,6 +320,9 @@
     "perNight": "por noche",
     "cleaningFee": "Tasa de limpieza",
     "total": "Total",
-    "proceedBooking": "Continuar con la reserva"
+    "proceedBooking": "Continuar con la reserva",
+    "discount": "Descuento ({percent}%)",
+    "midStayCleaning": "Limpieza intermedia",
+    "longStayDiscount": "Descuento estancia larga"
   }
 }

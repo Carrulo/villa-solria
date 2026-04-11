@@ -19,7 +19,11 @@ const emptySeason: Omit<Season, 'id' | 'created_at'> = {
   min_nights: 2,
   allowed_checkin_days: ALL_DAYS,
   cleaning_fee: 50,
-  weekly_discount: 0,
+  weekly_discount: 10,
+  biweekly_discount: 15,
+  monthly_discount: 25,
+  mid_stay_cleaning_fee: 50,
+  mid_stay_cleaning_auto_threshold: 14,
 };
 
 export default function AdminPricingPage() {
@@ -59,6 +63,10 @@ export default function AdminPricingPage() {
       allowed_checkin_days: editing.allowed_checkin_days,
       cleaning_fee: editing.cleaning_fee,
       weekly_discount: editing.weekly_discount,
+      biweekly_discount: editing.biweekly_discount,
+      monthly_discount: editing.monthly_discount,
+      mid_stay_cleaning_fee: editing.mid_stay_cleaning_fee,
+      mid_stay_cleaning_auto_threshold: editing.mid_stay_cleaning_auto_threshold,
     };
 
     if (editing.id) {
@@ -142,14 +150,16 @@ export default function AdminPricingPage() {
                 <th className="px-6 py-4">Noites Mín.</th>
                 <th className="px-6 py-4">Dias de Check-in</th>
                 <th className="px-6 py-4">Taxa de Limpeza</th>
-                <th className="px-6 py-4">Desconto Semanal</th>
+                <th className="px-6 py-4">Desc. 7+</th>
+                <th className="px-6 py-4">Desc. 14+</th>
+                <th className="px-6 py-4">Desc. 28+</th>
                 <th className="px-6 py-4">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {seasons.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                     Nenhuma época configurada
                   </td>
                 </tr>
@@ -172,7 +182,9 @@ export default function AdminPricingPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300">{season.cleaning_fee}EUR</td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{season.weekly_discount}%</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{season.weekly_discount || 0}%</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{season.biweekly_discount || 0}%</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">{season.monthly_discount || 0}%</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
@@ -264,24 +276,73 @@ export default function AdminPricingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Taxa de Limpeza (EUR)</label>
-                  <input
-                    type="number"
-                    value={editing.cleaning_fee}
-                    onChange={(e) => setEditing({ ...editing, cleaning_fee: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
-                  />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Taxa de Limpeza (EUR)</label>
+                <input
+                  type="number"
+                  value={editing.cleaning_fee}
+                  onChange={(e) => setEditing({ ...editing, cleaning_fee: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-4 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
+                />
+              </div>
+
+              {/* Descontos por Duração */}
+              <div className="pt-4 border-t border-white/5">
+                <h3 className="text-sm font-semibold text-white mb-3">Descontos por Duração</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Semanal 7+ (%)</label>
+                    <input
+                      type="number"
+                      value={editing.weekly_discount}
+                      onChange={(e) => setEditing({ ...editing, weekly_discount: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Quinzenal 14+ (%)</label>
+                    <input
+                      type="number"
+                      value={editing.biweekly_discount}
+                      onChange={(e) => setEditing({ ...editing, biweekly_discount: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Mensal 28+ (%)</label>
+                    <input
+                      type="number"
+                      value={editing.monthly_discount}
+                      onChange={(e) => setEditing({ ...editing, monthly_discount: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Desconto Semanal (%)</label>
-                  <input
-                    type="number"
-                    value={editing.weekly_discount}
-                    onChange={(e) => setEditing({ ...editing, weekly_discount: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
-                  />
+              </div>
+
+              {/* Limpeza Intermédia */}
+              <div className="pt-4 border-t border-white/5">
+                <h3 className="text-sm font-semibold text-white mb-1">Limpeza Intermédia</h3>
+                <p className="text-xs text-gray-500 mb-3">Cobrada a cada 7 noites para estadias longas</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Taxa (EUR)</label>
+                    <input
+                      type="number"
+                      value={editing.mid_stay_cleaning_fee}
+                      onChange={(e) => setEditing({ ...editing, mid_stay_cleaning_fee: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Ativar auto a partir de (noites)</label>
+                    <input
+                      type="number"
+                      value={editing.mid_stay_cleaning_auto_threshold}
+                      onChange={(e) => setEditing({ ...editing, mid_stay_cleaning_auto_threshold: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 

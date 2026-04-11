@@ -161,7 +161,24 @@
     "cleaningFee": "Cleaning fee: included",
     "inquiryTitle": "Request a Booking",
     "inquirySubtitle": "Fill in the form and we will reply within 24 hours",
-    "availabilityNote": "Prices may vary depending on the season and length of stay. Contact us for a personalized quote."
+    "availabilityNote": "Prices may vary depending on the season and length of stay. Contact us for a personalized quote.",
+    "discountsAvailable": "Long-stay discounts available",
+    "discountWeekly": "7+ nights: -{percent}%",
+    "discountBiweekly": "14+ nights: -{percent}%",
+    "discountMonthly": "28+ nights: -{percent}%"
+  },
+  "discounts": {
+    "title": "Long-stay discounts",
+    "weekly": "7+ nights",
+    "biweekly": "14+ nights",
+    "monthly": "28+ nights",
+    "off": "off"
+  },
+  "midStayCleaning": {
+    "label": "Weekly mid-stay cleaning",
+    "description": "Automatically included for stays of {threshold}+ nights",
+    "optional": "Add mid-stay cleaning (+{price}€)",
+    "countSuffix": "×"
   },
   "contact": {
     "title": "Contact",
@@ -303,6 +320,9 @@
     "perNight": "per night",
     "cleaningFee": "Cleaning fee",
     "total": "Total",
-    "proceedBooking": "Proceed with booking"
+    "proceedBooking": "Proceed with booking",
+    "discount": "Discount ({percent}%)",
+    "midStayCleaning": "Mid-stay cleaning",
+    "longStayDiscount": "Long-stay discount"
   }
 }

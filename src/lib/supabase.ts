@@ -16,6 +16,10 @@ export interface Season {
   allowed_checkin_days: number[];
   cleaning_fee: number;
   weekly_discount: number;
+  biweekly_discount: number;
+  monthly_discount: number;
+  mid_stay_cleaning_fee: number;
+  mid_stay_cleaning_auto_threshold: number;
   created_at: string;
 }
 

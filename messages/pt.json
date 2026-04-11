@@ -161,7 +161,24 @@
     "cleaningFee": "Taxa de limpeza: incluída",
     "inquiryTitle": "Solicitar Reserva",
     "inquirySubtitle": "Preencha o formulário e responderemos em menos de 24 horas",
-    "availabilityNote": "Os preços podem variar consoante a época e duração da estadia. Contacte-nos para um orçamento personalizado."
+    "availabilityNote": "Os preços podem variar consoante a época e duração da estadia. Contacte-nos para um orçamento personalizado.",
+    "discountsAvailable": "Descontos de longa estadia disponíveis",
+    "discountWeekly": "7+ noites: -{percent}%",
+    "discountBiweekly": "14+ noites: -{percent}%",
+    "discountMonthly": "28+ noites: -{percent}%"
+  },
+  "discounts": {
+    "title": "Descontos de longa estadia",
+    "weekly": "7+ noites",
+    "biweekly": "14+ noites",
+    "monthly": "28+ noites",
+    "off": "de desconto"
+  },
+  "midStayCleaning": {
+    "label": "Limpeza intermédia semanal",
+    "description": "Incluída automaticamente para estadias de {threshold}+ noites",
+    "optional": "Adicionar limpeza intermédia (+{price}€)",
+    "countSuffix": "×"
   },
   "contact": {
     "title": "Contacto",
@@ -303,6 +320,9 @@
     "perNight": "por noite",
     "cleaningFee": "Taxa de limpeza",
     "total": "Total",
-    "proceedBooking": "Prosseguir reserva"
+    "proceedBooking": "Prosseguir reserva",
+    "discount": "Desconto ({percent}%)",
+    "midStayCleaning": "Limpeza intermédia",
+    "longStayDiscount": "Desconto estadia longa"
   }
 }

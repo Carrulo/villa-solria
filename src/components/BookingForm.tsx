@@ -14,6 +14,10 @@ type Season = {
   min_nights: number;
   cleaning_fee: number;
   weekly_discount: number;
+  biweekly_discount: number;
+  monthly_discount: number;
+  mid_stay_cleaning_fee: number;
+  mid_stay_cleaning_auto_threshold: number;
 };
 
 function diffNights(checkIn: string, checkOut: string): number {
@@ -56,6 +60,7 @@ export default function BookingForm() {
 
   const [range, setRange] = useState<DateRange>({ checkIn: null, checkOut: null });
   const [seasons, setSeasons] = useState<Season[]>([]);
+  const [midStayOptIn, setMidStayOptIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetch('/api/seasons')
@@ -79,9 +84,31 @@ export default function BookingForm() {
   const pricePerNight = activeSeason?.price_per_night ?? 0;
   const cleaningFee = activeSeason?.cleaning_fee ?? 0;
   const minNights = activeSeason?.min_nights ?? 3;
+  const weeklyDiscount = activeSeason?.weekly_discount ?? 0;
+  const biweeklyDiscount = activeSeason?.biweekly_discount ?? 0;
+  const monthlyDiscount = activeSeason?.monthly_discount ?? 0;
+  const midStayFee = activeSeason?.mid_stay_cleaning_fee ?? 0;
+  const midStayThreshold = activeSeason?.mid_stay_cleaning_auto_threshold ?? 14;
 
   const subTotal = pricePerNight * nights;
-  const total = subTotal + cleaningFee;
+
+  // Long-stay discount tier
+  const discountPercent = useMemo(() => {
+    if (nights >= 28) return monthlyDiscount;
+    if (nights >= 14) return biweeklyDiscount;
+    if (nights >= 7) return weeklyDiscount;
+    return 0;
+  }, [nights, weeklyDiscount, biweeklyDiscount, monthlyDiscount]);
+
+  const discountAmount = Math.round(subTotal * (discountPercent / 100));
+
+  // Mid-stay cleaning logic
+  const midStayCount = Math.floor(nights / 7);
+  const midStayEligible = nights >= midStayThreshold && midStayCount > 0 && midStayFee > 0;
+  const midStayEnabled = midStayEligible && (midStayOptIn ?? true);
+  const midStayTotal = midStayEnabled ? midStayCount * midStayFee : 0;
+
+  const total = subTotal - discountAmount + cleaningFee + midStayTotal;
 
   const minNightsViolated = nights > 0 && nights < minNights;
   const datesComplete = Boolean(range.checkIn && range.checkOut);
@@ -114,6 +141,10 @@ export default function BookingForm() {
       nights,
       price_per_night: pricePerNight,
       cleaning_fee: cleaningFee,
+      discount_percent: discountPercent,
+      discount_amount: discountAmount,
+      mid_stay_cleaning_count: midStayEnabled ? midStayCount : 0,
+      mid_stay_cleaning_total: midStayTotal,
       total_price: total,
     };
 
@@ -177,10 +208,32 @@ export default function BookingForm() {
               </span>
               <span>{subTotal.toFixed(0)}&euro;</span>
             </div>
+            {discountPercent > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>{tp('discount', { percent: discountPercent })}</span>
+                <span>-{discountAmount.toFixed(0)}&euro;</span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-600">
               <span>{tp('cleaningFee')}</span>
-              <span>{cleaningFee.toFixed(0)}&euro;</span>
+              <span>+{cleaningFee.toFixed(0)}&euro;</span>
             </div>
+            {midStayEligible && (
+              <div className="flex justify-between items-center text-gray-600">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={midStayEnabled}
+                    onChange={(e) => setMidStayOptIn(e.target.checked)}
+                    className="w-4 h-4 accent-accent rounded cursor-pointer"
+                  />
+                  <span>
+                    {tp('midStayCleaning')} ({midStayCount}×)
+                  </span>
+                </label>
+                <span>{midStayEnabled ? `+${midStayTotal.toFixed(0)}` : '0'}&euro;</span>
+              </div>
+            )}
             <div className="border-t border-gray-200 my-2" />
             <div className="flex justify-between font-semibold text-gray-900 text-base">
               <span>{tp('total')}</span>

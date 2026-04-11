@@ -161,7 +161,24 @@
     "cleaningFee": "Reinigungsgebühr: inklusive",
     "inquiryTitle": "Buchungsanfrage",
     "inquirySubtitle": "Füllen Sie das Formular aus und wir antworten innerhalb von 24 Stunden",
-    "availabilityNote": "Die Preise können je nach Saison und Aufenthaltsdauer variieren. Kontaktieren Sie uns für ein individuelles Angebot."
+    "availabilityNote": "Die Preise können je nach Saison und Aufenthaltsdauer variieren. Kontaktieren Sie uns für ein individuelles Angebot.",
+    "discountsAvailable": "Rabatte für Langzeitaufenthalte verfügbar",
+    "discountWeekly": "7+ Nächte: -{percent}%",
+    "discountBiweekly": "14+ Nächte: -{percent}%",
+    "discountMonthly": "28+ Nächte: -{percent}%"
+  },
+  "discounts": {
+    "title": "Rabatte für Langzeitaufenthalte",
+    "weekly": "7+ Nächte",
+    "biweekly": "14+ Nächte",
+    "monthly": "28+ Nächte",
+    "off": "Rabatt"
+  },
+  "midStayCleaning": {
+    "label": "Wöchentliche Zwischenreinigung",
+    "description": "Automatisch enthalten bei Aufenthalten ab {threshold} Nächten",
+    "optional": "Zwischenreinigung hinzufügen (+{price}€)",
+    "countSuffix": "×"
   },
   "contact": {
     "title": "Kontakt",
@@ -303,6 +320,9 @@
     "perNight": "pro Nacht",
     "cleaningFee": "Reinigungsgebühr",
     "total": "Gesamt",
-    "proceedBooking": "Mit Buchung fortfahren"
+    "proceedBooking": "Mit Buchung fortfahren",
+    "discount": "Rabatt ({percent}%)",
+    "midStayCleaning": "Zwischenreinigung",
+    "longStayDiscount": "Langzeitrabatt"
   }
 }
