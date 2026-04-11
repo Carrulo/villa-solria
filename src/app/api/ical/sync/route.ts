@@ -14,17 +14,69 @@ function formatDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function parseICalDate(value: string): Date | null {
+  // Handles YYYYMMDD (date-only) and YYYYMMDDTHHMMSSZ (date-time)
+  const clean = value.trim();
+  if (/^\d{8}$/.test(clean)) {
+    const y = parseInt(clean.substring(0, 4), 10);
+    const m = parseInt(clean.substring(4, 6), 10) - 1;
+    const d = parseInt(clean.substring(6, 8), 10);
+    return new Date(Date.UTC(y, m, d));
+  }
+  if (/^\d{8}T\d{6}Z?$/.test(clean)) {
+    const y = parseInt(clean.substring(0, 4), 10);
+    const mo = parseInt(clean.substring(4, 6), 10) - 1;
+    const d = parseInt(clean.substring(6, 8), 10);
+    const h = parseInt(clean.substring(9, 11), 10);
+    const mi = parseInt(clean.substring(11, 13), 10);
+    const s = parseInt(clean.substring(13, 15), 10);
+    return new Date(Date.UTC(y, mo, d, h, mi, s));
+  }
+  return null;
+}
+
 function datesInRange(start: Date, end: Date): string[] {
   const dates: string[] = [];
-  // Use UTC to avoid TZ drift. iCal VALUE=DATE events are date-only.
   const cur = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
   const stop = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
-  // DTEND in iCal is exclusive — don't include the end date itself
+  // DTEND in iCal is exclusive
   while (cur < stop) {
     dates.push(formatDate(cur));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return dates;
+}
+
+type VEvent = { dtstart?: string; dtend?: string; summary?: string };
+
+function parseICS(text: string): VEvent[] {
+  // Unfold folded lines (RFC 5545: lines starting with space/tab continue previous line)
+  const unfolded = text.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
+  const lines = unfolded.split(/\r\n|\n|\r/);
+
+  const events: VEvent[] = [];
+  let current: VEvent | null = null;
+
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') {
+      current = {};
+    } else if (line === 'END:VEVENT') {
+      if (current) events.push(current);
+      current = null;
+    } else if (current) {
+      // Match PROPERTY[;PARAMS]:VALUE
+      const colonIdx = line.indexOf(':');
+      if (colonIdx < 0) continue;
+      const left = line.substring(0, colonIdx);
+      const value = line.substring(colonIdx + 1);
+      const propName = left.split(';')[0].toUpperCase();
+      if (propName === 'DTSTART') current.dtstart = value;
+      else if (propName === 'DTEND') current.dtend = value;
+      else if (propName === 'SUMMARY') current.summary = value;
+    }
+  }
+
+  return events;
 }
 
 async function syncSource(
@@ -41,35 +93,31 @@ async function syncSource(
       return { events: 0, dates_blocked: 0, error: `HTTP ${res.status}` };
     }
     const text = await res.text();
-    const icalMod = await import('node-ical');
-    const parsed = icalMod.sync.parseICS(text);
+    const events = parseICS(text);
 
     const blockedRows: { date: string; source: string; note: string | null }[] = [];
     let eventCount = 0;
 
-    for (const key of Object.keys(parsed)) {
-      const event = parsed[key];
-      if (!event || event.type !== 'VEVENT') continue;
-      if (!event.start || !event.end) continue;
+    for (const event of events) {
+      if (!event.dtstart || !event.dtend) continue;
+      const startDate = parseICalDate(event.dtstart);
+      const endDate = parseICalDate(event.dtend);
+      if (!startDate || !endDate) continue;
       eventCount += 1;
 
-      const startDate = event.start instanceof Date ? event.start : new Date(event.start as unknown as string);
-      const endDate = event.end instanceof Date ? event.end : new Date(event.end as unknown as string);
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) continue;
-
-      const note = (event.summary as string | undefined) || null;
+      const note = event.summary || null;
       for (const date of datesInRange(startDate, endDate)) {
         blockedRows.push({ date, source, note });
       }
     }
 
-    // Full refresh: delete existing for this source
+    // Full refresh
     const { error: delError } = await supabase.from('blocked_dates').delete().eq('source', source);
     if (delError) {
       return { events: eventCount, dates_blocked: 0, error: `delete failed: ${delError.message}` };
     }
 
-    // Deduplicate by date (iCal feeds can have overlapping events)
+    // Dedupe by date
     const uniqueByDate = new Map<string, { date: string; source: string; note: string | null }>();
     for (const row of blockedRows) {
       if (!uniqueByDate.has(row.date)) uniqueByDate.set(row.date, row);
@@ -134,4 +182,3 @@ export async function GET() {
     return NextResponse.json({ error: 'Internal server error', details: message }, { status: 500 });
   }
 }
-// Force redeploy Sat Apr 11 21:24:17 WEST 2026
