@@ -3,16 +3,25 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, CalendarX } from 'lucide-react';
+
+interface BlockedDateRow {
+  id: string;
+  date: string;
+  source: string;
+  note: string | null;
+}
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [blockedDates, setBlockedDates] = useState<BlockedDateRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     fetchBookings();
+    fetchBlockedDates();
   }, []);
 
   async function fetchBookings() {
@@ -23,6 +32,18 @@ export default function AdminBookingsPage() {
 
     setBookings((data || []) as Booking[]);
     setLoading(false);
+  }
+
+  async function fetchBlockedDates() {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data } = await supabase
+      .from('blocked_dates')
+      .select('id, date, source, note')
+      .gte('date', today)
+      .in('source', ['airbnb_ical', 'booking_ical'])
+      .order('date', { ascending: true })
+      .limit(500);
+    setBlockedDates((data || []) as BlockedDateRow[]);
   }
 
   async function updateStatus(id: string, status: 'confirmed' | 'cancelled') {
@@ -87,6 +108,44 @@ export default function AdminBookingsPage() {
           })}
         </div>
       </div>
+
+      {/* Blocked dates from external iCal */}
+      {blockedDates.length > 0 && (
+        <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarX size={16} className="text-amber-400" />
+            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+              Datas Bloqueadas (iCal Externo)
+            </h2>
+            <span className="text-xs text-gray-500">{blockedDates.length} dias</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {blockedDates.slice(0, 120).map((bd) => {
+              const sourceColor =
+                bd.source === 'airbnb_ical'
+                  ? 'bg-pink-500/10 text-pink-300 border-pink-500/20'
+                  : 'bg-blue-500/10 text-blue-300 border-blue-500/20';
+              const label = bd.source === 'airbnb_ical' ? 'Airbnb' : 'Booking';
+              return (
+                <span
+                  key={bd.id}
+                  title={bd.note || ''}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${sourceColor}`}
+                >
+                  {bd.date}
+                  <span className="opacity-60">·</span>
+                  <span className="opacity-80">{label}</span>
+                </span>
+              );
+            })}
+            {blockedDates.length > 120 && (
+              <span className="text-xs text-gray-500 self-center">
+                +{blockedDates.length - 120} mais...
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5 overflow-hidden">

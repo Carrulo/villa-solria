@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Setting } from '@/lib/supabase';
-import { Save } from 'lucide-react';
+import { Save, RefreshCw } from 'lucide-react';
 
 interface SettingField {
   key: string;
@@ -73,6 +73,7 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -125,6 +126,27 @@ export default function AdminSettingsPage() {
     setSaving(false);
   }
 
+  async function handleSyncNow() {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/ical/sync', { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(`Erro na sincronizacao: ${json.error || 'desconhecido'}`, 'error');
+      } else {
+        const a = json.airbnb || { events: 0, dates_blocked: 0 };
+        const b = json.booking || { events: 0, dates_blocked: 0 };
+        showToast(
+          `Sincronizado — Airbnb: ${a.events} eventos / ${a.dates_blocked} dias, Booking: ${b.events} eventos / ${b.dates_blocked} dias`,
+          'success'
+        );
+      }
+    } catch {
+      showToast('Erro ao sincronizar calendarios', 'error');
+    }
+    setSyncing(false);
+  }
+
   if (loading) {
     return <div className="text-gray-400">A carregar definicoes...</div>;
   }
@@ -162,6 +184,20 @@ export default function AdminSettingsPage() {
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
             {section.title}
           </h2>
+
+          {section.title === 'Reservas' && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleSyncNow}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-60"
+              >
+                <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+                {syncing ? 'A sincronizar...' : 'Sincronizar Agora'}
+              </button>
+            </div>
+          )}
 
           {section.fields.map(({ key, label, placeholder, type, options }) => (
             <div key={key}>
