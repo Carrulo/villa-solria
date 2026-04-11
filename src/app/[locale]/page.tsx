@@ -117,7 +117,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     allPhotos.length > 0
       ? allPhotos
           .filter((p) => !p.is_hero)
-          .slice(0, 7)
+          .slice(0, 9)
           .map((p) => ({ src: getPhotoUrl(p), alt: p.alt_text || p.filename }))
       : [
           { src: '/images/property/aerial-view.jpg', alt: 'Aerial View' },
@@ -127,6 +127,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { src: '/images/property/kitchen.jpg', alt: 'Kitchen' },
           { src: '/images/property/bathroom.jpg', alt: 'Bathroom' },
           { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
+          { src: '/images/property/rooftop.jpg', alt: 'Rooftop' },
+          { src: '/images/property/garden.jpg', alt: 'Garden' },
         ];
 
   return (
