@@ -421,7 +421,7 @@ function buildConfirmationEmailHtml(
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding-right:12px;">
-                    <a href="https://wa.me/${(settings?.['email_contact_whatsapp'] || '351912345678').replace(/[^\d]/g, '')}" target="_blank" style="display:inline-block;padding:8px 16px;background-color:#25D366;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">WhatsApp</a>
+                    <a href="https://wa.me/${(settings?.['email_contact_whatsapp'] || '351960486962').replace(/[^\d]/g, '')}" target="_blank" style="display:inline-block;padding:8px 16px;background-color:#25D366;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">WhatsApp</a>
                   </td>
                   <td>
                     <a href="mailto:${settings?.['email_contact_email'] || 'reservas@villasolria.com'}" style="display:inline-block;padding:8px 16px;background-color:#e5e7eb;color:#374151;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">Email</a>
@@ -552,7 +552,7 @@ function buildAbandonmentEmailHtml(
   const s = abandonmentStrings[locale];
   const checkinFormatted = formatDate(data.checkin_date, locale);
   const checkoutFormatted = formatDate(data.checkout_date, locale);
-  const whatsappNumber = (settings['email_contact_whatsapp'] || '351912345678').replace(/[^\d]/g, '');
+  const whatsappNumber = (settings['email_contact_whatsapp'] || '351960486962').replace(/[^\d]/g, '');
   const contactEmail = settings['email_contact_email'] || 'reservas@villasolria.com';
 
   return `<!DOCTYPE html>

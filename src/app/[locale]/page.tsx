@@ -176,6 +176,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     ? String(savingsRow[0].value)
     : '20';
 
+  // Fetch WhatsApp number from settings
+  const { data: whatsappRow } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'whatsapp_number')
+    .limit(1);
+
+  const whatsappNumber = (whatsappRow?.[0]?.value as string || '+351 960486962').replace(/[^\d]/g, '');
+
   // Fetch photos from Supabase
   const { data: dbPhotos } = await supabase
     .from('photos')
@@ -373,7 +382,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   {host('bio')}
                 </p>
                 <a
-                  href="https://wa.me/351912345678"
+                  href={`https://wa.me/${whatsappNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-hover transition-all shadow-sm text-sm"

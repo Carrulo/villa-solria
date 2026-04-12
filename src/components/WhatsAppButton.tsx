@@ -8,7 +8,7 @@ type Props = {
 };
 
 export default function WhatsAppButton({
-  phoneNumber = '351912345678',
+  phoneNumber = '351960486962',
   message = "Hello, I'm interested in Villa Solria",
 }: Props) {
   const clean = phoneNumber.replace(/[^\d]/g, '');
