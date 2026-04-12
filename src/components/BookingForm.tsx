@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
 import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
+import { trackGA4Event, trackMetaEvent } from './Analytics';
 
 type Season = {
   id: string;
@@ -186,6 +187,24 @@ export default function BookingForm() {
         setLoading(false);
         return;
       }
+
+      // Track begin_checkout conversion event
+      trackGA4Event('begin_checkout', {
+        currency: 'EUR',
+        value: total,
+        items: [
+          {
+            item_name: 'Villa Solria Booking',
+            quantity: nights,
+            price: pricePerNight,
+          },
+        ],
+      });
+      trackMetaEvent('InitiateCheckout', {
+        currency: 'EUR',
+        value: total,
+        num_items: 1,
+      });
 
       // Redirect to Stripe Checkout
       window.location.href = checkoutResult.url;

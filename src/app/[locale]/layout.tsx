@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import type { FooterSettings } from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import CookieConsent from '@/components/CookieConsent';
+import Analytics from '@/components/Analytics';
 import '../globals.css';
 
 type Props = {
@@ -78,6 +79,7 @@ export async function generateMetadata({ params }: Props) {
   const t = await getTranslations({ locale, namespace: 'meta' });
 
   return {
+    metadataBase: new URL('https://villa-solria.vercel.app'),
     title: t('title'),
     description: t('description'),
     openGraph: {
@@ -86,13 +88,28 @@ export async function generateMetadata({ params }: Props) {
       type: 'website',
       locale: locale === 'pt' ? 'pt_PT' : locale === 'en' ? 'en_US' : locale === 'es' ? 'es_ES' : 'de_DE',
       siteName: 'Villa Solria',
+      images: [
+        {
+          url: '/og-image.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'Villa Solria - Cabanas de Tavira',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('title'),
+      description: t('description'),
+      images: ['/og-image.jpg'],
     },
     alternates: {
       languages: {
-        'pt': '/pt',
+        'pt': '/',
         'en': '/en',
         'es': '/es',
         'de': '/de',
+        'x-default': '/',
       },
     },
   };
@@ -127,6 +144,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <Footer settings={footerSettings} />
           <WhatsAppButton phoneNumber={footerSettings.whatsapp} />
           <CookieConsent />
+          <Analytics />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -2,10 +2,61 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useRef, Suspense } from 'react';
 import { CheckCircle, Home, Mail } from 'lucide-react';
+import { trackGA4Event, trackMetaEvent } from '@/components/Analytics';
 
-export default function BookingSuccessPage() {
+function BookingSuccessContent() {
   const t = useTranslations('bookingStatus');
+  const searchParams = useSearchParams();
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    if (tracked.current) return;
+    tracked.current = true;
+
+    const sessionId = searchParams.get('session_id');
+    if (!sessionId) return;
+
+    // Fetch booking details from Stripe session to get the value
+    fetch(`/api/checkout/session?session_id=${sessionId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const value = data.amount_total ? data.amount_total / 100 : 0;
+        const transactionId = data.payment_intent || sessionId;
+
+        trackGA4Event('purchase', {
+          transaction_id: transactionId,
+          currency: 'EUR',
+          value,
+          items: [
+            {
+              item_name: 'Villa Solria Booking',
+              price: value,
+              quantity: 1,
+            },
+          ],
+        });
+
+        trackMetaEvent('Purchase', {
+          currency: 'EUR',
+          value,
+        });
+      })
+      .catch(() => {
+        // Still fire events without value if fetch fails
+        trackGA4Event('purchase', {
+          transaction_id: sessionId,
+          currency: 'EUR',
+          value: 0,
+        });
+        trackMetaEvent('Purchase', {
+          currency: 'EUR',
+          value: 0,
+        });
+      });
+  }, [searchParams]);
 
   return (
     <div className="py-20 lg:py-32">
@@ -34,5 +85,13 @@ export default function BookingSuccessPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function BookingSuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <BookingSuccessContent />
+    </Suspense>
   );
 }

@@ -64,6 +64,13 @@ const SECTIONS: SettingSection[] = [
       { key: 'terms_url', label: 'Link Termos e Condicoes', placeholder: 'https://...' },
     ],
   },
+  {
+    title: 'Tracking',
+    fields: [
+      { key: 'ga4_measurement_id', label: 'Google Analytics 4 (Measurement ID)', placeholder: 'G-XXXXXXXXXX' },
+      { key: 'meta_pixel_id', label: 'Meta Pixel ID', placeholder: '1234567890' },
+    ],
+  },
 ];
 
 // All known keys from all sections
