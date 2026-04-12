@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
-import { generateBookingReference, sendBookingConfirmationEmail } from '@/lib/email';
+import { generateBookingReference, sendBookingConfirmationEmail, sendAbandonmentEmail } from '@/lib/email';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -161,6 +161,31 @@ export async function POST(request: NextRequest) {
         const bookingId = session.metadata?.booking_id;
 
         if (bookingId) {
+          // Fetch booking details before cancelling — needed for abandonment email
+          const { data: expiredBooking } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', bookingId)
+            .eq('status', 'pending')
+            .single();
+
+          // Send abandonment email (non-blocking — cancellation proceeds regardless)
+          if (expiredBooking?.guest_email) {
+            try {
+              await sendAbandonmentEmail({
+                guest_name: expiredBooking.guest_name || '',
+                guest_email: expiredBooking.guest_email,
+                checkin_date: expiredBooking.checkin_date,
+                checkout_date: expiredBooking.checkout_date,
+                num_nights: expiredBooking.num_nights || 1,
+                total_price: expiredBooking.total_price || 0,
+                language: expiredBooking.language || 'pt',
+              });
+            } catch (emailErr) {
+              console.error('Failed to send abandonment email:', emailErr);
+            }
+          }
+
           // Cancel the pending booking since payment expired
           await supabase
             .from('bookings')

@@ -375,6 +375,15 @@
     "midStayCleaning": "Mid-stay cleaning",
     "longStayDiscount": "Long-stay discount"
   },
+  "host": {
+    "title": "Your host",
+    "name": "Bruno",
+    "since": "Host since 2024",
+    "responseTime": "Responds within 1 hour",
+    "bio": "Welcome to Villa Solria! I'm Bruno and I'd love to host you in this special corner of the Algarve. The villa has been carefully renovated to offer maximum comfort with stunning views of the Ria Formosa. I know the region well and I'm always available to share tips about beaches, restaurants and local activities.",
+    "contact": "Contact host",
+    "superhost": "Dedicated host"
+  },
   "bookingStatus": {
     "successTitle": "Booking Confirmed!",
     "successDesc": "Your payment has been processed successfully. Your reservation at Villa Solria is confirmed.",

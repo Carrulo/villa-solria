@@ -83,6 +83,16 @@ const SECTIONS: SettingSection[] = [
       { key: 'resend_api_key', label: 'Resend API Key', placeholder: 're_...' },
       { key: 'email_from_address', label: 'Email remetente', placeholder: 'Villa Solria <reservas@villasolria.com>' },
       { key: 'email_subject_confirmed', label: 'Assunto email confirmacao', placeholder: 'Reserva Confirmada - Villa Solria' },
+      {
+        key: 'email_abandonment_enabled',
+        label: 'Email de recuperacao de abandonos',
+        placeholder: '',
+        type: 'select',
+        options: [
+          { value: 'true', label: 'Ativado' },
+          { value: 'false', label: 'Desativado' },
+        ],
+      },
     ],
   },
   {

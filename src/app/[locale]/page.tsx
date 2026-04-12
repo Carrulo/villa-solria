@@ -1,15 +1,27 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
-import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent } from 'lucide-react';
+import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, User, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
 import { getPhotoUrl } from '@/lib/supabase';
 
-function JsonLd({ ratingValue, ratingCount }: { ratingValue: string; ratingCount: string }) {
-  const structuredData = {
+function JsonLd({
+  ratingValue,
+  ratingCount,
+  lowPrice,
+  highPrice,
+  seasonCount,
+}: {
+  ratingValue: string;
+  ratingCount: string;
+  lowPrice: string | null;
+  highPrice: string | null;
+  seasonCount: number;
+}) {
+  const structuredData: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'VacationRental',
     name: 'Villa Solria',
@@ -57,6 +69,17 @@ function JsonLd({ ratingValue, ratingCount }: { ratingValue: string; ratingCount
     },
   };
 
+  if (lowPrice && highPrice) {
+    structuredData.priceRange = `\u20ac${lowPrice} - \u20ac${highPrice}`;
+    structuredData.offers = {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'EUR',
+      lowPrice,
+      highPrice,
+      offerCount: String(seasonCount),
+    };
+  }
+
   return (
     <script
       type="application/ld+json"
@@ -71,6 +94,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const f = await getTranslations({ locale, namespace: 'features' });
   const h = await getTranslations({ locale, namespace: 'home' });
   const r = await getTranslations({ locale, namespace: 'reviews' });
+  const host = await getTranslations({ locale, namespace: 'host' });
 
   const features = [
     { icon: BedDouble, title: f('bedrooms'), desc: f('bedroomsDesc') },
@@ -134,6 +158,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       ? Math.round(Number(seasonsData[0].price_per_night))
       : null;
 
+  // Compute price range across all seasons for JSON-LD
+  const allPrices = (seasonsData || []).map((s: { price_per_night: number }) => Math.round(Number(s.price_per_night)));
+  const jsonLdLowPrice = allPrices.length > 0 ? String(Math.min(...allPrices)) : null;
+  const jsonLdHighPrice = allPrices.length > 0 ? String(Math.max(...allPrices)) : null;
+  const seasonCount = allPrices.length;
+
   // Fetch savings percentage from settings
   const { data: savingsRow } = await supabase
     .from('settings')
@@ -177,7 +207,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
-      <JsonLd ratingValue={jsonLdRatingValue} ratingCount={jsonLdRatingCount} />
+      <JsonLd ratingValue={jsonLdRatingValue} ratingCount={jsonLdRatingCount} lowPrice={jsonLdLowPrice} highPrice={jsonLdHighPrice} seasonCount={seasonCount} />
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
@@ -309,6 +339,49 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             >
               {h('viewGallery')} <ArrowRight size={16} />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Host */}
+      <section className="py-16 lg:py-24">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User size={40} className="text-primary" />
+                </div>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  {host('title')}
+                </h2>
+                <p className="text-lg font-semibold text-gray-800 mb-1">{host('name')}</p>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm text-gray-500 mb-4">
+                  <span className="inline-flex items-center gap-1">
+                    <Star size={14} className="text-accent fill-accent" />
+                    {host('since')}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Clock size={14} />
+                    {host('responseTime')}
+                  </span>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  {host('bio')}
+                </p>
+                <a
+                  href="https://wa.me/351912345678"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent-hover transition-all shadow-sm text-sm"
+                >
+                  <MessageCircle size={18} />
+                  {host('contact')}
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
