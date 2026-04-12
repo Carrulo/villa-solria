@@ -728,3 +728,169 @@ export async function sendAbandonmentEmail(
     return { success: false, error: message };
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Refund confirmation email                                          */
+/* ------------------------------------------------------------------ */
+
+export interface RefundEmailData {
+  reference: string;
+  guest_name: string;
+  guest_email: string;
+  checkin_date: string;
+  checkout_date: string;
+  total_price: number;
+  refund_amount: number;
+  language?: string;
+}
+
+const refundStrings: Record<SupportedLocale, {
+  subject: string;
+  greeting: (name: string) => string;
+  intro: string;
+  refLabel: string;
+  datesLabel: string;
+  refundedLabel: string;
+  note: string;
+  contactTitle: string;
+  contactText: string;
+}> = {
+  pt: {
+    subject: 'Reembolso Processado — Villa Solria',
+    greeting: (name) => `Olá ${name},`,
+    intro: 'O reembolso da sua reserva na Villa Solria foi processado com sucesso.',
+    refLabel: 'Referência',
+    datesLabel: 'Datas da reserva',
+    refundedLabel: 'Valor reembolsado',
+    note: 'O valor será creditado na sua conta dentro de 5 a 10 dias úteis, dependendo do seu banco.',
+    contactTitle: 'Questões?',
+    contactText: 'Estamos disponíveis para qualquer esclarecimento.',
+  },
+  en: {
+    subject: 'Refund Processed — Villa Solria',
+    greeting: (name) => `Hello ${name},`,
+    intro: 'The refund for your Villa Solria booking has been processed successfully.',
+    refLabel: 'Reference',
+    datesLabel: 'Booking dates',
+    refundedLabel: 'Amount refunded',
+    note: 'The amount will be credited to your account within 5 to 10 business days, depending on your bank.',
+    contactTitle: 'Questions?',
+    contactText: 'We are available for any questions.',
+  },
+  es: {
+    subject: 'Reembolso Procesado — Villa Solria',
+    greeting: (name) => `Hola ${name},`,
+    intro: 'El reembolso de su reserva en Villa Solria ha sido procesado correctamente.',
+    refLabel: 'Referencia',
+    datesLabel: 'Fechas de la reserva',
+    refundedLabel: 'Importe reembolsado',
+    note: 'El importe se acreditará en su cuenta en un plazo de 5 a 10 días hábiles, dependiendo de su banco.',
+    contactTitle: '¿Preguntas?',
+    contactText: 'Estamos disponibles para cualquier consulta.',
+  },
+  de: {
+    subject: 'Rückerstattung Verarbeitet — Villa Solria',
+    greeting: (name) => `Hallo ${name},`,
+    intro: 'Die Rückerstattung Ihrer Villa Solria-Buchung wurde erfolgreich verarbeitet.',
+    refLabel: 'Referenz',
+    datesLabel: 'Buchungsdaten',
+    refundedLabel: 'Erstatteter Betrag',
+    note: 'Der Betrag wird innerhalb von 5 bis 10 Werktagen Ihrem Konto gutgeschrieben, abhängig von Ihrer Bank.',
+    contactTitle: 'Fragen?',
+    contactText: 'Wir stehen Ihnen für Fragen zur Verfügung.',
+  },
+};
+
+export async function sendRefundEmail(
+  data: RefundEmailData,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerClient();
+
+  const { data: settingsRows } = await supabase
+    .from('settings')
+    .select('key, value')
+    .in('key', ['resend_api_key', 'email_from_address', 'email_contact_whatsapp', 'email_contact_email']);
+
+  const settings: Record<string, string> = {};
+  for (const row of settingsRows ?? []) {
+    settings[row.key] = typeof row.value === 'string' ? row.value : String(row.value ?? '');
+  }
+
+  const apiKey = settings['resend_api_key'];
+  if (!apiKey) return { success: false, error: 'Resend API key not configured' };
+
+  const fromAddress = settings['email_from_address'] || 'Villa Solria <reservas@villasolria.com>';
+  const rawLang = (data.language ?? 'pt').toLowerCase() as SupportedLocale;
+  const locale: SupportedLocale = rawLang in refundStrings ? rawLang : 'en';
+  const s = refundStrings[locale];
+
+  const whatsapp = (settings['email_contact_whatsapp'] || '351960486962').replace(/[^\d]/g, '');
+  const contactEmail = settings['email_contact_email'] || 'reservas@villasolria.com';
+
+  const checkinFormatted = formatDate(data.checkin_date, locale);
+  const checkoutFormatted = formatDate(data.checkout_date, locale);
+
+  const html = `<!DOCTYPE html>
+<html lang="${locale}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+        <tr><td style="background-color:#7C3AED;border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;">
+          <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;">Villa Solria</h1>
+          <p style="margin:8px 0 0;font-size:14px;color:#c4b5fd;">Cabanas de Tavira, Algarve</p>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:32px 40px 24px;text-align:center;">
+          <div style="width:64px;height:64px;border-radius:50%;background-color:#ede9fe;margin:0 auto 16px;line-height:64px;">
+            <span style="font-size:32px;">💸</span>
+          </div>
+          <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">${s.subject}</h2>
+          <p style="margin:0;font-size:15px;color:#6b7280;line-height:1.5;">${s.greeting(data.guest_name)}<br>${s.intro}</p>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:0 40px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+            <tr><td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:600;">${s.refLabel}</p>
+              <p style="margin:0;font-size:18px;font-weight:700;color:#7C3AED;">${data.reference}</p>
+            </td></tr>
+            <tr><td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:600;">${s.datesLabel}</p>
+              <p style="margin:0;font-size:15px;color:#111827;">${checkinFormatted} → ${checkoutFormatted}</p>
+            </td></tr>
+            <tr><td style="padding:16px 20px;background-color:#f9fafb;">
+              <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;font-weight:600;">${s.refundedLabel}</p>
+              <p style="margin:0;font-size:22px;font-weight:700;color:#7C3AED;">${data.refund_amount.toFixed(2)} €</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:0 40px 24px;">
+          <div style="background-color:#ede9fe;border-radius:12px;padding:16px 20px;">
+            <p style="margin:0;font-size:14px;color:#5b21b6;line-height:1.5;">ℹ️ ${s.note}</p>
+          </div>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;padding:0 40px 32px;border-radius:0 0 16px 16px;">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#111827;">${s.contactTitle}</p>
+          <p style="margin:0 0 12px;font-size:14px;color:#6b7280;">${s.contactText}</p>
+          <a href="https://wa.me/${whatsapp}" style="display:inline-block;padding:8px 16px;background-color:#25D366;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;margin-right:8px;">WhatsApp</a>
+          <a href="mailto:${contactEmail}" style="display:inline-block;padding:8px 16px;background-color:#e5e7eb;color:#374151;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">Email</a>
+        </td></tr>
+        <tr><td style="padding:24px 40px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#9ca3af;">Villa Solria — Cabanas de Tavira, Algarve</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  try {
+    const resend = new Resend(apiKey);
+    await resend.emails.send({ from: fromAddress, to: data.guest_email, subject: s.subject, html });
+    console.log(`[email] Refund email sent to ${data.guest_email}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[email] Failed to send refund email:`, message);
+    return { success: false, error: message };
+  }
+}

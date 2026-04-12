@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 import { sendTelegramNotification, buildRefundMessage } from '@/lib/telegram';
+import { sendRefundEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -87,21 +88,32 @@ export async function POST(request: NextRequest) {
         .in('date', dates);
     }
 
-    // Telegram notification
-    try {
-      await sendTelegramNotification(buildRefundMessage(
+    // Send refund email + Telegram in parallel
+    const ref = booking.reference || bookingId.slice(0, 8).toUpperCase();
+    const refundAmount = refund.amount / 100;
+
+    await Promise.allSettled([
+      sendRefundEmail({
+        reference: ref,
+        guest_name: booking.guest_name || '',
+        guest_email: booking.guest_email || '',
+        checkin_date: booking.checkin_date,
+        checkout_date: booking.checkout_date,
+        total_price: booking.total_price || 0,
+        refund_amount: refundAmount,
+        language: booking.language || 'pt',
+      }).catch((e) => console.error('Refund email failed:', e)),
+      sendTelegramNotification(buildRefundMessage(
         {
-          reference: booking.reference || bookingId.slice(0, 8).toUpperCase(),
+          reference: ref,
           guest_name: booking.guest_name || '',
           checkin_date: booking.checkin_date,
           checkout_date: booking.checkout_date,
           total_price: booking.total_price || 0,
         },
-        refund.amount / 100,
-      ));
-    } catch {
-      // non-critical
-    }
+        refundAmount,
+      )).catch(() => {}),
+    ]);
 
     return NextResponse.json({
       success: true,
