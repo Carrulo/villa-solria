@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '@/lib/stripe';
+import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 import Stripe from 'stripe';
 
@@ -16,13 +16,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
+    const stripeClient = await getStripeFromSettings();
+
+    // Read webhook secret from settings or env
+    const supabaseInit = createServerClient();
+    const { data: whData } = await supabaseInit
+      .from('settings')
+      .select('value')
+      .eq('key', 'stripe_webhook_secret')
+      .single();
+    const webhookSecret = (whData?.value as string) || process.env.STRIPE_WEBHOOK_SECRET!;
+
     let event: Stripe.Event;
     try {
-      event = getStripe().webhooks.constructEvent(
-        body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET!
-      );
+      event = stripeClient.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'unknown';
       console.error('Webhook signature verification failed:', message);

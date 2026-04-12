@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import {
   LayoutDashboard,
   CalendarDays,
+  CreditCard,
   DollarSign,
   Star,
   Settings,
@@ -20,6 +21,7 @@ import '../globals.css';
 const navItems = [
   { href: '/admin', label: 'Painel', icon: LayoutDashboard },
   { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
+  { href: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
   { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
   { href: '/admin/reviews', label: 'Avaliações', icon: Star },
   { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },

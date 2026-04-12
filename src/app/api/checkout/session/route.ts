@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripe } from '@/lib/stripe';
+import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
@@ -7,13 +7,7 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
-    if (!stripeKey) {
-      return NextResponse.json(
-        { error: 'Stripe not configured', hint: 'STRIPE_SECRET_KEY is missing' },
-        { status: 500 }
-      );
-    }
+    const stripe = await getStripeFromSettings();
 
     const body = await request.json();
     const { bookingId, locale = 'pt' } = body;
@@ -82,7 +76,7 @@ export async function POST(request: NextRequest) {
     // Build discounts (use Stripe coupon if applicable)
     const discounts: { coupon: string }[] = [];
     if (discount > 0) {
-      const coupon = await getStripe().coupons.create({
+      const coupon = await stripe.coupons.create({
         percent_off: discount,
         duration: 'once',
         name: `Desconto estadia longa (${discount}%)`,
@@ -94,7 +88,7 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin') || 'https://villa-solria.vercel.app';
 
     // Create Checkout Session
-    const session = await getStripe().checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       line_items: lineItems,
