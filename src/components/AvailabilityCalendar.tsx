@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getHolidays, localeToCountry } from '@/lib/holidays';
 
 export type DateRange = {
-  checkIn: string | null; // YYYY-MM-DD
+  checkIn: string | null;
   checkOut: string | null;
 };
 
@@ -74,7 +74,6 @@ function rangeContainsBlocked(
   checkOut: string,
   blockedSet: Set<string>
 ): boolean {
-  // Iterate from checkIn (inclusive) to checkOut (exclusive)
   const start = new Date(checkIn);
   const end = new Date(checkOut);
   const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -90,6 +89,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
   const locale = useLocale();
 
   const today = startOfDay(new Date());
+  const todayISO = toISO(today);
   const [viewMonth, setViewMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
   const [blocked, setBlocked] = useState<BlockedDate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,9 +107,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
         if (!active) return;
         if (Array.isArray(data)) setBlocked(data);
       })
-      .catch(() => {
-        /* swallow */
-      })
+      .catch(() => {})
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -135,18 +133,14 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
 
   const handleDayClick = (iso: string) => {
     if (!onChange) return;
-    // Starting fresh or resetting
     if (!checkIn || (checkIn && checkOut)) {
       onChange({ checkIn: iso, checkOut: null });
       return;
     }
-    // Have checkIn, picking checkOut
     if (iso <= checkIn) {
-      // Clicked earlier or same date → reset to new check-in
       onChange({ checkIn: iso, checkOut: null });
       return;
     }
-    // Validate range doesn't cross blocked
     if (rangeContainsBlocked(checkIn, iso, blockedSet)) {
       onChange({ checkIn: iso, checkOut: null });
       return;
@@ -158,7 +152,6 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
     const year = base.getFullYear();
     const month = base.getMonth();
     const total = daysInMonth(year, month);
-    // Week starts on Monday (ISO)
     const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
     const cells: (Date | null)[] = [];
     for (let i = 0; i < firstDow; i++) cells.push(null);
@@ -173,29 +166,35 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
     };
     const weekdays: string[] = [];
     for (let i = 1; i <= 7; i++) {
-      const d = new Date(2024, 0, i); // Mon Jan 1 2024
+      const d = new Date(2024, 0, i);
       weekdays.push(
-        d.toLocaleDateString(weekdayMap[locale] || 'en-GB', { weekday: 'narrow' })
+        d.toLocaleDateString(weekdayMap[locale] || 'en-GB', { weekday: 'short' }).slice(0, 3)
       );
     }
 
     return (
       <div className="flex-1 min-w-0">
-        <div className="text-center text-base lg:text-lg font-semibold text-gray-900 mb-4 capitalize">
+        {/* Month name */}
+        <div className="text-center text-base font-bold text-gray-900 mb-3 capitalize">
           {monthLabel(base, locale)}
         </div>
-        <div className="grid grid-cols-7 gap-1.5 text-xs text-gray-500 uppercase mb-2 font-medium">
+
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 mb-1">
           {weekdays.map((w, i) => (
-            <div key={i} className="text-center py-1.5">
+            <div key={i} className="text-center py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
               {w}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1.5">
+
+        {/* Day grid */}
+        <div className="grid grid-cols-7 gap-px bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
           {cells.map((d, i) => {
-            if (!d) return <div key={i} className="aspect-square" />;
+            if (!d) return <div key={i} className="aspect-square bg-gray-50/50" />;
             const iso = toISO(d);
             const isPast = d < today;
+            const isToday = iso === todayISO;
             const isBlocked = blockedSet.has(iso);
             const isCheckIn = iso === checkIn;
             const isCheckOut = iso === checkOut;
@@ -210,21 +209,29 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
 
             const disabled = isPast || isBlocked;
 
-            let classes =
-              'aspect-square flex flex-col items-center justify-center text-sm lg:text-base rounded-lg transition-colors select-none font-medium ';
+            // Build classes
+            let bgClass = 'bg-white';
+            let textClass = 'text-gray-800';
+            let extraClass = 'hover:bg-blue-50 cursor-pointer';
+
             if (disabled) {
               if (isBlocked) {
-                classes += 'bg-red-50 text-red-400 line-through cursor-not-allowed';
+                bgClass = 'bg-red-50/80';
+                textClass = 'text-red-300 line-through';
+                extraClass = 'cursor-not-allowed';
               } else {
-                classes += 'text-gray-300 cursor-not-allowed';
+                bgClass = 'bg-gray-50/50';
+                textClass = 'text-gray-300';
+                extraClass = 'cursor-not-allowed';
               }
             } else if (isCheckIn || isCheckOut) {
-              classes += 'bg-accent text-white font-semibold cursor-pointer shadow-md';
+              bgClass = 'bg-accent';
+              textClass = 'text-white font-bold';
+              extraClass = 'cursor-pointer shadow-inner';
             } else if (inRange) {
-              classes += 'bg-accent/15 text-gray-900 cursor-pointer';
-            } else {
-              classes +=
-                'bg-white text-gray-700 hover:bg-accent/10 cursor-pointer border border-transparent';
+              bgClass = 'bg-accent/10';
+              textClass = 'text-accent font-semibold';
+              extraClass = 'cursor-pointer';
             }
 
             return (
@@ -235,14 +242,16 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
                 onClick={() => handleDayClick(iso)}
                 onMouseEnter={() => setHoverDate(iso)}
                 onMouseLeave={() => setHoverDate(null)}
-                className={classes}
+                className={`aspect-square flex flex-col items-center justify-center relative transition-all ${bgClass} ${textClass} ${extraClass}`}
                 title={holidayName ?? undefined}
               >
-                <span>{d.getDate()}</span>
-                {holidayName ? (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-0.5" />
-                ) : (
-                  <span className="w-1.5 h-1.5 mt-0.5" />
+                {/* Today indicator */}
+                {isToday && !isCheckIn && !isCheckOut && (
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />
+                )}
+                <span className="text-sm lg:text-base">{d.getDate()}</span>
+                {holidayName && (
+                  <span className="absolute bottom-1 w-1 h-1 rounded-full bg-amber-400" />
                 )}
               </button>
             );
@@ -257,34 +266,32 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
 
   return (
     <div>
-      <div className="text-center mb-5">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5">{t('title')}</h3>
-        <p className="text-xs sm:text-sm text-gray-500">{t('subtitle')}</p>
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-2 mb-4 max-w-sm mx-auto">
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">{t('checkIn')}</div>
-          <div className="text-sm font-semibold text-gray-900 mt-0.5">
+      {/* Check-in / Check-out summary */}
+      <div className="grid grid-cols-2 gap-3 mb-5 max-w-md mx-auto">
+        <div className={`rounded-xl p-3.5 text-center border-2 transition-colors ${checkIn ? 'border-accent bg-accent/5' : 'border-gray-200 bg-gray-50'}`}>
+          <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{t('checkIn')}</div>
+          <div className={`text-base font-bold mt-0.5 ${checkIn ? 'text-accent' : 'text-gray-300'}`}>
             {checkIn ? formatDateDisplay(checkIn, locale) : '—'}
           </div>
         </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">{t('checkOut')}</div>
-          <div className="text-sm font-semibold text-gray-900 mt-0.5">
+        <div className={`rounded-xl p-3.5 text-center border-2 transition-colors ${checkOut ? 'border-accent bg-accent/5' : 'border-gray-200 bg-gray-50'}`}>
+          <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{t('checkOut')}</div>
+          <div className={`text-base font-bold mt-0.5 ${checkOut ? 'text-accent' : 'text-gray-300'}`}>
             {checkOut ? formatDateDisplay(checkOut, locale) : '—'}
           </div>
         </div>
       </div>
+
       {nights > 0 && (
-        <div className="text-center text-sm text-gray-700 font-medium mb-4">
-          {nights} {t('nights')}
+        <div className="text-center mb-5">
+          <span className="inline-flex items-center gap-1.5 bg-accent/10 text-accent font-bold text-sm px-4 py-1.5 rounded-full">
+            {nights} {t('nights')}
+          </span>
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={() => {
@@ -292,29 +299,29 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
             const earliest = new Date(today.getFullYear(), today.getMonth(), 1);
             if (prev >= earliest) setViewMonth(prev);
           }}
-          className="p-2.5 rounded-lg hover:bg-gray-100 text-gray-600 border border-gray-200"
+          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
           aria-label={t('previousMonth')}
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={22} />
         </button>
         <button
           type="button"
           onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-          className="p-2.5 rounded-lg hover:bg-gray-100 text-gray-600 border border-gray-200"
+          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
           aria-label={t('nextMonth')}
         >
-          <ChevronRight size={20} />
+          <ChevronRight size={22} />
         </button>
       </div>
 
       {/* Calendars */}
-      <div className="flex flex-col md:flex-row gap-4 lg:gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         {renderMonth(viewMonth)}
         <div className="hidden md:block">{renderMonth(nextMonth)}</div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center flex-wrap gap-4 mt-6 text-xs text-gray-500">
+      <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-5 text-xs text-gray-400">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-white border border-gray-200" />
           <span>{t('selectDates')}</span>
@@ -324,17 +331,17 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
           <span>{t('checkIn')} / {t('checkOut')}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-red-50 border border-red-100" />
+          <span className="w-3 h-3 rounded bg-red-50 border border-red-200" />
           <span>{t('unavailable')}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+          <span className="w-2 h-2 rounded-full bg-amber-400" />
           <span>{t('holiday')}</span>
         </div>
       </div>
 
       {loading && (
-        <div className="text-center text-xs text-gray-400 mt-3">…</div>
+        <div className="text-center text-xs text-gray-300 mt-3 animate-pulse">…</div>
       )}
     </div>
   );
