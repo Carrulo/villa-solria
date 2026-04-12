@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
+import { sendTelegramNotification, buildRefundMessage } from '@/lib/telegram';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -84,6 +85,22 @@ export async function POST(request: NextRequest) {
         .delete()
         .eq('source', 'website')
         .in('date', dates);
+    }
+
+    // Telegram notification
+    try {
+      await sendTelegramNotification(buildRefundMessage(
+        {
+          reference: booking.reference || bookingId.slice(0, 8).toUpperCase(),
+          guest_name: booking.guest_name || '',
+          checkin_date: booking.checkin_date,
+          checkout_date: booking.checkout_date,
+          total_price: booking.total_price || 0,
+        },
+        refund.amount / 100,
+      ));
+    } catch {
+      // non-critical
     }
 
     return NextResponse.json({

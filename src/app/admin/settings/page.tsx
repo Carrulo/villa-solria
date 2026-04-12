@@ -108,6 +108,13 @@ const SECTIONS: SettingSection[] = [
       { key: 'email_contact_email', label: 'Email contacto', placeholder: 'reservas@villasolria.com' },
     ],
   },
+  {
+    title: 'Notificações Telegram',
+    fields: [
+      { key: 'telegram_bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...' },
+      { key: 'telegram_chat_id', label: 'Chat ID', placeholder: '5441465964' },
+    ],
+  },
 ];
 
 // All known keys from all sections

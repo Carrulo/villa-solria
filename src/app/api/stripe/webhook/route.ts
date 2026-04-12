@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 import { generateBookingReference, sendBookingConfirmationEmail, sendAbandonmentEmail } from '@/lib/email';
+import { sendTelegramNotification, buildNewBookingMessage, buildCancellationMessage } from '@/lib/telegram';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -151,6 +152,23 @@ export async function POST(request: NextRequest) {
             } catch (emailErr) {
               console.error('Failed to send confirmation email:', emailErr);
             }
+
+            // Send Telegram notification
+            try {
+              await sendTelegramNotification(buildNewBookingMessage({
+                reference,
+                guest_name: booking.guest_name || '',
+                guest_email: booking.guest_email || '',
+                guest_phone: booking.guest_phone,
+                checkin_date: booking.checkin_date,
+                checkout_date: booking.checkout_date,
+                num_nights: booking.num_nights || 1,
+                num_guests: booking.num_guests || 1,
+                total_price: booking.total_price || 0,
+              }));
+            } catch {
+              console.error('Failed to send Telegram notification');
+            }
           }
         }
         break;
@@ -194,6 +212,21 @@ export async function POST(request: NextRequest) {
             .eq('status', 'pending');
 
           console.log(`Booking ${bookingId} cancelled (session expired)`);
+
+          // Telegram notification
+          if (expiredBooking) {
+            try {
+              await sendTelegramNotification(buildCancellationMessage({
+                reference: expiredBooking.reference || bookingId.slice(0, 8).toUpperCase(),
+                guest_name: expiredBooking.guest_name || '',
+                checkin_date: expiredBooking.checkin_date,
+                checkout_date: expiredBooking.checkout_date,
+                total_price: expiredBooking.total_price || 0,
+              }));
+            } catch {
+              // non-critical
+            }
+          }
         }
         break;
       }
