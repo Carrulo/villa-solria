@@ -78,11 +78,24 @@ const SECTIONS: SettingSection[] = [
     ],
   },
   {
-    title: 'Email',
+    title: 'Email — Configuracao',
     fields: [
       { key: 'resend_api_key', label: 'Resend API Key', placeholder: 're_...' },
       { key: 'email_from_address', label: 'Email remetente', placeholder: 'Villa Solria <reservas@villasolria.com>' },
       { key: 'email_subject_confirmed', label: 'Assunto email confirmacao', placeholder: 'Reserva Confirmada - Villa Solria' },
+    ],
+  },
+  {
+    title: 'Email — Conteudo do Template',
+    fields: [
+      { key: 'email_welcome_message', label: 'Mensagem de boas-vindas', placeholder: 'A sua reserva foi confirmada com sucesso! Aqui estao os detalhes:' },
+      { key: 'email_smartlock_note', label: 'Nota sobre fechadura/chave', placeholder: 'Recebera o codigo da fechadura inteligente por email antes da sua chegada.' },
+      { key: 'email_cancellation_text', label: 'Texto politica cancelamento', placeholder: 'Cancelamento gratuito ate 14 dias antes do check-in.' },
+      { key: 'email_checkin_time', label: 'Hora check-in', placeholder: 'A partir das 16:00' },
+      { key: 'email_checkout_time', label: 'Hora check-out', placeholder: 'Ate as 11:00' },
+      { key: 'email_property_address', label: 'Morada (linha 1)', placeholder: 'Rua do Junco 3.5B' },
+      { key: 'email_contact_whatsapp', label: 'WhatsApp contacto', placeholder: '+351 960 486 962' },
+      { key: 'email_contact_email', label: 'Email contacto', placeholder: 'reservas@villasolria.com' },
     ],
   },
 ];

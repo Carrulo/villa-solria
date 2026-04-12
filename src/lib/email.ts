@@ -175,8 +175,10 @@ function formatDate(iso: string, locale: SupportedLocale): string {
 function buildConfirmationEmailHtml(
   data: BookingEmailData,
   locale: SupportedLocale,
+  sOverride?: typeof emailStrings[SupportedLocale],
+  settings?: Record<string, string>,
 ): string {
-  const s = emailStrings[locale];
+  const s = sOverride || emailStrings[locale];
   const checkinFormatted = formatDate(data.checkin_date, locale);
   const checkoutFormatted = formatDate(data.checkout_date, locale);
 
@@ -285,7 +287,7 @@ function buildConfirmationEmailHtml(
                 <tr>
                   <td style="padding:16px 20px;">
                     <p style="margin:0 0 4px;font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">${s.addressLabel}</p>
-                    <p style="margin:0;font-size:15px;color:#111827;font-weight:500;">Rua do Junco 3.5B</p>
+                    <p style="margin:0;font-size:15px;color:#111827;font-weight:500;">${settings?.['email_property_address'] || 'Rua do Junco 3.5B'}</p>
                     <p style="margin:2px 0 0;font-size:14px;color:#6b7280;">8800-591 Cabanas de Tavira, Portugal</p>
                     <p style="margin:8px 0 0;">
                       <a href="https://maps.google.com/?q=37.1255,-7.5927" target="_blank" style="font-size:13px;color:#2563EB;text-decoration:none;font-weight:500;">Google Maps &rarr;</a>
@@ -320,10 +322,10 @@ function buildConfirmationEmailHtml(
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="padding-right:12px;">
-                    <a href="https://wa.me/351912345678" target="_blank" style="display:inline-block;padding:8px 16px;background-color:#25D366;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">WhatsApp</a>
+                    <a href="https://wa.me/${(settings?.['email_contact_whatsapp'] || '351912345678').replace(/[^\d]/g, '')}" target="_blank" style="display:inline-block;padding:8px 16px;background-color:#25D366;color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">WhatsApp</a>
                   </td>
                   <td>
-                    <a href="mailto:reservas@villasolria.com" style="display:inline-block;padding:8px 16px;background-color:#e5e7eb;color:#374151;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">Email</a>
+                    <a href="mailto:${settings?.['email_contact_email'] || 'reservas@villasolria.com'}" style="display:inline-block;padding:8px 16px;background-color:#e5e7eb;color:#374151;text-decoration:none;border-radius:8px;font-size:13px;font-weight:600;">Email</a>
                   </td>
                 </tr>
               </table>
@@ -372,11 +374,23 @@ export async function sendBookingConfirmationEmail(
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createServerClient();
 
-  // Read email settings from settings table
+  // Read ALL email settings from settings table
   const { data: settingsRows } = await supabase
     .from('settings')
     .select('key, value')
-    .in('key', ['resend_api_key', 'email_from_address', 'email_subject_confirmed']);
+    .in('key', [
+      'resend_api_key',
+      'email_from_address',
+      'email_subject_confirmed',
+      'email_welcome_message',
+      'email_smartlock_note',
+      'email_cancellation_text',
+      'email_checkin_time',
+      'email_checkout_time',
+      'email_contact_whatsapp',
+      'email_contact_email',
+      'email_property_address',
+    ]);
 
   const settings: Record<string, string> = {};
   for (const row of settingsRows ?? []) {
@@ -393,10 +407,28 @@ export async function sendBookingConfirmationEmail(
   const rawLang = (data.language ?? 'pt').toLowerCase() as SupportedLocale;
   const locale: SupportedLocale = rawLang in emailStrings ? rawLang : 'en';
 
+  // Override locale strings with admin-configured values (if set)
+  const s = { ...emailStrings[locale] };
+  if (settings['email_welcome_message']) {
+    s.intro = settings['email_welcome_message'];
+  }
+  if (settings['email_smartlock_note']) {
+    s.lockCode = settings['email_smartlock_note'];
+  }
+  if (settings['email_cancellation_text']) {
+    s.cancellationText = settings['email_cancellation_text'];
+  }
+  if (settings['email_checkin_time']) {
+    s.checkinTime = settings['email_checkin_time'];
+  }
+  if (settings['email_checkout_time']) {
+    s.checkoutTime = settings['email_checkout_time'];
+  }
+
   const defaultSubject = emailStrings[locale].subject;
   const subject = settings['email_subject_confirmed'] || defaultSubject;
 
-  const html = buildConfirmationEmailHtml(data, locale);
+  const html = buildConfirmationEmailHtml(data, locale, s, settings);
 
   try {
     const resend = new Resend(apiKey);
