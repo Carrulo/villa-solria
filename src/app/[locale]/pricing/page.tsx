@@ -101,10 +101,14 @@ export default async function PricingPage({ params }: Props) {
   const rawSeasons: Season[] = dbSeasons || [];
   const hasSeasons = rawSeasons.length > 0;
 
-  // Starting-from price (minimum)
-  const startingPrice = hasSeasons
-    ? Math.min(...rawSeasons.map((s) => s.price_per_night))
-    : 90;
+  // Current season price (active season) — fallback to lowest
+  const today = new Date().toISOString().slice(0, 10);
+  const activeSeason = rawSeasons.find(
+    (s) => today >= s.start_date && today <= s.end_date
+  );
+  const currentPrice = activeSeason?.price_per_night
+    ?? (hasSeasons ? Math.min(...rawSeasons.map((s) => s.price_per_night)) : 90);
+  const startingPrice = currentPrice;
 
   // Build display set: group seasons by unique price (not index), show up to 3 tiers
   type DisplaySeason = {

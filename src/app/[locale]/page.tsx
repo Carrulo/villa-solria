@@ -118,16 +118,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     jsonLdRatingCount = String(reviewCount);
   }
 
-  // Fetch lowest price from seasons
+  // Fetch current season price (active today) — fallback to lowest
   const { data: seasonsData } = await supabase
     .from('seasons')
-    .select('price_per_night')
-    .order('price_per_night', { ascending: true })
-    .limit(1);
+    .select('price_per_night, start_date, end_date')
+    .order('price_per_night', { ascending: true });
 
-  const lowestPrice = seasonsData?.[0]?.price_per_night
-    ? Math.round(Number(seasonsData[0].price_per_night))
-    : null;
+  const today = new Date().toISOString().slice(0, 10);
+  const activeSeason = (seasonsData || []).find(
+    (s: { start_date: string; end_date: string }) => today >= s.start_date && today <= s.end_date
+  );
+  const lowestPrice = activeSeason?.price_per_night
+    ? Math.round(Number(activeSeason.price_per_night))
+    : seasonsData?.[0]?.price_per_night
+      ? Math.round(Number(seasonsData[0].price_per_night))
+      : null;
 
   // Fetch savings percentage from settings
   const { data: savingsRow } = await supabase
