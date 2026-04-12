@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine base URL
-    const origin = request.headers.get('origin') || 'https://villa-solria.vercel.app';
+    const origin = request.headers.get('origin') || 'https://villasolria.com';
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({

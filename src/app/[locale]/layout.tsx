@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: Props) {
   const t = await getTranslations({ locale, namespace: 'meta' });
 
   return {
-    metadataBase: new URL('https://villa-solria.vercel.app'),
+    metadataBase: new URL('https://villasolria.com'),
     title: t('title'),
     description: t('description'),
     openGraph: {

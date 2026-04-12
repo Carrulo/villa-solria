@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin', '/api', '/booking'],
       },
     ],
-    sitemap: 'https://villa-solria.vercel.app/sitemap.xml',
+    sitemap: 'https://villasolria.com/sitemap.xml',
   };
 }

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://villa-solria.vercel.app';
+const BASE_URL = 'https://villasolria.com';
 
 const locales = ['pt', 'en', 'es', 'de'] as const;
 const defaultLocale = 'pt';

@@ -596,10 +596,10 @@ export default function PaymentsPage() {
               Webhook Endpoint
             </h2>
             <div className="bg-[#1a1a2e] rounded-xl px-4 py-3 font-mono text-sm text-gray-300 flex items-center justify-between">
-              <span>https://villa-solria.vercel.app/api/stripe/webhook</span>
+              <span>https://villasolria.com/api/stripe/webhook</span>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText('https://villa-solria.vercel.app/api/stripe/webhook');
+                  navigator.clipboard.writeText('https://villasolria.com/api/stripe/webhook');
                   showToast('URL copiado', 'success');
                 }}
                 className="text-xs text-blue-400 hover:text-blue-300 font-sans ml-3"

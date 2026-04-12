@@ -623,7 +623,7 @@ function buildAbandonmentEmailHtml(
           <tr>
             <td style="background-color:#ffffff;padding:0 40px 32px;text-align:center;">
               <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">${s.ctaMessage}</p>
-              <a href="https://villa-solria.vercel.app/pricing" target="_blank" style="display:inline-block;padding:14px 40px;background-color:#D97706;color:#ffffff;text-decoration:none;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:0.3px;">${s.ctaButton}</a>
+              <a href="https://villasolria.com/pricing" target="_blank" style="display:inline-block;padding:14px 40px;background-color:#D97706;color:#ffffff;text-decoration:none;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:0.3px;">${s.ctaButton}</a>
             </td>
           </tr>
 
