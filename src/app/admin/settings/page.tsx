@@ -65,6 +65,12 @@ const SECTIONS: SettingSection[] = [
     ],
   },
   {
+    title: 'Marketing',
+    fields: [
+      { key: 'direct_booking_savings_percent', label: 'Poupanca vs OTAs (%)', placeholder: '20' },
+    ],
+  },
+  {
     title: 'Tracking',
     fields: [
       { key: 'ga4_measurement_id', label: 'Google Analytics 4 (Measurement ID)', placeholder: 'G-XXXXXXXXXX' },

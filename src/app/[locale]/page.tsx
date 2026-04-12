@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
-import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight } from 'lucide-react';
+import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
@@ -101,6 +101,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
         ];
 
+  // Fetch lowest price from seasons
+  const { data: seasonsData } = await supabase
+    .from('seasons')
+    .select('price_per_night')
+    .order('price_per_night', { ascending: true })
+    .limit(1);
+
+  const lowestPrice = seasonsData?.[0]?.price_per_night
+    ? Math.round(Number(seasonsData[0].price_per_night))
+    : null;
+
+  // Fetch savings percentage from settings
+  const { data: savingsRow } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'direct_booking_savings_percent')
+    .limit(1);
+
+  const savingsPercent = savingsRow?.[0]?.value
+    ? String(savingsRow[0].value)
+    : '20';
+
   // Fetch photos from Supabase
   const { data: dbPhotos } = await supabase
     .from('photos')
@@ -160,9 +182,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <p className="text-xl sm:text-2xl text-sand font-light mb-4">
             {t('tagline')}
           </p>
-          <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto mb-10">
+          <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto mb-6">
             {t('subtitle')}
           </p>
+
+          {lowestPrice && (
+            <p className="text-2xl sm:text-3xl font-bold text-sand mb-8">
+              {t('fromPrice', { price: String(lowestPrice) })}
+            </p>
+          )}
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -182,6 +210,29 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+      </section>
+
+      {/* Direct Booking Savings Banner */}
+      <section className="py-8 lg:py-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-6 sm:p-8 text-center shadow-lg">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9zdmc+')] opacity-50" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <BadgePercent size={24} className="text-white" />
+                <span className="text-sm font-medium text-white/80 uppercase tracking-wider">
+                  {t('saveCompare')}
+                </span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                {t('saveBanner', { percent: savingsPercent })}
+              </h3>
+              <p className="text-white/80 text-base sm:text-lg max-w-xl mx-auto">
+                {t('saveBannerDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features */}

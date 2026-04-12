@@ -35,7 +35,11 @@
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "guests": "Guests",
-    "search": "Search"
+    "search": "Search",
+    "fromPrice": "From {price}\u20ac/night",
+    "saveBanner": "Book direct and save up to {percent}%",
+    "saveBannerDesc": "No service fees \u2014 pay less than on Airbnb or Booking.com",
+    "saveCompare": "vs third-party platforms"
   },
   "features": {
     "title": "Why Villa Solria?",
