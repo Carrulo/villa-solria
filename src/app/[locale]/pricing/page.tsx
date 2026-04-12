@@ -318,9 +318,9 @@ export default async function PricingPage({ params }: Props) {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10">
           {/* ─── LEFT COLUMN (scrollable content) ──────────────── */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             {/* ─── PROPERTY FEATURES ───────────────────────────── */}
             <section className="mb-16">
               <div className="text-center mb-8">
@@ -354,7 +354,7 @@ export default async function PricingPage({ params }: Props) {
                 </h2>
                 <p className="text-gray-500 text-base lg:text-lg">{t('pricingTableSubtitle')}</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-5 lg:gap-4 items-stretch">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-5 lg:gap-4 items-stretch">
                 {displaySeasons.map((season) => {
                   const style = tierStyles[season.tier];
                   const isActive = season.isActive;
@@ -423,7 +423,7 @@ export default async function PricingPage({ params }: Props) {
                 </h2>
                 <p className="text-gray-500 text-base lg:text-lg">{t('discountsSubtitle')}</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-5">
                 {longStayDiscounts.map((d) => {
                   const Icon = d.icon;
                   return (
@@ -492,7 +492,7 @@ export default async function PricingPage({ params }: Props) {
           </div>
 
           {/* ─── RIGHT COLUMN (sticky booking sidebar — desktop only) */}
-          <div className="hidden lg:block lg:col-span-1">
+          <div className="hidden lg:block lg:col-span-2">
             <div
               id="booking-form-section"
               className="sticky top-24 scroll-mt-24 overflow-y-auto"

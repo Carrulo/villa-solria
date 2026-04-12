@@ -235,10 +235,10 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
   const nights = checkIn && checkOut ? diffNights(checkIn, checkOut) : 0;
 
   return (
-    <div className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-100 shadow-sm">
       <div className="text-center mb-6">
-        <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{t('title')}</h3>
-        <p className="text-base text-gray-500">{t('subtitle')}</p>
+        <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{t('title')}</h3>
+        <p className="text-sm sm:text-base text-gray-500">{t('subtitle')}</p>
       </div>
 
       {/* Summary */}
@@ -289,7 +289,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
       {/* Calendars */}
       <div className="flex flex-col md:flex-row gap-8 lg:gap-12 max-w-4xl mx-auto">
         {renderMonth(viewMonth)}
-        <div className="hidden md:block">{renderMonth(nextMonth)}</div>
+        <div className="hidden md:block lg:hidden xl:block">{renderMonth(nextMonth)}</div>
       </div>
 
       {/* Legend */}
