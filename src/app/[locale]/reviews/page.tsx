@@ -32,7 +32,7 @@ export default async function ReviewsPage({ params }: Props) {
     dbReviews && dbReviews.length > 0
       ? (dbReviews as Review[]).map((r) => ({
           name: r.guest_name,
-          country: r.country,
+          country: r.guest_country,
           text: r.comment,
           rating: String(r.rating),
           source: r.source,

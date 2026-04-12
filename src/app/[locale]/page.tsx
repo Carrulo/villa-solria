@@ -116,7 +116,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     dbReviews && dbReviews.length > 0
       ? (dbReviews as Review[]).map((rv) => ({
           name: rv.guest_name,
-          country: rv.country,
+          country: rv.guest_country,
           text: rv.comment,
           rating: String(rv.rating),
           source: rv.source,

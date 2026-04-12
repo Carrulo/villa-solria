@@ -7,7 +7,7 @@ import { Plus, Trash2, Eye, EyeOff, X, Save, Star } from 'lucide-react';
 
 const emptyReview = {
   guest_name: '',
-  country: '',
+  guest_country: '',
   rating: 10,
   comment: '',
   source: 'Booking.com',
@@ -124,7 +124,7 @@ export default function AdminReviewsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-white font-medium">{review.guest_name}</h3>
-                    <span className="text-xs text-gray-400">{review.country}</span>
+                    <span className="text-xs text-gray-400">{review.guest_country}</span>
                     <div className="flex items-center gap-1 bg-yellow-500/10 px-2 py-0.5 rounded-full">
                       <Star size={12} className="text-yellow-400 fill-yellow-400" />
                       <span className="text-xs text-yellow-400 font-medium">{review.rating}</span>
@@ -194,8 +194,8 @@ export default function AdminReviewsPage() {
                   <label className="block text-sm font-medium text-gray-300 mb-1">País</label>
                   <input
                     type="text"
-                    value={form.country}
-                    onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    value={form.guest_country}
+                    onChange={(e) => setForm({ ...form, guest_country: e.target.value })}
                     placeholder="Reino Unido"
                     className="w-full px-4 py-2.5 bg-[#1a1a2e] border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 outline-none"
                   />

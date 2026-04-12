@@ -26,7 +26,7 @@ export interface Season {
 export interface Review {
   id: string;
   guest_name: string;
-  country: string;
+  guest_country: string;
   rating: number;
   comment: string;
   source: string;
