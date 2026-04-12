@@ -7,6 +7,7 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 30; // Allow up to 30s for email + telegram
 
 // Stripe sends raw body — we must NOT parse it as JSON
 export async function POST(request: NextRequest) {
@@ -113,62 +114,40 @@ export async function POST(request: NextRequest) {
               await supabase.from('blocked_dates').insert(dates);
             }
 
-            // Get Stripe receipt URL if available
-            let stripeReceiptUrl: string | null = null;
-            try {
-              const paymentIntentId =
-                typeof session.payment_intent === 'string'
-                  ? session.payment_intent
-                  : session.payment_intent?.id;
-              if (paymentIntentId) {
-                const pi = await stripeClient.paymentIntents.retrieve(paymentIntentId);
-                const chargeId =
-                  typeof pi.latest_charge === 'string'
-                    ? pi.latest_charge
-                    : pi.latest_charge?.id;
-                if (chargeId) {
-                  const charge = await stripeClient.charges.retrieve(chargeId as string);
-                  stripeReceiptUrl = charge.receipt_url || null;
-                }
-              }
-            } catch {
-              // Non-critical — continue without receipt URL
-            }
+            // Send email + Telegram in PARALLEL to avoid timeout
+            const emailData = {
+              reference,
+              guest_name: booking.guest_name || '',
+              guest_email: booking.guest_email || '',
+              checkin_date: booking.checkin_date,
+              checkout_date: booking.checkout_date,
+              num_nights: booking.num_nights || 1,
+              num_guests: booking.num_guests || 1,
+              total_price: booking.total_price || 0,
+              language: booking.language || 'pt',
+              stripe_receipt_url: null as string | null,
+            };
 
-            // Send confirmation email (non-blocking — booking is confirmed regardless)
-            try {
-              await sendBookingConfirmationEmail({
-                reference,
-                guest_name: booking.guest_name || '',
-                guest_email: booking.guest_email || '',
-                checkin_date: booking.checkin_date,
-                checkout_date: booking.checkout_date,
-                num_nights: booking.num_nights || 1,
-                num_guests: booking.num_guests || 1,
-                total_price: booking.total_price || 0,
-                language: booking.language || 'pt',
-                stripe_receipt_url: stripeReceiptUrl,
-              });
-            } catch (emailErr) {
-              console.error('Failed to send confirmation email:', emailErr);
-            }
+            const telegramData = {
+              reference,
+              guest_name: booking.guest_name || '',
+              guest_email: booking.guest_email || '',
+              guest_phone: booking.guest_phone,
+              checkin_date: booking.checkin_date,
+              checkout_date: booking.checkout_date,
+              num_nights: booking.num_nights || 1,
+              num_guests: booking.num_guests || 1,
+              total_price: booking.total_price || 0,
+            };
 
-            // Send Telegram notification
-            try {
-              await sendTelegramNotification(buildNewBookingMessage({
-                reference,
-                guest_name: booking.guest_name || '',
-                guest_email: booking.guest_email || '',
-                guest_phone: booking.guest_phone,
-                checkin_date: booking.checkin_date,
-                checkout_date: booking.checkout_date,
-                num_nights: booking.num_nights || 1,
-                num_guests: booking.num_guests || 1,
-                total_price: booking.total_price || 0,
-              }));
-            } catch {
-              console.error('Failed to send Telegram notification');
-            }
+            await Promise.allSettled([
+              sendBookingConfirmationEmail(emailData).catch((e) =>
+                console.error('Email failed:', e)
+              ),
+              sendTelegramNotification(buildNewBookingMessage(telegramData)).catch((e) =>
+                console.error('Telegram failed:', e)
+              ),
+            ]);
           }
         }
         break;
