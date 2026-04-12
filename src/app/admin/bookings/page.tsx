@@ -255,25 +255,23 @@ export default function AdminBookingsPage() {
                           </>
                         )}
                         {booking.status === 'confirmed' && (
-                          <>
-                            <button
-                              onClick={() => updateStatus(booking.id, 'cancelled')}
-                              className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                              title="Cancelar"
-                            >
-                              <XCircle size={16} />
-                            </button>
-                            {booking.payment_status === 'paid' && (
-                              <button
-                                onClick={() => handleRefund(booking.id)}
-                                disabled={refunding === booking.id}
-                                className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-xs font-medium disabled:opacity-50"
-                                title="Cancelar e Reembolsar via Stripe"
-                              >
-                                {refunding === booking.id ? '...' : 'Refund'}
-                              </button>
-                            )}
-                          </>
+                          <button
+                            onClick={() => updateStatus(booking.id, 'cancelled')}
+                            className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                            title="Cancelar"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        )}
+                        {booking.payment_status === 'paid' && (
+                          <button
+                            onClick={() => handleRefund(booking.id)}
+                            disabled={refunding === booking.id}
+                            className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-xs font-medium disabled:opacity-50"
+                            title="Reembolsar via Stripe"
+                          >
+                            {refunding === booking.id ? '...' : 'Refund'}
+                          </button>
                         )}
                         {booking.payment_status === 'refunded' && (
                           <span className="text-xs text-gray-500">Reembolsado</span>
