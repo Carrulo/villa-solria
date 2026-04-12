@@ -239,19 +239,11 @@ export default async function PricingPage({ params }: Props) {
       </section>
 
       {/* ---- SECTION 2: BOOKING FORM (full width, the star) ---- */}
-      <section id="booking-form-section" className="scroll-mt-20 bg-gray-50/50 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-              {t('availabilityTitle')}
-            </h2>
-            <p className="text-gray-500 text-sm">{t('availabilitySubtitle')}</p>
-          </div>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-8 lg:p-10">
-            <BookingForm />
-          </div>
-          <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4 max-w-2xl mx-auto">
-            <Info size={16} className="text-accent shrink-0 mt-0.5" />
+      <section id="booking-form-section" className="scroll-mt-20 border-b border-gray-100">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 lg:py-10">
+          <BookingForm />
+          <div className="mt-3 flex items-start gap-2 bg-accent/5 rounded-lg p-3">
+            <Info size={14} className="text-accent shrink-0 mt-0.5" />
             <p className="text-xs text-gray-500">{t('availabilityNote')}</p>
           </div>
         </div>

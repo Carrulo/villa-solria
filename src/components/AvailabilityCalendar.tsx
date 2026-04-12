@@ -256,35 +256,35 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
   const nights = checkIn && checkOut ? diffNights(checkIn, checkOut) : 0;
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-100 shadow-sm">
-      <div className="text-center mb-6">
-        <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{t('title')}</h3>
-        <p className="text-sm sm:text-base text-gray-500">{t('subtitle')}</p>
+    <div>
+      <div className="text-center mb-5">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-0.5">{t('title')}</h3>
+        <p className="text-xs sm:text-sm text-gray-500">{t('subtitle')}</p>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 mb-5 max-w-md mx-auto">
-        <div className="bg-gray-50 rounded-xl p-4 text-center">
-          <div className="text-xs uppercase tracking-wide text-gray-500 font-medium">{t('checkIn')}</div>
-          <div className="text-base font-semibold text-gray-900 mt-1">
+      <div className="grid grid-cols-2 gap-2 mb-4 max-w-sm mx-auto">
+        <div className="bg-gray-50 rounded-lg p-3 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">{t('checkIn')}</div>
+          <div className="text-sm font-semibold text-gray-900 mt-0.5">
             {checkIn ? formatDateDisplay(checkIn, locale) : '—'}
           </div>
         </div>
-        <div className="bg-gray-50 rounded-xl p-4 text-center">
-          <div className="text-xs uppercase tracking-wide text-gray-500 font-medium">{t('checkOut')}</div>
-          <div className="text-base font-semibold text-gray-900 mt-1">
+        <div className="bg-gray-50 rounded-lg p-3 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">{t('checkOut')}</div>
+          <div className="text-sm font-semibold text-gray-900 mt-0.5">
             {checkOut ? formatDateDisplay(checkOut, locale) : '—'}
           </div>
         </div>
       </div>
       {nights > 0 && (
-        <div className="text-center text-base text-gray-700 font-medium mb-5">
+        <div className="text-center text-sm text-gray-700 font-medium mb-4">
           {nights} {t('nights')}
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={() => {
@@ -308,7 +308,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
       </div>
 
       {/* Calendars */}
-      <div className="flex flex-col md:flex-row gap-6 lg:gap-8 max-w-4xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-4 lg:gap-6">
         {renderMonth(viewMonth)}
         <div className="hidden md:block">{renderMonth(nextMonth)}</div>
       </div>
