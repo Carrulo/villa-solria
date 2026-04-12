@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Photo, PhotoCategory } from '@/lib/supabase';
-import { PHOTO_CATEGORIES, getPhotoUrl } from '@/lib/supabase';
+import { PHOTO_CATEGORIES, PHOTO_CATEGORY_LABELS, getPhotoUrl } from '@/lib/supabase';
 import {
   Upload, Trash2, Eye, EyeOff, Star, StarOff, Check, X,
   ImageIcon, Download, ChevronDown, Loader2, AlertCircle,
@@ -414,7 +414,7 @@ export default function AdminPhotosPage() {
             <option value="">Alterar categoria...</option>
             {PHOTO_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {PHOTO_CATEGORY_LABELS[c]}
               </option>
             ))}
           </select>
@@ -652,7 +652,7 @@ function PhotoCard({
           >
             {PHOTO_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {PHOTO_CATEGORY_LABELS[c]}
               </option>
             ))}
           </select>

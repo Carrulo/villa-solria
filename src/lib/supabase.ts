@@ -81,6 +81,17 @@ export const PHOTO_CATEGORIES = [
 
 export type PhotoCategory = typeof PHOTO_CATEGORIES[number];
 
+export const PHOTO_CATEGORY_LABELS: Record<PhotoCategory, string> = {
+  hero: 'Capa Principal',
+  bedroom: 'Quartos',
+  living: 'Sala / Refeições',
+  kitchen: 'Cozinha',
+  bathroom: 'Casa de Banho',
+  outdoor: 'Exterior / Terraço',
+  view: 'Vistas',
+  general: 'Geral',
+};
+
 export function getPhotoUrl(photo: Photo): string {
   if (photo.source === 'storage') {
     return `https://esqkhahcifdtthnvlyos.supabase.co/storage/v1/object/public/property-photos/${photo.storage_path}`;
