@@ -310,13 +310,17 @@ export default async function PricingPage({ params }: Props) {
               </span>
             </div>
 
+            {/* Mobile: scroll to form. Desktop: hidden (sidebar already visible) */}
             <a
               href="#booking-form-section"
-              className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-8 py-4 text-base shadow-lg shadow-accent/25 transition-all hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-accent/30"
+              className="lg:hidden inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-8 py-4 text-base shadow-lg shadow-accent/25 transition-all hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-accent/30"
             >
               <Calendar size={18} />
               {t('checkAvailability')}
             </a>
+            <p className="hidden lg:block text-sm text-gray-500 mt-2">
+              ← {t('availabilitySubtitle')}
+            </p>
           </div>
         </div>
       </section>
