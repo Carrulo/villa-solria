@@ -1,5 +1,48 @@
 import { Star, Quote } from 'lucide-react';
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  portugal: '\u{1F1F5}\u{1F1F9}',
+  alemanha: '\u{1F1E9}\u{1F1EA}',
+  germany: '\u{1F1E9}\u{1F1EA}',
+  deutschland: '\u{1F1E9}\u{1F1EA}',
+  eua: '\u{1F1FA}\u{1F1F8}',
+  usa: '\u{1F1FA}\u{1F1F8}',
+  'united states': '\u{1F1FA}\u{1F1F8}',
+  'estados unidos': '\u{1F1FA}\u{1F1F8}',
+  'españa': '\u{1F1EA}\u{1F1F8}',
+  spain: '\u{1F1EA}\u{1F1F8}',
+  spanien: '\u{1F1EA}\u{1F1F8}',
+  espanha: '\u{1F1EA}\u{1F1F8}',
+  france: '\u{1F1EB}\u{1F1F7}',
+  'frança': '\u{1F1EB}\u{1F1F7}',
+  uk: '\u{1F1EC}\u{1F1E7}',
+  england: '\u{1F1EC}\u{1F1E7}',
+  'united kingdom': '\u{1F1EC}\u{1F1E7}',
+  'reino unido': '\u{1F1EC}\u{1F1E7}',
+  inglaterra: '\u{1F1EC}\u{1F1E7}',
+  netherlands: '\u{1F1F3}\u{1F1F1}',
+  holanda: '\u{1F1F3}\u{1F1F1}',
+  'países baixos': '\u{1F1F3}\u{1F1F1}',
+  'paises baixos': '\u{1F1F3}\u{1F1F1}',
+  belgium: '\u{1F1E7}\u{1F1EA}',
+  'bélgica': '\u{1F1E7}\u{1F1EA}',
+  belgica: '\u{1F1E7}\u{1F1EA}',
+  italy: '\u{1F1EE}\u{1F1F9}',
+  'itália': '\u{1F1EE}\u{1F1F9}',
+  italia: '\u{1F1EE}\u{1F1F9}',
+  brasil: '\u{1F1E7}\u{1F1F7}',
+  brazil: '\u{1F1E7}\u{1F1F7}',
+  ireland: '\u{1F1EE}\u{1F1EA}',
+  irlanda: '\u{1F1EE}\u{1F1EA}',
+  switzerland: '\u{1F1E8}\u{1F1ED}',
+  'suíça': '\u{1F1E8}\u{1F1ED}',
+  suica: '\u{1F1E8}\u{1F1ED}',
+};
+
+function getCountryFlag(country: string): string {
+  return COUNTRY_FLAGS[country.toLowerCase().trim()] || '\u{1F30D}';
+}
+
 interface ReviewCardProps {
   name: string;
   country: string;
@@ -30,7 +73,7 @@ export default function ReviewCard({ name, country, text, rating, source }: Revi
         </div>
         <div>
           <p className="font-medium text-gray-900 text-sm">{name}</p>
-          <p className="text-gray-400 text-xs">{country}</p>
+          <p className="text-gray-400 text-xs">{getCountryFlag(country)} {country}</p>
         </div>
       </div>
     </div>

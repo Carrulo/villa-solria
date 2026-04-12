@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import { sendTelegramNotification } from '@/lib/telegram';
 
 export async function POST(request: Request) {
   try {
@@ -62,14 +63,28 @@ export async function POST(request: Request) {
 
     // Also insert into contact_messages table (graceful degradation)
     try {
-      await supabase.from('contact_messages').insert({
+      // Try with status column first
+      const { error: insertError } = await supabase.from('contact_messages').insert({
         name: name.trim(),
         email: email.toLowerCase().trim(),
         phone: phone?.trim() || null,
         message: message.trim(),
         email_sent: emailSent,
+        status: 'new',
         created_at: new Date().toISOString(),
       });
+
+      // If status column doesn't exist, retry without it
+      if (insertError && insertError.message?.includes('status')) {
+        await supabase.from('contact_messages').insert({
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          phone: phone?.trim() || null,
+          message: message.trim(),
+          email_sent: emailSent,
+          created_at: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       // 42P01 = table doesn't exist yet — that's fine
       const pgError = err as { code?: string };
@@ -77,6 +92,16 @@ export async function POST(request: Request) {
         console.error('Contact message insert error:', err);
       }
     }
+
+    // Send Telegram notification (fire-and-forget)
+    const preview = message.trim().length > 100
+      ? message.trim().slice(0, 100) + '...'
+      : message.trim();
+    sendTelegramNotification(
+      `\u{1F4E9} *Nova mensagem de contacto*\n\n\u{1F464} ${name}\n\u{1F4E7} ${email}\n\n${preview}`,
+    ).catch(() => {
+      // Telegram is best-effort, never block the response
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {
