@@ -389,7 +389,7 @@ function buildConfirmationEmailHtml(
                     <p style="margin:0;font-size:15px;color:#111827;font-weight:500;">${settings?.['email_property_address'] || 'Rua do Junco 3.5B'}</p>
                     <p style="margin:2px 0 0;font-size:14px;color:#6b7280;">8800-591 Cabanas de Tavira, Portugal</p>
                     <p style="margin:8px 0 0;">
-                      <a href="https://maps.google.com/?q=37.1255,-7.5927" target="_blank" style="font-size:13px;color:#2563EB;text-decoration:none;font-weight:500;">Google Maps &rarr;</a>
+                      <a href="https://maps.google.com/?q=37.1317,-7.6100" target="_blank" style="font-size:13px;color:#2563EB;text-decoration:none;font-weight:500;">Google Maps &rarr;</a>
                     </p>
                   </td>
                 </tr>

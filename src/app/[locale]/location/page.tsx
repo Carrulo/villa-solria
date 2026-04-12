@@ -57,7 +57,7 @@ export default function LocationPage() {
           <div className="lg:col-span-2">
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-100">
               <iframe
-                src="https://maps.google.com/maps?q=Rua%20do%20Junco%203.5B%2C%208800-591%20Tavira%2C%20Portugal&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                src="https://maps.google.com/maps?q=37.1317,-7.6100&t=&z=17&ie=UTF8&iwloc=&output=embed"
                 width="100%"
                 height="400"
                 style={{ border: 0 }}
