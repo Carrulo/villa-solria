@@ -4,34 +4,38 @@ import { useTranslations } from 'next-intl';
 import { useState, useCallback, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import type { Photo } from '@/lib/supabase';
-import { getPhotoUrl } from '@/lib/supabase';
+import type { Photo, PhotoCategory } from '@/lib/supabase';
+import { getPhotoUrl, PHOTO_CATEGORIES } from '@/lib/supabase';
 
-const fallbackPhotos = [
-  { src: '/images/property/hero-ria-formosa.jpg', key: 'riaView', fallbackLabel: 'Vista Ria Formosa' },
-  { src: '/images/property/aerial-view.jpg', key: 'aerialView', fallbackLabel: 'Vista Aerea' },
-  { src: '/images/property/living-room.jpg', key: 'livingRoom', fallbackLabel: 'Sala de Estar' },
-  { src: '/images/property/kitchen.jpg', key: 'kitchen', fallbackLabel: 'Cozinha' },
-  { src: '/images/property/bedroom-master.jpg', key: 'masterBedroom', fallbackLabel: 'Suite Principal' },
-  { src: '/images/property/bedroom-double.jpg', key: 'secondBedroom', fallbackLabel: 'Quarto Duplo' },
-  { src: '/images/property/bedroom-twin.jpg', key: 'thirdBedroom', fallbackLabel: 'Quarto Twin' },
-  { src: '/images/property/bathroom.jpg', key: 'bathroom', fallbackLabel: 'Casa de Banho' },
-  { src: '/images/property/terrace-view.jpg', key: 'terrace', fallbackLabel: 'Terraco' },
-  { src: '/images/property/rooftop.jpg', key: 'rooftop', fallbackLabel: 'Rooftop' },
-  { src: '/images/property/garden.jpg', key: 'garden', fallbackLabel: 'Jardim' },
-  { src: '/images/property/exterior.jpg', key: 'exterior', fallbackLabel: 'Exterior' },
-  { src: '/images/property/balcony.jpg', key: 'balcony', fallbackLabel: 'Varanda' },
-  { src: '/images/property/dining-area.jpg', key: 'diningArea', fallbackLabel: 'Zona de Refeicoes' },
-  { src: '/images/property/sunset-view.jpg', key: 'sunsetView', fallbackLabel: 'Por do Sol' },
-  { src: '/images/property/beach-view.jpg', key: 'beachView', fallbackLabel: 'Vista Praia' },
-  { src: '/images/property/entrance.jpg', key: 'entrance', fallbackLabel: 'Entrada' },
+const fallbackPhotos: { src: string; key: string; fallbackLabel: string; category: PhotoCategory }[] = [
+  { src: '/images/property/hero-ria-formosa.jpg', key: 'riaView', fallbackLabel: 'Vista Ria Formosa', category: 'view' },
+  { src: '/images/property/aerial-view.jpg', key: 'aerialView', fallbackLabel: 'Vista Aerea', category: 'view' },
+  { src: '/images/property/living-room.jpg', key: 'livingRoom', fallbackLabel: 'Sala de Estar', category: 'living' },
+  { src: '/images/property/kitchen.jpg', key: 'kitchen', fallbackLabel: 'Cozinha', category: 'kitchen' },
+  { src: '/images/property/bedroom-master.jpg', key: 'masterBedroom', fallbackLabel: 'Suite Principal', category: 'bedroom' },
+  { src: '/images/property/bedroom-double.jpg', key: 'secondBedroom', fallbackLabel: 'Quarto Duplo', category: 'bedroom' },
+  { src: '/images/property/bedroom-twin.jpg', key: 'thirdBedroom', fallbackLabel: 'Quarto Twin', category: 'bedroom' },
+  { src: '/images/property/bathroom.jpg', key: 'bathroom', fallbackLabel: 'Casa de Banho', category: 'bathroom' },
+  { src: '/images/property/terrace-view.jpg', key: 'terrace', fallbackLabel: 'Terraco', category: 'outdoor' },
+  { src: '/images/property/rooftop.jpg', key: 'rooftop', fallbackLabel: 'Rooftop', category: 'outdoor' },
+  { src: '/images/property/garden.jpg', key: 'garden', fallbackLabel: 'Jardim', category: 'outdoor' },
+  { src: '/images/property/exterior.jpg', key: 'exterior', fallbackLabel: 'Exterior', category: 'outdoor' },
+  { src: '/images/property/balcony.jpg', key: 'balcony', fallbackLabel: 'Varanda', category: 'outdoor' },
+  { src: '/images/property/dining-area.jpg', key: 'diningArea', fallbackLabel: 'Zona de Refeicoes', category: 'living' },
+  { src: '/images/property/sunset-view.jpg', key: 'sunsetView', fallbackLabel: 'Por do Sol', category: 'view' },
+  { src: '/images/property/beach-view.jpg', key: 'beachView', fallbackLabel: 'Vista Praia', category: 'view' },
+  { src: '/images/property/entrance.jpg', key: 'entrance', fallbackLabel: 'Entrada', category: 'outdoor' },
 ];
+
+const FILTER_CATEGORIES = ['all', 'bedroom', 'living', 'outdoor', 'view'] as const;
+type FilterCategory = typeof FILTER_CATEGORIES[number];
 
 export default function GalleryPage() {
   const t = useTranslations('gallery');
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [galleryPhotos, setGalleryPhotos] = useState(
-    fallbackPhotos.map((p) => ({ src: p.src, label: p.fallbackLabel, key: p.key }))
+    fallbackPhotos.map((p) => ({ src: p.src, label: p.fallbackLabel, key: p.key, category: p.category as string }))
   );
 
   useEffect(() => {
@@ -44,6 +48,7 @@ export default function GalleryPage() {
               src: getPhotoUrl(p),
               label: p.alt_text || p.filename,
               key: p.id,
+              category: p.category,
             }))
           );
         }
@@ -52,6 +57,10 @@ export default function GalleryPage() {
         // Keep fallback photos
       });
   }, []);
+
+  const filteredPhotos = activeFilter === 'all'
+    ? galleryPhotos
+    : galleryPhotos.filter((p) => p.category === activeFilter);
 
   const getLabel = (photo: { label: string; key: string }) => {
     // Try translation by key, fall back to label from DB/fallback
@@ -63,18 +72,12 @@ export default function GalleryPage() {
   };
 
   const goNext = useCallback(() => {
-    setGalleryPhotos((current) => {
-      setLightbox((prev) => (prev !== null ? (prev + 1) % current.length : null));
-      return current;
-    });
-  }, []);
+    setLightbox((prev) => (prev !== null ? (prev + 1) % filteredPhotos.length : null));
+  }, [filteredPhotos.length]);
 
   const goPrev = useCallback(() => {
-    setGalleryPhotos((current) => {
-      setLightbox((prev) => (prev !== null ? (prev - 1 + current.length) % current.length : null));
-      return current;
-    });
-  }, []);
+    setLightbox((prev) => (prev !== null ? (prev - 1 + filteredPhotos.length) % filteredPhotos.length : null));
+  }, [filteredPhotos.length]);
 
   return (
     <div className="py-12 lg:py-20">
@@ -84,8 +87,25 @@ export default function GalleryPage() {
           <p className="text-lg text-gray-500">{t('subtitle')}</p>
         </div>
 
+        {/* Filter tabs */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          {FILTER_CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => { setActiveFilter(cat); setLightbox(null); }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                activeFilter === cat
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {t(`filter_${cat}`)}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
-          {galleryPhotos.map((photo, i) => (
+          {filteredPhotos.map((photo, i) => (
             <div
               key={photo.key}
               className={`relative overflow-hidden rounded-2xl cursor-pointer group ${
@@ -142,17 +162,17 @@ export default function GalleryPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <Image
-              src={galleryPhotos[lightbox].src}
-              alt={getLabel(galleryPhotos[lightbox])}
+              src={filteredPhotos[lightbox].src}
+              alt={getLabel(filteredPhotos[lightbox])}
               fill
               className="object-contain"
               sizes="90vw"
               priority
-              unoptimized={galleryPhotos[lightbox].src.startsWith('http')}
+              unoptimized={filteredPhotos[lightbox].src.startsWith('http')}
             />
           </div>
           <p className="absolute bottom-8 text-white/70 text-sm font-medium">
-            {getLabel(galleryPhotos[lightbox])} ({lightbox + 1}/{galleryPhotos.length})
+            {getLabel(filteredPhotos[lightbox])} ({lightbox + 1}/{filteredPhotos.length})
           </p>
         </div>
       )}

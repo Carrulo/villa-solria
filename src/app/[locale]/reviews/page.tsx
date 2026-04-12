@@ -28,13 +28,14 @@ export default async function ReviewsPage({ params }: Props) {
     .order('created_at', { ascending: false });
 
   // Use DB reviews if available, otherwise fallback to translated hardcoded ones
-  const reviews: { name: string; country: string; text: string; rating: string }[] =
+  const reviews: { name: string; country: string; text: string; rating: string; source?: string }[] =
     dbReviews && dbReviews.length > 0
       ? (dbReviews as Review[]).map((r) => ({
           name: r.guest_name,
           country: r.country,
           text: r.comment,
           rating: String(r.rating),
+          source: r.source,
         }))
       : [
           { name: t('review1Name'), country: t('review1Country'), text: t('review1Text'), rating: t('review1Rating') },

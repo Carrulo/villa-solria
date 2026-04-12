@@ -24,7 +24,7 @@ const SECTIONS: SettingSection[] = [
     fields: [
       { key: 'contact_email', label: 'Email de Contacto', placeholder: 'email@exemplo.com' },
       { key: 'contact_phone', label: 'Telefone', placeholder: '+351 912 345 678' },
-      { key: 'whatsapp_number', label: 'Numero WhatsApp', placeholder: '351912345678' },
+      { key: 'whatsapp_number', label: 'N\u00famero WhatsApp', placeholder: '351912345678' },
       { key: 'address_line1', label: 'Morada (Linha 1)', placeholder: 'Rua do Junco 3.5B' },
       { key: 'address_line2', label: 'Morada (Linha 2)', placeholder: '8800-591 Tavira, Portugal' },
     ],
@@ -33,8 +33,8 @@ const SECTIONS: SettingSection[] = [
     title: 'Propriedade',
     fields: [
       { key: 'property_name', label: 'Nome da Propriedade', placeholder: 'Villa Solria' },
-      { key: 'al_license', label: 'Licenca AL', placeholder: '120108/AL' },
-      { key: 'max_guests', label: 'Maximo de Hospedes', placeholder: '6' },
+      { key: 'al_license', label: 'Licen\u00e7a AL', placeholder: '120108/AL' },
+      { key: 'max_guests', label: 'M\u00e1ximo de H\u00f3spedes', placeholder: '6' },
       { key: 'check_in_time', label: 'Hora de Check-in', placeholder: '16:00' },
       { key: 'check_out_time', label: 'Hora de Check-out', placeholder: '10:30' },
     ],
@@ -49,7 +49,7 @@ const SECTIONS: SettingSection[] = [
         type: 'select',
         options: [
           { value: 'inquiry', label: 'Consulta' },
-          { value: 'instant', label: 'Instantaneo' },
+          { value: 'instant', label: 'Instant\u00e2neo' },
         ],
       },
       { key: 'ical_airbnb', label: 'URL iCal Airbnb', placeholder: 'https://...' },
@@ -59,15 +59,15 @@ const SECTIONS: SettingSection[] = [
   {
     title: 'Legal',
     fields: [
-      { key: 'complaints_url', label: 'Link Livro de Reclamacoes', placeholder: 'https://www.livroreclamacoes.pt' },
-      { key: 'privacy_url', label: 'Link Politica de Privacidade', placeholder: 'https://...' },
-      { key: 'terms_url', label: 'Link Termos e Condicoes', placeholder: 'https://...' },
+      { key: 'complaints_url', label: 'Link Livro de Reclama\u00e7\u00f5es', placeholder: 'https://www.livroreclamacoes.pt' },
+      { key: 'privacy_url', label: 'Link Pol\u00edtica de Privacidade', placeholder: 'https://...' },
+      { key: 'terms_url', label: 'Link Termos e Condi\u00e7\u00f5es', placeholder: 'https://...' },
     ],
   },
   {
     title: 'Marketing',
     fields: [
-      { key: 'direct_booking_savings_percent', label: 'Poupanca vs OTAs (%)', placeholder: '20' },
+      { key: 'direct_booking_savings_percent', label: 'Poupan\u00e7a vs OTAs (%)', placeholder: '20' },
     ],
   },
   {
@@ -78,14 +78,14 @@ const SECTIONS: SettingSection[] = [
     ],
   },
   {
-    title: 'Email — Configuracao',
+    title: 'Email — Configura\u00e7\u00e3o',
     fields: [
       { key: 'resend_api_key', label: 'Resend API Key', placeholder: 're_...' },
       { key: 'email_from_address', label: 'Email remetente', placeholder: 'Villa Solria <reservas@villasolria.com>' },
-      { key: 'email_subject_confirmed', label: 'Assunto email confirmacao', placeholder: 'Reserva Confirmada - Villa Solria' },
+      { key: 'email_subject_confirmed', label: 'Assunto email confirma\u00e7\u00e3o', placeholder: 'Reserva Confirmada - Villa Solria' },
       {
         key: 'email_abandonment_enabled',
-        label: 'Email de recuperacao de abandonos',
+        label: 'Email de recupera\u00e7\u00e3o de abandonos',
         placeholder: '',
         type: 'select',
         options: [
@@ -96,13 +96,13 @@ const SECTIONS: SettingSection[] = [
     ],
   },
   {
-    title: 'Email — Conteudo do Template',
+    title: 'Email — Conte\u00fado do Template',
     fields: [
-      { key: 'email_welcome_message', label: 'Mensagem de boas-vindas', placeholder: 'A sua reserva foi confirmada com sucesso! Aqui estao os detalhes:' },
-      { key: 'email_smartlock_note', label: 'Nota sobre fechadura/chave', placeholder: 'Recebera o codigo da fechadura inteligente por email antes da sua chegada.' },
-      { key: 'email_cancellation_text', label: 'Texto politica cancelamento', placeholder: 'Cancelamento gratuito ate 14 dias antes do check-in.' },
+      { key: 'email_welcome_message', label: 'Mensagem de boas-vindas', placeholder: 'A sua reserva foi confirmada com sucesso! Aqui est\u00e3o os detalhes:' },
+      { key: 'email_smartlock_note', label: 'Nota sobre fechadura/chave', placeholder: 'Receber\u00e1 o c\u00f3digo da fechadura inteligente por email antes da sua chegada.' },
+      { key: 'email_cancellation_text', label: 'Texto pol\u00edtica cancelamento', placeholder: 'Cancelamento gratuito at\u00e9 14 dias antes do check-in.' },
       { key: 'email_checkin_time', label: 'Hora check-in', placeholder: 'A partir das 16:00' },
-      { key: 'email_checkout_time', label: 'Hora check-out', placeholder: 'Ate as 11:00' },
+      { key: 'email_checkout_time', label: 'Hora check-out', placeholder: 'At\u00e9 \u00e0s 11:00' },
       { key: 'email_property_address', label: 'Morada (linha 1)', placeholder: 'Rua do Junco 3.5B' },
       { key: 'email_contact_whatsapp', label: 'WhatsApp contacto', placeholder: '+351 960 486 962' },
       { key: 'email_contact_email', label: 'Email contacto', placeholder: 'reservas@villasolria.com' },

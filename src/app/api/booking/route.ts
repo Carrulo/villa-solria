@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Get applicable season price
     const { data: seasons } = await supabase
       .from('seasons')
-      .select('price_per_night, cleaning_fee, weekly_discount')
+      .select('price_per_night, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount')
       .lte('start_date', checkIn)
       .gte('end_date', checkOut)
       .limit(1);
@@ -44,17 +44,30 @@ export async function POST(request: NextRequest) {
     let pricePerNight = 100;
     let cleaningFee = 50;
     let weeklyDiscount = 0;
+    let biweeklyDiscount = 0;
+    let monthlyDiscount = 0;
 
     if (seasons && seasons.length > 0) {
       pricePerNight = seasons[0].price_per_night;
       cleaningFee = seasons[0].cleaning_fee || 50;
       weeklyDiscount = seasons[0].weekly_discount || 0;
+      biweeklyDiscount = seasons[0].biweekly_discount || 0;
+      monthlyDiscount = seasons[0].monthly_discount || 0;
     }
 
-    let totalPrice = pricePerNight * nights + cleaningFee;
-    if (nights >= 7 && weeklyDiscount > 0) {
-      totalPrice = totalPrice * (1 - weeklyDiscount / 100);
+    // Long-stay discount tier (matches frontend BookingForm logic)
+    let discountPercent = 0;
+    if (nights >= 28) {
+      discountPercent = monthlyDiscount;
+    } else if (nights >= 14) {
+      discountPercent = biweeklyDiscount;
+    } else if (nights >= 7) {
+      discountPercent = weeklyDiscount;
     }
+
+    const subTotal = pricePerNight * nights;
+    const discountAmount = Math.round(subTotal * (discountPercent / 100));
+    let totalPrice = subTotal - discountAmount + cleaningFee;
 
     const { data, error } = await supabase
       .from('bookings')

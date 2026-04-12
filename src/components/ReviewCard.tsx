@@ -5,16 +5,22 @@ interface ReviewCardProps {
   country: string;
   text: string;
   rating: string;
+  source?: string;
 }
 
-export default function ReviewCard({ name, country, text, rating }: ReviewCardProps) {
+export default function ReviewCard({ name, country, text, rating, source }: ReviewCardProps) {
   return (
     <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <Quote size={24} className="text-sand/40" />
-        <div className="flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-full">
-          <Star size={14} className="text-accent fill-accent" />
-          <span className="text-sm font-semibold text-accent">{rating}</span>
+        <div className="flex items-center gap-2">
+          {source && (
+            <span className="text-xs text-gray-400 font-medium">{source}</span>
+          )}
+          <div className="flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-full">
+            <Star size={14} className="text-accent fill-accent" />
+            <span className="text-sm font-semibold text-accent">{rating}</span>
+          </div>
         </div>
       </div>
       <p className="text-gray-600 leading-relaxed mb-6 text-sm lg:text-base">{text}</p>

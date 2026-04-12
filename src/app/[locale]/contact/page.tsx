@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Mail, Phone, MapPin, MessageCircle, Clock } from 'lucide-react';
-import BookingForm from '@/components/BookingForm';
+import ContactForm from '@/components/ContactForm';
 import { createServerClient } from '@/lib/supabase-server';
 
 type Props = {
@@ -126,7 +126,7 @@ export default async function ContactPage({ params }: Props) {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-6">{t('formTitle')}</h2>
-              <BookingForm />
+              <ContactForm />
             </div>
           </div>
         </div>

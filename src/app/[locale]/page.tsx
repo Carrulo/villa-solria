@@ -26,7 +26,7 @@ function JsonLd({
     '@type': 'VacationRental',
     name: 'Villa Solria',
     description: 'Duplex villa with 3 bedrooms and Ria Formosa views in Cabanas de Tavira, Algarve',
-    url: 'https://villasolria.com',
+    url: 'https://villa-solria.vercel.app',
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'Rua do Junco 3.5B',
@@ -61,7 +61,7 @@ function JsonLd({
     checkinTime: '16:00',
     checkoutTime: '10:30',
     petsAllowed: false,
-    tourBookingPage: 'https://villasolria.com/pricing',
+    tourBookingPage: 'https://villa-solria.vercel.app/pricing',
     identifier: {
       '@type': 'PropertyValue',
       name: 'AL License',
@@ -119,6 +119,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           country: rv.country,
           text: rv.comment,
           rating: String(rv.rating),
+          source: rv.source,
         }))
       : [
           { name: r('review1Name'), country: r('review1Country'), text: r('review1Text'), rating: r('review1Rating') },

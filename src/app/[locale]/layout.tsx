@@ -112,6 +112,10 @@ export async function generateMetadata({ params }: Props) {
         'x-default': '/',
       },
     },
+    icons: {
+      icon: '/favicon.svg',
+      apple: '/favicon.svg',
+    },
   };
 }
 
