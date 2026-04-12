@@ -46,28 +46,3 @@ html {
   animation: slide-up 0.3s ease-out;
 }
 
-/* Force single-month calendar in the sticky sidebar */
-[data-sidebar-calendar="true"] .hidden.md\:block {
-  display: none !important;
-}
-
-/* Compact calendar styling in sidebar */
-[data-sidebar-calendar="true"] .max-w-md,
-[data-sidebar-calendar="true"] .max-w-2xl,
-[data-sidebar-calendar="true"] .max-w-4xl {
-  max-width: 100% !important;
-}
-
-[data-sidebar-calendar="true"] .text-2xl {
-  font-size: 1.125rem !important;
-  line-height: 1.75rem !important;
-}
-
-[data-sidebar-calendar="true"] .lg\:text-3xl {
-  font-size: 1.125rem !important;
-  line-height: 1.75rem !important;
-}
-
-[data-sidebar-calendar="true"] .lg\:p-8 {
-  padding: 1rem !important;
-}
