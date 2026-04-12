@@ -498,7 +498,7 @@ export default async function PricingPage({ params }: Props) {
               className="sticky top-24 scroll-mt-24 overflow-y-auto"
               style={{ maxHeight: 'calc(100vh - 6rem)' }}
             >
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 xl:p-6 [&_.hidden.md\\:block]:!hidden">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 xl:p-6" data-sidebar-calendar="true">
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
                   {t('availabilityTitle')}
                 </h3>
