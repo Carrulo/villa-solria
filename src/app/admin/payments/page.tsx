@@ -93,7 +93,7 @@ export default function PaymentsPage() {
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeWebhook, setStripeWebhook] = useState('');
   const [depositPercent, setDepositPercent] = useState('100');
-  const [sessionTimeout, setSessionTimeout] = useState('30');
+  const [sessionTimeout, setSessionTimeout] = useState('1440');
 
   // Edit state — when user wants to edit a masked key
   const [editingSecret, setEditingSecret] = useState(false);
@@ -127,7 +127,7 @@ export default function PaymentsPage() {
       setStripeSecret(s.stripe_secret_key || '');
       setStripeWebhook(s.stripe_webhook_secret || '');
       setDepositPercent(s.deposit_percent || '100');
-      setSessionTimeout(s.session_timeout_min || '30');
+      setSessionTimeout(s.session_timeout_min || '1440');
 
       // Load stats
       try {
@@ -559,8 +559,10 @@ export default function PaymentsPage() {
                   >
                     <option value="15">15 minutos</option>
                     <option value="30">30 minutos</option>
-                    <option value="60">60 minutos</option>
+                    <option value="60">1 hora</option>
                     <option value="120">2 horas</option>
+                    <option value="720">12 horas</option>
+                    <option value="1440">24 horas (recomendado para Multibanco)</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
                     Se o hóspede não pagar neste tempo, a reserva é cancelada automaticamente

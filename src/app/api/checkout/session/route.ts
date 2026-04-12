@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     );
     const sessionTimeoutMin = Math.max(
       5,
-      Number(settingsMap['session_timeout_min']) || 30,
+      Number(settingsMap['session_timeout_min']) || 1440,
     );
 
     // If deposit_percent is 0, payments are in inquiry mode
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
 
     // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'multibanco', 'mbway'],
+      payment_method_types: ['card', 'multibanco', 'mb_way'],
       mode: 'payment',
       line_items: lineItems,
       ...(discounts.length > 0 ? { discounts } : {}),

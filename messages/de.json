@@ -254,6 +254,8 @@
     "cribRequested": "Babybett angefordert",
     "cancellationTitle": "Kostenlose Stornierung bis 14 Tage vor Check-in",
     "cancellationDesc": "Nach dieser Frist gelten die in den AGB beschriebenen Bedingungen. Diese Buchung ist eine Anfrage; sie wird erst nach unserer Antwort bestätigt.",
+    "paymentDeadlineTitle": "Sie haben 24 Stunden Zeit, die Zahlung abzuschließen",
+    "paymentDeadlineDesc": "Zahlen Sie per Karte, MB WAY oder Multibanco-Referenz. Wird die Zahlung nicht innerhalb von 24h abgeschlossen, wird die Buchung automatisch storniert.",
     "acceptTerms": "Ich habe die <terms>Allgemeinen Geschäftsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und akzeptiere sie. Ich stimme der Verarbeitung meiner Daten zur Bearbeitung dieser Buchungsanfrage zu."
   },
   "faq": {

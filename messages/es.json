@@ -254,6 +254,8 @@
     "cribRequested": "Cuna solicitada",
     "cancellationTitle": "Cancelación gratuita hasta 14 días antes del check-in",
     "cancellationDesc": "Después de este plazo, se aplican las condiciones descritas en los Términos y Condiciones. Esta reserva es una solicitud; solo se confirma tras nuestra respuesta.",
+    "paymentDeadlineTitle": "Tiene 24 horas para completar el pago",
+    "paymentDeadlineDesc": "Pague con tarjeta, MB WAY o referencia Multibanco. Si el pago no se completa en 24h, la reserva se cancelará automáticamente.",
     "acceptTerms": "He leído y acepto los <terms>Términos y Condiciones</terms> y la <privacy>Política de Privacidad</privacy>. Autorizo el tratamiento de mis datos para gestionar esta solicitud de reserva."
   },
   "faq": {

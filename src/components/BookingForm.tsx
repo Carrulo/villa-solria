@@ -421,6 +421,15 @@ export default function BookingForm() {
           </div>
         </div>
 
+        {/* Payment deadline notice */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <span className="text-amber-600 shrink-0 mt-0.5 text-lg">⏰</span>
+          <div className="text-sm text-amber-900">
+            <p className="font-medium">{t('paymentDeadlineTitle')}</p>
+            <p className="text-amber-700 text-xs mt-0.5">{t('paymentDeadlineDesc')}</p>
+          </div>
+        </div>
+
         {/* Terms acceptance */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
           <label className="flex items-start gap-3 cursor-pointer">

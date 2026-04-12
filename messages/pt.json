@@ -254,6 +254,8 @@
     "cribRequested": "Berço solicitado",
     "cancellationTitle": "Cancelamento gratuito até 14 dias antes do check-in",
     "cancellationDesc": "Após este prazo, aplicam-se as condições descritas nos Termos e Condições. Esta reserva é um pedido; só é confirmada após a nossa resposta.",
+    "paymentDeadlineTitle": "Tem 24 horas para concluir o pagamento",
+    "paymentDeadlineDesc": "Pode pagar por cartão, MB WAY ou referência Multibanco. Se o pagamento não for concluído em 24h, a reserva será cancelada automaticamente.",
     "acceptTerms": "Li e aceito os <terms>Termos e Condições</terms> e a <privacy>Política de Privacidade</privacy>. Autorizo o tratamento dos meus dados para gestão do pedido de reserva."
   },
   "faq": {
