@@ -267,8 +267,8 @@ export default async function PricingPage({ params }: Props) {
             <p className="text-gray-500 text-sm">{t('pricingTableSubtitle')}</p>
           </div>
 
-          {/* Season cards - horizontal on desktop, stacked on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {/* Season cards - horizontal scroll carousel */}
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             {displaySeasons.map((season) => {
               const colors = tierColors[season.tier];
               const isActive = season.isActive;
@@ -282,7 +282,7 @@ export default async function PricingPage({ params }: Props) {
               return (
                 <div
                   key={season.id}
-                  className={`relative rounded-xl border p-5 transition-all ${
+                  className={`relative rounded-xl border p-5 transition-all snap-start shrink-0 w-[260px] sm:w-[280px] ${
                     isActive
                       ? 'border-accent bg-accent/[0.02] ring-1 ring-accent/20 shadow-md'
                       : 'border-gray-150 bg-white hover:shadow-sm'

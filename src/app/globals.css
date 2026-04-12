@@ -46,3 +46,12 @@ html {
   animation: slide-up 0.3s ease-out;
 }
 
+/* Hide scrollbar but keep scroll functional */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
