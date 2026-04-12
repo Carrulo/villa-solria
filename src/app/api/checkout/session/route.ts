@@ -213,6 +213,10 @@ export async function POST(request: NextRequest) {
       line_items: lineItems,
       ...(discounts.length > 0 ? { discounts } : {}),
       customer_email: booking.guest_email,
+      payment_intent_data: {
+        statement_descriptor: 'VILLA SOLRIA',
+        description: `Villa Solria — ${booking.checkin_date} → ${booking.checkout_date}`,
+      },
       metadata: {
         booking_id: bookingId,
         checkin_date: booking.checkin_date,
