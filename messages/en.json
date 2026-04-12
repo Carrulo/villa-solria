@@ -370,7 +370,8 @@
     "selectDates": "Select dates",
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
-    "minNightsWarning": "Minimum stay of {count} nights"
+    "minNightsWarning": "Minimum stay of {count} nights",
+    "holiday": "Holiday"
   },
   "priceBreakdown": {
     "title": "Price details",

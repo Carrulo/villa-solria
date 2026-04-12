@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getHolidays, localeToCountry } from '@/lib/holidays';
 
 export type DateRange = {
   checkIn: string | null; // YYYY-MM-DD
@@ -119,6 +120,19 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
 
   const blockedSet = useMemo(() => new Set(blocked.map((b) => b.date)), [blocked]);
 
+  const holidayMap = useMemo(() => {
+    const country = localeToCountry(locale);
+    const year1 = viewMonth.getFullYear();
+    const nextM = addMonths(viewMonth, 1);
+    const year2 = nextM.getFullYear();
+    const map = new Map<string, string>();
+    for (const [k, v] of getHolidays(year1, country)) map.set(k, v);
+    if (year2 !== year1) {
+      for (const [k, v] of getHolidays(year2, country)) map.set(k, v);
+    }
+    return map;
+  }, [locale, viewMonth]);
+
   const handleDayClick = (iso: string) => {
     if (!onChange) return;
     // Starting fresh or resetting
@@ -185,6 +199,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
             const isBlocked = blockedSet.has(iso);
             const isCheckIn = iso === checkIn;
             const isCheckOut = iso === checkOut;
+            const holidayName = holidayMap.get(iso);
 
             let inRange = false;
             if (checkIn && checkOut) {
@@ -196,7 +211,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
             const disabled = isPast || isBlocked;
 
             let classes =
-              'aspect-square flex items-center justify-center text-sm lg:text-base rounded-lg transition-colors select-none font-medium ';
+              'aspect-square flex flex-col items-center justify-center text-sm lg:text-base rounded-lg transition-colors select-none font-medium ';
             if (disabled) {
               if (isBlocked) {
                 classes += 'bg-red-50 text-red-400 line-through cursor-not-allowed';
@@ -221,8 +236,14 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
                 onMouseEnter={() => setHoverDate(iso)}
                 onMouseLeave={() => setHoverDate(null)}
                 className={classes}
+                title={holidayName ?? undefined}
               >
-                {d.getDate()}
+                <span>{d.getDate()}</span>
+                {holidayName ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-0.5" />
+                ) : (
+                  <span className="w-1.5 h-1.5 mt-0.5" />
+                )}
               </button>
             );
           })}
@@ -305,6 +326,10 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-red-50 border border-red-100" />
           <span>{t('unavailable')}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+          <span>{t('holiday')}</span>
         </div>
       </div>
 

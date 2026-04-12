@@ -370,7 +370,8 @@
     "selectDates": "Daten auswählen",
     "previousMonth": "Vorheriger Monat",
     "nextMonth": "Nächster Monat",
-    "minNightsWarning": "Mindestaufenthalt {count} Nächte"
+    "minNightsWarning": "Mindestaufenthalt {count} Nächte",
+    "holiday": "Feiertag"
   },
   "priceBreakdown": {
     "title": "Preisübersicht",
