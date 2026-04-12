@@ -47,7 +47,7 @@ export default async function ReviewsPage({ params }: Props) {
   const avgRating =
     dbReviews && dbReviews.length > 0
       ? ((dbReviews as Review[]).reduce((sum, r) => sum + r.rating, 0) / dbReviews.length).toFixed(1)
-      : '9.4';
+      : '9.8';
 
   return (
     <div className="py-12 lg:py-20">

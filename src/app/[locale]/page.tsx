@@ -133,7 +133,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     .select('rating', { count: 'exact' })
     .eq('visible', true);
 
-  let jsonLdRatingValue = '9.4';
+  let jsonLdRatingValue = '9.8';
   let jsonLdRatingCount = '3';
 
   if (allReviewRatings && reviewCount && reviewCount > 0) {
@@ -235,7 +235,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6">
             <Star size={14} className="text-sand fill-sand" />
-            <span className="text-white/80 text-sm font-medium">9.4/10 Booking.com</span>
+            <span className="text-white/80 text-sm font-medium">9.8/10 Booking.com</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">

@@ -49,7 +49,7 @@
     "riaFormosaDesc": "Vista frontal deslumbrante",
     "beach": "Praia a 700m",
     "beachDesc": "A poucos minutos a pé",
-    "rating": "9.4/10",
+    "rating": "9.8/10",
     "ratingDesc": "Avaliação no Booking.com"
   },
   "home": {
@@ -179,7 +179,7 @@
     "startingAt": "A partir de",
     "noFees": "Reserve diretamente connosco — sem taxas de serviço",
     "checkAvailability": "Verificar Disponibilidade",
-    "ratingBadge": "9.4/10 Booking.com",
+    "ratingBadge": "9.8/10 Booking.com",
     "pillGuests": "6 hóspedes",
     "pillBedrooms": "3 quartos",
     "pillLocation": "Ria Formosa",
@@ -206,7 +206,7 @@
     "pricingTableSubtitle": "Tarifas transparentes, sem surpresas",
     "reserveNow": "Reservar",
     "trustTitle": "Reserve com confiança",
-    "trustRating": "9.4/10 · 5+ Avaliações",
+    "trustRating": "9.8/10 · 5+ Avaliações",
     "trustSecure": "Pagamento Seguro",
     "trustInstant": "Confirmação Imediata",
     "trustSupport": "Suporte 24h"
@@ -285,7 +285,7 @@
   "reviews": {
     "title": "Avaliações",
     "subtitle": "O que dizem os nossos hóspedes",
-    "rating": "9.4/10 no Booking.com",
+    "rating": "9.8/10 no Booking.com",
     "review1Name": "Ana",
     "review1Country": "Portugal",
     "review1Text": "Casa moderna e confortável, com um lindo terraço. As camas são ótimas. A cozinha é pequena, mas funcional e bem equipada. Localização tranquila com vistas maravilhosas para a Ria.",
