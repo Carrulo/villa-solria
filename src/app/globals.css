@@ -37,6 +37,15 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Mobile booking drawer animation */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 /* Force single-month calendar in the sticky sidebar */
 [data-sidebar-calendar="true"] .hidden.md\:block {
   display: none !important;
