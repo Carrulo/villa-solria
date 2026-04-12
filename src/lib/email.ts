@@ -407,22 +407,15 @@ export async function sendBookingConfirmationEmail(
   const rawLang = (data.language ?? 'pt').toLowerCase() as SupportedLocale;
   const locale: SupportedLocale = rawLang in emailStrings ? rawLang : 'en';
 
-  // Override locale strings with admin-configured values (if set)
+  // Override locale strings with admin-configured values — PT only
+  // Other languages (EN/ES/DE) keep their built-in translations
   const s = { ...emailStrings[locale] };
-  if (settings['email_welcome_message']) {
-    s.intro = settings['email_welcome_message'];
-  }
-  if (settings['email_smartlock_note']) {
-    s.lockCode = settings['email_smartlock_note'];
-  }
-  if (settings['email_cancellation_text']) {
-    s.cancellationText = settings['email_cancellation_text'];
-  }
-  if (settings['email_checkin_time']) {
-    s.checkinTime = settings['email_checkin_time'];
-  }
-  if (settings['email_checkout_time']) {
-    s.checkoutTime = settings['email_checkout_time'];
+  if (locale === 'pt') {
+    if (settings['email_welcome_message']) s.intro = settings['email_welcome_message'];
+    if (settings['email_smartlock_note']) s.lockCode = settings['email_smartlock_note'];
+    if (settings['email_cancellation_text']) s.cancellationText = settings['email_cancellation_text'];
+    if (settings['email_checkin_time']) s.checkinTime = settings['email_checkin_time'];
+    if (settings['email_checkout_time']) s.checkoutTime = settings['email_checkout_time'];
   }
 
   const defaultSubject = emailStrings[locale].subject;
