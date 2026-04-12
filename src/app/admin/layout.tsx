@@ -15,6 +15,7 @@ import {
   X,
   BookOpen,
   ImageIcon,
+  Mail,
 } from 'lucide-react';
 import '../globals.css';
 
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/admin', label: 'Painel', icon: LayoutDashboard },
   { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
   { href: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
+  { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
   { href: '/admin/reviews', label: 'Avaliações', icon: Star },
   { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
