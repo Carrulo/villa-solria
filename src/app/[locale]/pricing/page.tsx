@@ -310,19 +310,8 @@ export default async function PricingPage({ params }: Props) {
               </span>
             </div>
 
-            {/* Desktop: scroll to sidebar. Mobile: scroll to inline form */}
             <a
               href="#booking-form-section"
-              onClick={(e) => {
-                // On desktop, scroll to sidebar instead
-                if (window.innerWidth >= 1024) {
-                  const sidebar = document.getElementById('booking-form-sidebar');
-                  if (sidebar) {
-                    e.preventDefault();
-                    sidebar.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }
-              }}
               className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-8 py-4 text-base shadow-lg shadow-accent/25 transition-all hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-accent/30"
             >
               <Calendar size={18} />
