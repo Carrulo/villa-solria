@@ -77,6 +77,14 @@ const SECTIONS: SettingSection[] = [
       { key: 'meta_pixel_id', label: 'Meta Pixel ID', placeholder: '1234567890' },
     ],
   },
+  {
+    title: 'Email',
+    fields: [
+      { key: 'resend_api_key', label: 'Resend API Key', placeholder: 're_...' },
+      { key: 'email_from_address', label: 'Email remetente', placeholder: 'Villa Solria <reservas@villasolria.com>' },
+      { key: 'email_subject_confirmed', label: 'Assunto email confirmacao', placeholder: 'Reserva Confirmada - Villa Solria' },
+    ],
+  },
 ];
 
 // All known keys from all sections

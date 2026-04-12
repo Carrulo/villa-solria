@@ -67,12 +67,62 @@ export async function GET(request: NextRequest) {
     const stripe = await getStripeFromSettings();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
+
+    // Fetch booking details from Supabase if booking_id exists in metadata
+    let booking = null;
+    let receiptUrl: string | null = null;
+    const bookingId = session.metadata?.booking_id;
+
+    if (bookingId) {
+      const supabase = createServerClient();
+      const { data } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .single();
+
+      if (data) {
+        booking = {
+          id: data.id,
+          reference: data.reference || data.id.slice(0, 8).toUpperCase(),
+          guest_name: data.guest_name,
+          checkin_date: data.checkin_date,
+          checkout_date: data.checkout_date,
+          num_nights: data.num_nights,
+          num_guests: data.num_guests,
+          total_price: data.total_price,
+          status: data.status,
+          payment_status: data.payment_status,
+        };
+      }
+    }
+
+    // Try to get Stripe receipt URL
+    if (paymentIntentId) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const chargeId =
+          typeof pi.latest_charge === 'string'
+            ? pi.latest_charge
+            : (pi.latest_charge as { id?: string })?.id;
+        if (chargeId) {
+          const charge = await stripe.charges.retrieve(chargeId);
+          receiptUrl = charge.receipt_url || null;
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
     return NextResponse.json({
       amount_total: session.amount_total,
       currency: session.currency,
-      payment_intent: typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : session.payment_intent?.id ?? null,
+      payment_intent: paymentIntentId,
+      booking,
+      receipt_url: receiptUrl,
     });
   } catch (err) {
     console.error('Checkout session GET error:', err);

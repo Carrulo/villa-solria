@@ -153,6 +153,7 @@ export default function AdminBookingsPage() {
           <table className="w-full">
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-white/5">
+                <th className="px-6 py-4">Ref.</th>
                 <th className="px-6 py-4">Hóspede</th>
                 <th className="px-6 py-4">Datas</th>
                 <th className="px-6 py-4">Noites</th>
@@ -167,13 +168,18 @@ export default function AdminBookingsPage() {
             <tbody className="divide-y divide-white/5">
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                     Nenhuma reserva encontrada
                   </td>
                 </tr>
               ) : (
                 filteredBookings.map((booking, i) => (
                   <tr key={booking.id} className={`hover:bg-white/[0.02] ${i % 2 === 1 ? 'bg-white/[0.01]' : ''}`}>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-mono font-semibold text-blue-400">
+                        {(booking as Booking & { reference?: string }).reference || '-'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-sm font-medium text-white">{booking.guest_name}</p>

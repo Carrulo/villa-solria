@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
+import { generateBookingReference, sendBookingConfirmationEmail } from '@/lib/email';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -67,14 +68,34 @@ export async function POST(request: NextRequest) {
         } else {
           console.log(`Booking ${bookingId} confirmed + paid`);
 
-          // Block dates in blocked_dates table
+          // Generate booking reference
+          let reference: string;
+          try {
+            reference = await generateBookingReference();
+            // Try to store reference in the booking row
+            const { error: refError } = await supabase
+              .from('bookings')
+              .update({ reference })
+              .eq('id', bookingId);
+
+            if (refError) {
+              // Column might not exist — use booking ID prefix as fallback
+              console.warn('Could not save reference (column may not exist):', refError.message);
+              reference = bookingId.slice(0, 8).toUpperCase();
+            }
+          } catch {
+            reference = bookingId.slice(0, 8).toUpperCase();
+          }
+
+          // Fetch full booking data for email + date blocking
           const { data: booking } = await supabase
             .from('bookings')
-            .select('checkin_date, checkout_date, guest_name')
+            .select('*')
             .eq('id', bookingId)
             .single();
 
           if (booking) {
+            // Block dates in blocked_dates table
             const dates: { date: string; source: string; note: string }[] = [];
             const cur = new Date(booking.checkin_date);
             const end = new Date(booking.checkout_date);
@@ -89,6 +110,46 @@ export async function POST(request: NextRequest) {
 
             if (dates.length > 0) {
               await supabase.from('blocked_dates').insert(dates);
+            }
+
+            // Get Stripe receipt URL if available
+            let stripeReceiptUrl: string | null = null;
+            try {
+              const paymentIntentId =
+                typeof session.payment_intent === 'string'
+                  ? session.payment_intent
+                  : session.payment_intent?.id;
+              if (paymentIntentId) {
+                const pi = await stripeClient.paymentIntents.retrieve(paymentIntentId);
+                const chargeId =
+                  typeof pi.latest_charge === 'string'
+                    ? pi.latest_charge
+                    : pi.latest_charge?.id;
+                if (chargeId) {
+                  const charge = await stripeClient.charges.retrieve(chargeId as string);
+                  stripeReceiptUrl = charge.receipt_url || null;
+                }
+              }
+            } catch {
+              // Non-critical — continue without receipt URL
+            }
+
+            // Send confirmation email (non-blocking — booking is confirmed regardless)
+            try {
+              await sendBookingConfirmationEmail({
+                reference,
+                guest_name: booking.guest_name || '',
+                guest_email: booking.guest_email || '',
+                checkin_date: booking.checkin_date,
+                checkout_date: booking.checkout_date,
+                num_nights: booking.num_nights || 1,
+                num_guests: booking.num_guests || 1,
+                total_price: booking.total_price || 0,
+                language: booking.language || 'pt',
+                stripe_receipt_url: stripeReceiptUrl,
+              });
+            } catch (emailErr) {
+              console.error('Failed to send confirmation email:', emailErr);
             }
           }
         }
