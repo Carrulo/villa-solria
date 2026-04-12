@@ -287,9 +287,9 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
       </div>
 
       {/* Calendars */}
-      <div className="flex flex-col md:flex-row gap-8 lg:gap-12 max-w-4xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-6 lg:gap-8 max-w-4xl mx-auto">
         {renderMonth(viewMonth)}
-        <div className="hidden md:block lg:hidden xl:block">{renderMonth(nextMonth)}</div>
+        <div className="hidden md:block">{renderMonth(nextMonth)}</div>
       </div>
 
       {/* Legend */}

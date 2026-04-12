@@ -498,11 +498,11 @@ export default async function PricingPage({ params }: Props) {
               className="sticky top-24 scroll-mt-24 overflow-y-auto"
               style={{ maxHeight: 'calc(100vh - 6rem)' }}
             >
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-1">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 xl:p-6 [&_.hidden.md\\:block]:!hidden">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
                   {t('availabilityTitle')}
                 </h3>
-                <p className="text-gray-500 text-sm mb-5">{t('availabilitySubtitle')}</p>
+                <p className="text-gray-500 text-xs mb-4">{t('availabilitySubtitle')}</p>
                 <BookingForm />
                 <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4">
                   <Info size={18} className="text-accent shrink-0 mt-0.5" />
