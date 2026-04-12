@@ -260,7 +260,7 @@ export default async function PricingPage({ params }: Props) {
           </div>
 
           {/* Season cards - horizontal scroll carousel */}
-          <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="flex gap-4 overflow-x-auto pt-4 pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             {displaySeasons.map((season) => {
               const colors = tierColors[season.tier];
               const isActive = season.isActive;
