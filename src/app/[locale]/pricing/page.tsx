@@ -20,6 +20,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import BookingForm from '@/components/BookingForm';
+import MobileBookingBar from '@/components/MobileBookingBar';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Season } from '@/lib/supabase';
 
@@ -306,7 +307,7 @@ export default async function PricingPage({ params }: Props) {
             </div>
 
             <a
-              href="#availability"
+              href="#booking-form-section"
               className="inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-8 py-4 text-base shadow-lg shadow-accent/25 transition-all hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-accent/30"
             >
               <Calendar size={18} />
@@ -317,197 +318,204 @@ export default async function PricingPage({ params }: Props) {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        {/* ─── PROPERTY FEATURES ─────────────────────────────────── */}
-        <section className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{tf('title')}</h2>
-            <p className="text-gray-500 text-base lg:text-lg">{tf('subtitle')}</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            {features.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${f.color}`}>
-                    <Icon size={22} />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{f.title}</h3>
-                  <p className="text-xs text-gray-500">{f.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ─── PRICING TABLE (3 tiers) ───────────────────────────── */}
-        <section className="mb-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              {t('pricingTableTitle')}
-            </h2>
-            <p className="text-gray-500 text-base lg:text-lg">{t('pricingTableSubtitle')}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 max-w-5xl mx-auto items-stretch">
-            {displaySeasons.map((season) => {
-              const style = tierStyles[season.tier];
-              const isActive = season.isActive;
-              const minLabel =
-                season.minNights === 1
-                  ? t('minNightsShort', { count: season.minNights })
-                  : t('minNightsShortPlural', { count: season.minNights });
-              const checkInLabel =
-                season.tier === 'high' ? t('checkInSaturday') : t('checkInFlexible');
-
-              return (
-                <div
-                  key={season.id}
-                  className={`relative rounded-2xl p-6 lg:p-8 border-2 ${
-                    isActive ? 'border-accent ring-2 ring-accent/20' : style.border
-                  } ${style.bg} flex flex-col ${
-                    isActive
-                      ? 'md:scale-[1.04] shadow-xl shadow-accent/10'
-                      : 'shadow-sm hover:shadow-md'
-                  } transition-all`}
-                >
-                  {isActive && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      {t('currentSeasonBadge')}
-                    </span>
-                  )}
-                  <span
-                    className={`inline-block self-center px-3 py-1 rounded-full text-xs font-medium mb-4 ${style.badge}`}
-                  >
-                    {season.period}
-                  </span>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
-                    {season.name}
-                  </h3>
-                  <div className="text-center mb-5">
-                    <span className="text-5xl lg:text-6xl font-bold text-gray-900 leading-none">
-                      {season.price}€
-                    </span>
-                    <span className="text-gray-500 text-sm block mt-1">{t('perNight')}</span>
-                  </div>
-                  <div className="space-y-2.5 text-sm text-gray-700 border-t border-gray-100 pt-4 mt-auto">
-                    <div className="flex items-center gap-2">
-                      <Calendar size={15} className="text-gray-400 shrink-0" />
-                      <span>{minLabel}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+          {/* ─── LEFT COLUMN (scrollable content) ──────────────── */}
+          <div className="lg:col-span-2">
+            {/* ─── PROPERTY FEATURES ───────────────────────────── */}
+            <section className="mb-16">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{tf('title')}</h2>
+                <p className="text-gray-500 text-base lg:text-lg">{tf('subtitle')}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {features.map((f) => {
+                  const Icon = f.icon;
+                  return (
+                    <div
+                      key={f.title}
+                      className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${f.color}`}>
+                        <Icon size={22} />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 text-sm mb-1">{f.title}</h3>
+                      <p className="text-xs text-gray-500">{f.desc}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Clock size={15} className="text-gray-400 shrink-0" />
-                      <span>{checkInLabel}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check size={15} className="text-emerald-500 shrink-0" />
-                      <span className="text-gray-600">{t('longStayHint')}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                  );
+                })}
+              </div>
+            </section>
 
-        {/* ─── LONG-STAY DISCOUNTS ───────────────────────────────── */}
-        <section className="mb-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              {t('discountsTitle')}
-            </h2>
-            <p className="text-gray-500 text-base lg:text-lg">{t('discountsSubtitle')}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-            {longStayDiscounts.map((d) => {
-              const Icon = d.icon;
-              return (
-                <div
-                  key={d.title}
-                  className={`rounded-2xl p-6 border ${d.color} shadow-sm hover:shadow-md transition-shadow`}
-                >
+            {/* ─── PRICING TABLE (3 tiers) ─────────────────────── */}
+            <section className="mb-16">
+              <div className="text-center mb-10">
+                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                  {t('pricingTableTitle')}
+                </h2>
+                <p className="text-gray-500 text-base lg:text-lg">{t('pricingTableSubtitle')}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-5 lg:gap-4 items-stretch">
+                {displaySeasons.map((season) => {
+                  const style = tierStyles[season.tier];
+                  const isActive = season.isActive;
+                  const minLabel =
+                    season.minNights === 1
+                      ? t('minNightsShort', { count: season.minNights })
+                      : t('minNightsShortPlural', { count: season.minNights });
+                  const checkInLabel =
+                    season.tier === 'high' ? t('checkInSaturday') : t('checkInFlexible');
+
+                  return (
+                    <div
+                      key={season.id}
+                      className={`relative rounded-2xl p-6 border-2 ${
+                        isActive ? 'border-accent ring-2 ring-accent/20' : style.border
+                      } ${style.bg} flex flex-col ${
+                        isActive
+                          ? 'shadow-xl shadow-accent/10'
+                          : 'shadow-sm hover:shadow-md'
+                      } transition-all`}
+                    >
+                      {isActive && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                          {t('currentSeasonBadge')}
+                        </span>
+                      )}
+                      <span
+                        className={`inline-block self-center px-3 py-1 rounded-full text-xs font-medium mb-4 ${style.badge}`}
+                      >
+                        {season.period}
+                      </span>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
+                        {season.name}
+                      </h3>
+                      <div className="text-center mb-5">
+                        <span className="text-5xl font-bold text-gray-900 leading-none">
+                          {season.price}&euro;
+                        </span>
+                        <span className="text-gray-500 text-sm block mt-1">{t('perNight')}</span>
+                      </div>
+                      <div className="space-y-2.5 text-sm text-gray-700 border-t border-gray-100 pt-4 mt-auto">
+                        <div className="flex items-center gap-2">
+                          <Calendar size={15} className="text-gray-400 shrink-0" />
+                          <span>{minLabel}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock size={15} className="text-gray-400 shrink-0" />
+                          <span>{checkInLabel}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check size={15} className="text-emerald-500 shrink-0" />
+                          <span className="text-gray-600">{t('longStayHint')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* ─── LONG-STAY DISCOUNTS ─────────────────────────── */}
+            <section className="mb-16">
+              <div className="text-center mb-10">
+                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                  {t('discountsTitle')}
+                </h2>
+                <p className="text-gray-500 text-base lg:text-lg">{t('discountsSubtitle')}</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-5">
+                {longStayDiscounts.map((d) => {
+                  const Icon = d.icon;
+                  return (
+                    <div
+                      key={d.title}
+                      className={`rounded-2xl p-6 border ${d.color} shadow-sm hover:shadow-md transition-shadow`}
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${d.iconBg}`}
+                      >
+                        <Icon size={22} />
+                      </div>
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <h3 className="text-xl font-bold text-gray-900">{d.title}</h3>
+                        <span className="text-2xl font-bold">-{d.percent}%</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{d.desc}</p>
+                      {d.cleaning && (
+                        <p className="mt-3 pt-3 border-t border-current/10 text-xs font-medium flex items-center gap-1.5">
+                          <Check size={13} /> {t('cleaningIncluded')}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* ─── BOOKING FORM (mobile only — stacked below content) */}
+            <section id="booking-form-section" className="mb-16 scroll-mt-24 lg:hidden">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  {t('availabilityTitle')}
+                </h2>
+                <p className="text-gray-500 text-base">{t('availabilitySubtitle')}</p>
+              </div>
+              <BookingForm />
+              <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4">
+                <Info size={18} className="text-accent shrink-0 mt-0.5" />
+                <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
+              </div>
+            </section>
+
+            {/* ─── TRUST SIGNALS ───────────────────────────────── */}
+            <section>
+              <div className="text-center mb-6">
+                <h2 className="text-xl lg:text-2xl font-semibold text-gray-900">{t('trustTitle')}</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { icon: Star, label: t('trustRating'), color: 'text-amber-500', bg: 'bg-amber-50' },
+                  { icon: Shield, label: t('trustSecure'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                  { icon: Check, label: t('trustInstant'), color: 'text-sky-600', bg: 'bg-sky-50' },
+                  { icon: Phone, label: t('trustSupport'), color: 'text-violet-600', bg: 'bg-violet-50' },
+                ].map(({ icon: Icon, label, color, bg }) => (
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${d.iconBg}`}
+                    key={label}
+                    className={`flex items-center gap-3 rounded-xl p-4 border border-gray-100 ${bg}`}
                   >
-                    <Icon size={22} />
+                    <Icon size={20} className={color} />
+                    <span className="text-sm font-medium text-gray-800">{label}</span>
                   </div>
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <h3 className="text-xl font-bold text-gray-900">{d.title}</h3>
-                    <span className="text-2xl font-bold">-{d.percent}%</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{d.desc}</p>
-                  {d.cleaning && (
-                    <p className="mt-3 pt-3 border-t border-current/10 text-xs font-medium flex items-center gap-1.5">
-                      <Check size={13} /> {t('cleaningIncluded')}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            </section>
           </div>
-        </section>
 
-        {/* ─── AVAILABILITY + INQUIRY FORM ───────────────────────── */}
-        <section id="availability" className="mb-16 scroll-mt-24">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              {t('availabilityTitle')}
-            </h2>
-            <p className="text-gray-500 text-base lg:text-lg">{t('availabilitySubtitle')}</p>
-          </div>
-          <div className="max-w-5xl mx-auto">
-            <BookingForm />
-            <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4">
-              <Info size={18} className="text-accent shrink-0 mt-0.5" />
-              <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
+          {/* ─── RIGHT COLUMN (sticky booking sidebar — desktop only) */}
+          <div className="hidden lg:block lg:col-span-1">
+            <div
+              id="booking-form-section"
+              className="sticky top-24 scroll-mt-24 overflow-y-auto"
+              style={{ maxHeight: 'calc(100vh - 6rem)' }}
+            >
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-1">
+                  {t('availabilityTitle')}
+                </h3>
+                <p className="text-gray-500 text-sm mb-5">{t('availabilitySubtitle')}</p>
+                <BookingForm />
+                <div className="mt-4 flex items-start gap-2 bg-accent/5 rounded-xl p-4">
+                  <Info size={18} className="text-accent shrink-0 mt-0.5" />
+                  <p className="text-sm text-gray-600">{t('availabilityNote')}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
-
-        {/* ─── TRUST SIGNALS ─────────────────────────────────────── */}
-        <section>
-          <div className="text-center mb-6">
-            <h2 className="text-xl lg:text-2xl font-semibold text-gray-900">{t('trustTitle')}</h2>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {[
-              { icon: Star, label: t('trustRating'), color: 'text-amber-500', bg: 'bg-amber-50' },
-              { icon: Shield, label: t('trustSecure'), color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { icon: Check, label: t('trustInstant'), color: 'text-sky-600', bg: 'bg-sky-50' },
-              { icon: Phone, label: t('trustSupport'), color: 'text-violet-600', bg: 'bg-violet-50' },
-            ].map(({ icon: Icon, label, color, bg }) => (
-              <div
-                key={label}
-                className={`flex items-center gap-3 rounded-xl p-4 border border-gray-100 ${bg}`}
-              >
-                <Icon size={20} className={color} />
-                <span className="text-sm font-medium text-gray-800">{label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        </div>
       </div>
 
       {/* ─── STICKY MOBILE BOOK BAR ────────────────────────────── */}
-      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex items-center justify-between gap-3 max-w-lg mx-auto">
-          <div className="min-w-0">
-            <p className="text-xs text-gray-500 leading-tight">{t('startingAt')}</p>
-            <p className="text-lg font-bold text-gray-900 leading-tight">
-              {startingPrice}€
-              <span className="text-xs font-normal text-gray-500">{t('perNight')}</span>
-            </p>
-          </div>
-          <a
-            href="#availability"
-            className="inline-flex items-center justify-center gap-1.5 bg-accent hover:bg-accent/90 text-white font-semibold rounded-full px-5 py-3 text-sm shadow-md shadow-accent/25 transition-all shrink-0"
-          >
-            <Calendar size={16} />
-            {t('reserveNow')}
-          </a>
-        </div>
-      </div>
+      <MobileBookingBar startingPrice={startingPrice} />
     </div>
   );
 }

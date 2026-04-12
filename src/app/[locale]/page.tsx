@@ -3,11 +3,12 @@ import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
+import EmailCapture from '@/components/EmailCapture';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
 import { getPhotoUrl } from '@/lib/supabase';
 
-function JsonLd() {
+function JsonLd({ ratingValue, ratingCount }: { ratingValue: string; ratingCount: string }) {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'VacationRental',
@@ -34,9 +35,9 @@ function JsonLd() {
     },
     aggregateRating: {
       '@type': 'AggregateRating',
-      ratingValue: '9.4',
+      ratingValue,
       bestRating: '10',
-      ratingCount: '3',
+      ratingCount,
     },
     amenityFeature: [
       { '@type': 'LocationFeatureSpecification', name: 'Air Conditioning' },
@@ -101,6 +102,22 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
         ];
 
+  // Fetch review stats for JSON-LD (all visible reviews, not just top 3)
+  const { data: allReviewRatings, count: reviewCount } = await supabase
+    .from('reviews')
+    .select('rating', { count: 'exact' })
+    .eq('visible', true);
+
+  let jsonLdRatingValue = '9.4';
+  let jsonLdRatingCount = '3';
+
+  if (allReviewRatings && reviewCount && reviewCount > 0) {
+    const avgRating =
+      allReviewRatings.reduce((sum, rv) => sum + Number(rv.rating), 0) / reviewCount;
+    jsonLdRatingValue = avgRating.toFixed(1);
+    jsonLdRatingCount = String(reviewCount);
+  }
+
   // Fetch lowest price from seasons
   const { data: seasonsData } = await supabase
     .from('seasons')
@@ -155,7 +172,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
-      <JsonLd />
+      <JsonLd ratingValue={jsonLdRatingValue} ratingCount={jsonLdRatingCount} />
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
@@ -310,6 +327,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
       </section>
+
+      {/* Newsletter */}
+      <EmailCapture locale={locale} />
 
       {/* CTA */}
       <section className="py-16 lg:py-24 bg-primary">

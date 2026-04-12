@@ -320,6 +320,14 @@
     "lastUpdated": "Last updated",
     "backToHome": "Back to home"
   },
+  "newsletter": {
+    "title": "Exclusive Offers",
+    "desc": "Be the first to know about last-minute availability and special rates.",
+    "placeholder": "Your email",
+    "submit": "Subscribe",
+    "success": "Thank you! We'll be in touch.",
+    "privacy": "We respect your privacy. You can unsubscribe at any time."
+  },
   "common": {
     "learnMore": "Learn More",
     "viewAll": "View All",

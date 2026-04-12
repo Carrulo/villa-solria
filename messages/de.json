@@ -320,6 +320,14 @@
     "lastUpdated": "Letzte Aktualisierung",
     "backToHome": "Zuruck zur Startseite"
   },
+  "newsletter": {
+    "title": "Exklusive Angebote",
+    "desc": "Erfahren Sie als Erster von Last-Minute-Verfügbarkeiten und Sondertarifen.",
+    "placeholder": "Ihre E-Mail",
+    "submit": "Abonnieren",
+    "success": "Vielen Dank! Wir melden uns bei Ihnen.",
+    "privacy": "Wir respektieren Ihre Privatsphäre. Sie können sich jederzeit abmelden."
+  },
   "common": {
     "learnMore": "Mehr erfahren",
     "viewAll": "Alle anzeigen",

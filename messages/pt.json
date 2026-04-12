@@ -320,6 +320,14 @@
     "lastUpdated": "Ultima atualizacao",
     "backToHome": "Voltar ao inicio"
   },
+  "newsletter": {
+    "title": "Ofertas Exclusivas",
+    "desc": "Seja o primeiro a saber de disponibilidade de última hora e tarifas especiais.",
+    "placeholder": "O seu email",
+    "submit": "Subscrever",
+    "success": "Obrigado! Entraremos em contacto.",
+    "privacy": "Respeitamos a sua privacidade. Pode cancelar a qualquer momento."
+  },
   "common": {
     "learnMore": "Saber Mais",
     "viewAll": "Ver Tudo",
