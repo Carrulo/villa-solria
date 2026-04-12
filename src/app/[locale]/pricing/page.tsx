@@ -122,49 +122,36 @@ export default async function PricingPage({ params }: Props) {
 
   let displaySeasons: DisplaySeason[] = [];
   if (hasSeasons) {
-    // Group all seasons by their price (unique prices = unique tiers)
-    const priceGroups = new Map<number, Season[]>();
-    rawSeasons.forEach((s) => {
-      const existing = priceGroups.get(s.price_per_night) || [];
-      existing.push(s);
-      priceGroups.set(s.price_per_night, existing);
+    // Show ALL seasons individually with their real names
+    const sorted = [...rawSeasons].sort((a, b) => {
+      const aStart = new Date(a.start_date).getTime();
+      const bStart = new Date(b.start_date).getTime();
+      return aStart - bStart;
     });
 
-    // Sort prices ascending: cheapest = low, middle = mid, highest = high
-    const sortedPrices = Array.from(priceGroups.keys()).sort((a, b) => a - b);
-    const priceCount = sortedPrices.length;
+    const minPrice = Math.min(...sorted.map((s) => s.price_per_night));
+    const maxPrice = Math.max(...sorted.map((s) => s.price_per_night));
 
-    sortedPrices.forEach((price, i) => {
+    sorted.forEach((s) => {
+      // Assign tier color based on price position
       let tier: SeasonTier;
-      if (priceCount === 1) tier = 'mid';
-      else if (priceCount === 2) tier = i === 0 ? 'low' : 'high';
-      else if (i === 0) tier = 'low';
-      else if (i === priceCount - 1) tier = 'high';
+      if (s.price_per_night === minPrice) tier = 'low';
+      else if (s.price_per_night === maxPrice) tier = 'high';
       else tier = 'mid';
 
-      const seasonsAtPrice = priceGroups.get(price) || [];
-      // Join all date ranges for this price tier (e.g. "Jan-May, Nov-Dec")
-      const period = seasonsAtPrice
-        .map((s) => `${formatDate(s.start_date, locale)} - ${formatDate(s.end_date, locale)}`)
-        .join(' / ');
-      // Active if today falls in ANY of the ranges for this price
-      const isActive = seasonsAtPrice.some(isSeasonActive);
-      // Min nights = minimum across all seasons at this price
-      const minNights = Math.min(...seasonsAtPrice.map((s) => s.min_nights || 1));
+      const translatedName = translateSeasonName(s.name, locale);
+      const period = `${formatDate(s.start_date, locale)} - ${formatDate(s.end_date, locale)}`;
 
       displaySeasons.push({
-        id: `tier-${tier}`,
-        name: tierLabels[tier],
+        id: s.id,
+        name: translatedName,
         period,
-        price,
-        minNights,
+        price: s.price_per_night,
+        minNights: s.min_nights || 1,
         tier,
-        isActive,
+        isActive: isSeasonActive(s),
       });
     });
-
-    // Take max 3 tiers (low, mid, high)
-    displaySeasons = displaySeasons.slice(0, 3);
   } else {
     displaySeasons = [
       {
@@ -281,7 +268,7 @@ export default async function PricingPage({ params }: Props) {
           </div>
 
           {/* Season cards - horizontal on desktop, stacked on mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {displaySeasons.map((season) => {
               const colors = tierColors[season.tier];
               const isActive = season.isActive;
