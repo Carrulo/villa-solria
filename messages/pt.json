@@ -362,5 +362,14 @@
     "discount": "Desconto ({percent}%)",
     "midStayCleaning": "Limpeza intermédia",
     "longStayDiscount": "Desconto estadia longa"
+  },
+  "bookingStatus": {
+    "successTitle": "Reserva Confirmada!",
+    "successDesc": "O pagamento foi processado com sucesso. A sua reserva na Villa Solria está confirmada.",
+    "successEmail": "Receberá um email de confirmação com todos os detalhes.",
+    "backHome": "Voltar ao Início",
+    "cancelTitle": "Pagamento Cancelado",
+    "cancelDesc": "O pagamento não foi concluído. A sua reserva não foi confirmada. Pode tentar novamente a qualquer momento.",
+    "tryAgain": "Tentar Novamente"
   }
 }

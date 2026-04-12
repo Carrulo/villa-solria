@@ -150,6 +150,7 @@ export default function BookingForm() {
     };
 
     try {
+      // 1. Create booking (pending)
       const res = await fetch('/api/booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,8 +165,30 @@ export default function BookingForm() {
         return;
       }
 
-      setLoading(false);
-      setSubmitted(true);
+      const bookingId = result.booking?.id;
+      if (!bookingId) {
+        setError('Booking created but missing ID');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Create Stripe Checkout Session and redirect
+      const checkoutRes = await fetch('/api/checkout/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, locale }),
+      });
+
+      const checkoutResult = await checkoutRes.json();
+
+      if (!checkoutRes.ok || !checkoutResult.url) {
+        setError(checkoutResult.error || 'Failed to start payment');
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutResult.url;
     } catch {
       setError('Network error. Please try again.');
       setLoading(false);
