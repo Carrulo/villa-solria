@@ -56,6 +56,7 @@ export default function Footer({ settings: overrides }: FooterProps) {
               {s.address2}
             </p>
             <p className="text-sand text-sm font-medium">{t('license')}</p>
+            <p className="text-gray-400 text-xs mt-1">NIF 224113178</p>
           </div>
 
           <div>
