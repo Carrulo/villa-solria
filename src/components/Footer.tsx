@@ -57,6 +57,12 @@ export default function Footer({ settings: overrides }: FooterProps) {
             </p>
             <p className="text-sand text-sm font-medium">{t('license')}</p>
             <p className="text-gray-400 text-xs mt-1">NIF 224113178</p>
+            <p className="text-white/70 text-sm mt-3">
+              <a href="tel:+351960486962" className="hover:text-sand transition-colors">
+                +351 960 486 962
+              </a>
+            </p>
+            <p className="text-gray-400 text-[10px]">(custo da chamada para a rede fixa nacional)</p>
           </div>
 
           <div>
