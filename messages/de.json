@@ -1,13 +1,13 @@
 {
   "meta": {
     "title": "Villa Solria - Ihr Rückzugsort an der Ria Formosa | Tavira, Algarve",
-    "description": "3-Zimmer-Duplexvilla mit Blick auf die Ria Formosa in Cabanas de Tavira. 6 Gäste, 700m vom Strand. Lizenz AL 120108/AL.",
+    "description": "Duplex-Villa T3 mit Blick auf die Ria Formosa in Cabanas de Tavira, Algarve. 3 Schlafzimmer, 6 Gäste, 700m vom Strand. AL-Lizenz 120108/AL.",
     "villaTitle": "Villa Solria - Die Villa | Tavira, Algarve",
     "villaDescription": "Entdecken Sie alle Details der Villa Solria: Schlafzimmer, Ausstattung und Hausregeln.",
     "galleryTitle": "Villa Solria - Fotogalerie | Tavira, Algarve",
     "galleryDescription": "Entdecken Sie Fotos der Villa Solria: Blick auf die Ria Formosa, Terrasse und Schlafzimmer.",
     "locationTitle": "Villa Solria - Lage | Cabanas de Tavira, Algarve",
-    "locationDescription": "Die Villa Solria befindet sich in Cabanas de Tavira, 700m vom Strand und 3,5km vom Zentrum Taviras.",
+    "locationDescription": "Die Villa Solria befindet sich in Cabanas de Tavira, Algarve, 700m vom Strand und 3,5km vom Zentrum von Tavira entfernt.",
     "pricingTitle": "Villa Solria - Preise & Verfügbarkeit | Tavira, Algarve",
     "pricingDescription": "Saisonale Preise und Verfügbarkeit der Villa Solria in Cabanas de Tavira.",
     "contactTitle": "Villa Solria - Kontakt | Tavira, Algarve",
@@ -30,15 +30,15 @@
   },
   "hero": {
     "tagline": "Ihr Rückzugsort an der Ria Formosa",
-    "subtitle": "3-Zimmer-Duplexvilla in Cabanas de Tavira mit atemberaubendem Blick auf die Ria Formosa",
+    "subtitle": "Duplex-Villa T3 in Cabanas de Tavira, Algarve, mit atemberaubendem Blick auf die Ria Formosa",
     "cta": "Verfügbarkeit prüfen",
     "checkIn": "Anreise",
     "checkOut": "Abreise",
     "guests": "Gäste",
     "search": "Suchen",
-    "fromPrice": "Ab {price}\u20ac/Nacht",
+    "fromPrice": "Ab {price}€/Nacht",
     "saveBanner": "Direkt buchen und bis zu {percent}% sparen",
-    "saveBannerDesc": "Keine Servicegeb\u00fchren \u2014 zahlen Sie weniger als auf Airbnb oder Booking.com",
+    "saveBannerDesc": "Keine Servicegebühren — zahlen Sie weniger als auf Airbnb oder Booking.com",
     "saveCompare": "vs Drittanbieter-Plattformen"
   },
   "features": {
@@ -63,7 +63,7 @@
   "villa": {
     "title": "Die Villa",
     "subtitle": "Eine sorgfältig ausgestattete 3-Zimmer-Duplexvilla für Ihren perfekten Urlaub",
-    "description": "Villa Solria ist eine 3-Zimmer-Duplexvilla in erster Reihe der Ria Formosa in Cabanas de Tavira. Mit zwei liebevoll gestalteten Etagen, Dachterrasse und Garten mit Grill ist sie der ideale Rückzugsort für Familien und Gruppen bis 6 Personen.",
+    "description": "Villa Solria ist eine Duplex-Villa mit 3 Schlafzimmern in erster Reihe zur Ria Formosa, in Cabanas de Tavira, im Herzen der Algarve. Mit zwei sorgfältig eingerichteten Etagen, Dachterrasse und Garten mit Grill ist sie der ideale Rückzugsort für Familien und Gruppen von bis zu 6 Personen.",
     "groundFloor": "Erdgeschoss",
     "groundFloorDesc": "Wohnzimmer mit Kamin, voll ausgestattete Küche, 1 Schlafzimmer mit 2 Einzelbetten (90x200cm) und Bad mit Dusche.",
     "firstFloor": "Obergeschoss",
@@ -388,7 +388,7 @@
     "name": "Bruno",
     "since": "Gastgeber seit 2024",
     "responseTime": "Antwortet innerhalb von 1 Stunde",
-    "bio": "Willkommen in der Villa Solria! Ich bin Bruno und freue mich, Sie in diesem besonderen Ort an der Algarve begr\u00fc\u00dfen zu d\u00fcrfen. Die Villa wurde sorgf\u00e4ltig renoviert, um h\u00f6chsten Komfort mit atemberaubendem Blick auf die Ria Formosa zu bieten. Ich kenne die Region gut und stehe Ihnen jederzeit mit Tipps zu Str\u00e4nden, Restaurants und lokalen Aktivit\u00e4ten zur Verf\u00fcgung.",
+    "bio": "Willkommen in der Villa Solria! Ich bin Bruno und freue mich, Sie in diesem besonderen Ort an der Algarve begrüßen zu dürfen. Die Villa wurde sorgfältig renoviert, um höchsten Komfort mit atemberaubendem Blick auf die Ria Formosa zu bieten. Ich kenne die Region gut und stehe Ihnen jederzeit mit Tipps zu Stränden, Restaurants und lokalen Aktivitäten zur Verfügung.",
     "contact": "Gastgeber kontaktieren",
     "superhost": "Engagierter Gastgeber"
   },

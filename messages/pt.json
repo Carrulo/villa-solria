@@ -1,13 +1,13 @@
 {
   "meta": {
     "title": "Villa Solria - O seu refúgio na Ria Formosa | Tavira, Algarve",
-    "description": "Moradia T3 duplex com vista para a Ria Formosa em Cabanas de Tavira. 3 quartos, 6 hóspedes, a 700m da praia. Licença AL 120108/AL.",
+    "description": "Moradia T3 duplex com vista para a Ria Formosa em Cabanas de Tavira, Algarve. 3 quartos, 6 hóspedes, a 700m da praia. Licença AL 120108/AL.",
     "villaTitle": "Villa Solria - A Moradia | Tavira, Algarve",
     "villaDescription": "Descubra todos os detalhes da Villa Solria: quartos, comodidades, equipamentos e regras da casa.",
     "galleryTitle": "Villa Solria - Galeria de Fotos | Tavira, Algarve",
     "galleryDescription": "Explore as fotos da Villa Solria: vistas para a Ria Formosa, terraço, quartos e espaços comuns.",
     "locationTitle": "Villa Solria - Localização | Cabanas de Tavira, Algarve",
-    "locationDescription": "A Villa Solria situa-se em Cabanas de Tavira, a 700m da praia e 3.5km do centro de Tavira.",
+    "locationDescription": "A Villa Solria situa-se em Cabanas de Tavira, Algarve, a 700m da praia e 3.5km do centro de Tavira.",
     "pricingTitle": "Villa Solria - Preços e Disponibilidade | Tavira, Algarve",
     "pricingDescription": "Consulte os preços por temporada e verifique a disponibilidade da Villa Solria em Cabanas de Tavira.",
     "contactTitle": "Villa Solria - Contacto | Tavira, Algarve",
@@ -30,15 +30,15 @@
   },
   "hero": {
     "tagline": "O seu refúgio na Ria Formosa",
-    "subtitle": "Moradia T3 duplex em Cabanas de Tavira com vistas deslumbrantes para a Ria Formosa",
+    "subtitle": "Moradia T3 duplex em Cabanas de Tavira, Algarve, com vistas deslumbrantes para a Ria Formosa",
     "cta": "Ver Disponibilidade",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
     "guests": "Hóspedes",
     "search": "Pesquisar",
-    "fromPrice": "Desde {price}\u20ac/noite",
-    "saveBanner": "Reserve direto e poupe at\u00e9 {percent}%",
-    "saveBannerDesc": "Sem taxas de servi\u00e7o \u2014 pague menos do que no Airbnb ou Booking.com",
+    "fromPrice": "Desde {price}€/noite",
+    "saveBanner": "Reserve direto e poupe até {percent}%",
+    "saveBannerDesc": "Sem taxas de serviço — pague menos do que no Airbnb ou Booking.com",
     "saveCompare": "vs plataformas externas"
   },
   "features": {
@@ -63,7 +63,7 @@
   "villa": {
     "title": "A Moradia",
     "subtitle": "Uma moradia T3 duplex cuidadosamente equipada para as suas férias perfeitas",
-    "description": "A Villa Solria é uma moradia duplex com 3 quartos localizada em primeira linha da Ria Formosa, em Cabanas de Tavira. Com dois pisos cuidadosamente decorados, terraço no telhado e jardim com churrasqueira, é o refúgio ideal para famílias e grupos de até 6 pessoas.",
+    "description": "A Villa Solria é uma moradia duplex com 3 quartos localizada em primeira linha da Ria Formosa, em Cabanas de Tavira, no coração do Algarve. Com dois pisos cuidadosamente decorados, terraço no telhado e jardim com churrasqueira, é o refúgio ideal para famílias e grupos de até 6 pessoas.",
     "groundFloor": "Piso Térreo",
     "groundFloorDesc": "Sala de estar com lareira, cozinha totalmente equipada, 1 quarto com 2 camas individuais (90x200cm) e casa de banho com duche.",
     "firstFloor": "1.o Andar",
@@ -121,9 +121,9 @@
     "filter_living": "Salas",
     "filter_outdoor": "Exterior",
     "filter_view": "Vistas",
-    "aerialView": "Vista A\u00e9rea",
-    "diningArea": "Zona de Refei\u00e7\u00f5es",
-    "sunsetView": "P\u00f4r do Sol",
+    "aerialView": "Vista Aérea",
+    "diningArea": "Zona de Refeições",
+    "sunsetView": "Pôr do Sol",
     "beachView": "Vista Praia",
     "entrance": "Entrada"
   },
@@ -308,24 +308,24 @@
   },
   "cookies": {
     "title": "Utilizamos cookies",
-    "description": "Utilizamos cookies para melhorar a sua experi\u00eancia. Pode escolher quais cookies aceitar.",
+    "description": "Utilizamos cookies para melhorar a sua experiência. Pode escolher quais cookies aceitar.",
     "acceptAll": "Aceitar todos",
-    "rejectAll": "Apenas necess\u00e1rios",
+    "rejectAll": "Apenas necessários",
     "customize": "Personalizar",
-    "save": "Guardar prefer\u00eancias",
-    "necessary": "Necess\u00e1rios",
+    "save": "Guardar preferências",
+    "necessary": "Necessários",
     "necessaryDesc": "Essenciais para o funcionamento do site",
-    "analytics": "Anal\u00edticos",
+    "analytics": "Analíticos",
     "analyticsDesc": "Ajudam-nos a entender como usa o site (Google Analytics)",
     "marketing": "Marketing",
     "marketingDesc": "Utilizados para publicidade personalizada (Meta Pixel)",
     "manage": "Gerir cookies"
   },
   "legal": {
-    "privacyTitle": "Pol\u00edtica de Privacidade",
-    "termsTitle": "Termos e Condi\u00e7\u00f5es",
-    "lastUpdated": "\u00daltima atualiza\u00e7\u00e3o",
-    "backToHome": "Voltar ao in\u00edcio"
+    "privacyTitle": "Política de Privacidade",
+    "termsTitle": "Termos e Condições",
+    "lastUpdated": "Última atualização",
+    "backToHome": "Voltar ao início"
   },
   "newsletter": {
     "title": "Ofertas Exclusivas",
@@ -384,13 +384,13 @@
     "longStayDiscount": "Desconto estadia longa"
   },
   "host": {
-    "title": "O seu anfitri\u00e3o",
+    "title": "O seu anfitrião",
     "name": "Bruno",
-    "since": "Anfitri\u00e3o desde 2024",
+    "since": "Anfitrião desde 2024",
     "responseTime": "Responde em menos de 1 hora",
-    "bio": "Bem-vindo \u00e0 Villa Solria! Sou o Bruno e terei todo o gosto em receb\u00ea-lo neste cantinho especial do Algarve. A moradia foi cuidadosamente renovada para oferecer o m\u00e1ximo conforto com vistas deslumbrantes para a Ria Formosa. Conhe\u00e7o bem a regi\u00e3o e estou sempre dispon\u00edvel para partilhar dicas sobre praias, restaurantes e atividades locais.",
-    "contact": "Contactar anfitri\u00e3o",
-    "superhost": "Anfitri\u00e3o dedicado"
+    "bio": "Bem-vindo à Villa Solria! Sou o Bruno e terei todo o gosto em recebê-lo neste cantinho especial do Algarve. A moradia foi cuidadosamente renovada para oferecer o máximo conforto com vistas deslumbrantes para a Ria Formosa. Conheço bem a região e estou sempre disponível para partilhar dicas sobre praias, restaurantes e atividades locais.",
+    "contact": "Contactar anfitrião",
+    "superhost": "Anfitrião dedicado"
   },
   "bookingStatus": {
     "successTitle": "Reserva Confirmada!",
