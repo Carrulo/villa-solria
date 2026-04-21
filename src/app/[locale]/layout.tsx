@@ -139,8 +139,49 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   const footerSettings = await getFooterSettings();
 
+  // Fetch GA4 ID for server-side script injection (Consent Mode v2)
+  let ga4Id = '';
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseKey) {
+      const sb = createClient(supabaseUrl, supabaseKey);
+      const { data: ga4Row } = await sb
+        .from('settings')
+        .select('value')
+        .eq('key', 'ga4_measurement_id')
+        .single();
+      ga4Id = (ga4Row?.value as string) || '';
+    }
+  } catch { /* optional */ }
+
   return (
     <html lang={locale} className="h-full antialiased">
+      <head>
+        {/* Google Consent Mode v2 — default denied until user accepts */}
+        {ga4Id && (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('consent', 'default', {
+                    'analytics_storage': 'denied',
+                    'ad_storage': 'denied',
+                    'ad_user_data': 'denied',
+                    'ad_personalization': 'denied',
+                    'wait_for_update': 500
+                  });
+                  gtag('js', new Date());
+                  gtag('config', '${ga4Id}');
+                `,
+              }}
+            />
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`} />
+          </>
+        )}
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Header />
