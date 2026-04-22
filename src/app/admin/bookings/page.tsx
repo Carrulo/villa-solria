@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, CalendarX } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, CalendarX, Plus, X as XIcon } from 'lucide-react';
 
 interface BlockedDateRow {
   id: string;
@@ -18,6 +18,7 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showManualModal, setShowManualModal] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -128,10 +129,29 @@ export default function AdminBookingsPage() {
         />
       )}
 
+      {showManualModal && (
+        <ManualBookingModal
+          onCancel={() => setShowManualModal(false)}
+          onCreated={async () => {
+            setShowManualModal(false);
+            await fetchBookings();
+            await fetchBlockedDates();
+            showToast('Reserva manual criada', 'success');
+          }}
+          onError={(msg) => showToast(msg, 'error')}
+        />
+      )}
+
       {/* Header + Filter */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">Reservas</h1>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowManualModal(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors text-sm font-medium"
+          >
+            <Plus size={14} /> Reserva manual
+          </button>
           <Filter size={16} className="text-gray-400" />
           {(['all', 'pending', 'confirmed', 'cancelled'] as const).map((f) => {
             const labels: Record<string, string> = { all: 'Todos', pending: 'Pendente', confirmed: 'Confirmada', cancelled: 'Cancelada' };
@@ -379,6 +399,299 @@ function RefundConfirmModal({
       </div>
     </div>
   );
+}
+
+function ManualBookingModal({
+  onCancel,
+  onCreated,
+  onError,
+}: {
+  onCancel: () => void;
+  onCreated: () => Promise<void> | void;
+  onError: (msg: string) => void;
+}) {
+  const [guestName, setGuestName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [checkin, setCheckin] = useState(() => new Date().toISOString().slice(0, 10));
+  const [checkout, setCheckout] = useState('');
+  const [numGuests, setNumGuests] = useState(2);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [deposit, setDeposit] = useState(0);
+  const [notes, setNotes] = useState('');
+  const [midStays, setMidStays] = useState<Set<string>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+
+  const numNights = useMemo(() => {
+    if (!checkin || !checkout) return 0;
+    const a = new Date(checkin + 'T00:00:00Z').getTime();
+    const b = new Date(checkout + 'T00:00:00Z').getTime();
+    const n = Math.round((b - a) / 86400000);
+    return n > 0 ? n : 0;
+  }, [checkin, checkout]);
+
+  // Suggest mid-stay cleanings:
+  //   nights 11-20 → 1 Saturday in the middle (or nearest Saturday to midpoint)
+  //   nights 21+   → every 7 days from check-in
+  const suggested = useMemo<string[]>(() => {
+    if (!checkin || !checkout || numNights < 11) return [];
+    const start = new Date(checkin + 'T00:00:00Z');
+    const end = new Date(checkout + 'T00:00:00Z');
+
+    if (numNights >= 21) {
+      const out: string[] = [];
+      const d = new Date(start);
+      d.setUTCDate(d.getUTCDate() + 7);
+      while (d < end) {
+        out.push(d.toISOString().slice(0, 10));
+        d.setUTCDate(d.getUTCDate() + 7);
+      }
+      return out;
+    }
+
+    // 11-20 nights: pick the Saturday closest to the midpoint.
+    const saturdays: string[] = [];
+    const d = new Date(start);
+    d.setUTCDate(d.getUTCDate() + 1);
+    while (d < end) {
+      if (d.getUTCDay() === 6) saturdays.push(d.toISOString().slice(0, 10));
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+    if (saturdays.length === 0) {
+      const mid = new Date(start);
+      mid.setUTCDate(mid.getUTCDate() + Math.floor(numNights / 2));
+      return [mid.toISOString().slice(0, 10)];
+    }
+    const midpointTime = (start.getTime() + end.getTime()) / 2;
+    const best = saturdays.reduce((a, b) =>
+      Math.abs(new Date(a + 'T00:00:00Z').getTime() - midpointTime) <
+      Math.abs(new Date(b + 'T00:00:00Z').getTime() - midpointTime)
+        ? a
+        : b
+    );
+    return [best];
+  }, [checkin, checkout, numNights]);
+
+  useEffect(() => {
+    setMidStays(new Set(suggested));
+  }, [suggested]);
+
+  function toggleMid(d: string) {
+    setMidStays((prev) => {
+      const next = new Set(prev);
+      if (next.has(d)) next.delete(d);
+      else next.add(d);
+      return next;
+    });
+  }
+
+  async function submit() {
+    if (!guestName.trim()) {
+      onError('Nome obrigatório');
+      return;
+    }
+    if (!checkin || !checkout || numNights <= 0) {
+      onError('Datas inválidas');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/bookings/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest_name: guestName,
+          guest_phone: phone,
+          guest_email: email,
+          checkin_date: checkin,
+          checkout_date: checkout,
+          num_guests: numGuests,
+          total_price: totalPrice,
+          deposit_paid: deposit,
+          notes,
+          mid_stay_dates: Array.from(midStays),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        onError(data.error || 'Erro ao criar reserva');
+        return;
+      }
+      await onCreated();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Reserva manual</h2>
+          <button onClick={onCancel} className="text-gray-400 hover:text-white">
+            <XIcon size={18} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Nome *">
+            <input
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              className={fieldCls}
+              placeholder="Carolina Silva"
+            />
+          </Field>
+          <Field label="Telefone">
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={fieldCls}
+              placeholder="+351 912 345 678"
+            />
+          </Field>
+          <Field label="Email (opcional)" className="sm:col-span-2">
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={fieldCls}
+              placeholder="email@example.com"
+            />
+          </Field>
+          <Field label="Entrada *">
+            <input
+              type="date"
+              value={checkin}
+              onChange={(e) => setCheckin(e.target.value)}
+              className={fieldCls}
+            />
+          </Field>
+          <Field label="Saída *">
+            <input
+              type="date"
+              value={checkout}
+              onChange={(e) => setCheckout(e.target.value)}
+              className={fieldCls}
+            />
+          </Field>
+          <Field label="Hóspedes">
+            <input
+              type="number"
+              min={1}
+              value={numGuests}
+              onChange={(e) => setNumGuests(Math.max(1, Number(e.target.value) || 1))}
+              className={fieldCls}
+            />
+          </Field>
+          <Field label={`Noites (auto)`}>
+            <input value={numNights} disabled className={fieldCls + ' opacity-60'} />
+          </Field>
+          <Field label="Preço total (€)">
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={totalPrice}
+              onChange={(e) => setTotalPrice(Number(e.target.value) || 0)}
+              className={fieldCls}
+            />
+          </Field>
+          <Field label="Sinal pago (€)">
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={deposit}
+              onChange={(e) => setDeposit(Number(e.target.value) || 0)}
+              className={fieldCls}
+            />
+          </Field>
+          <Field label="Notas (opcional)" className="sm:col-span-2">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className={fieldCls + ' resize-none'}
+              placeholder="ex: 1450€/semana, pagamento restante em mãos à chegada"
+            />
+          </Field>
+        </div>
+
+        {numNights >= 11 && (
+          <div className="mt-4 bg-white/5 border border-white/10 rounded-xl p-3">
+            <p className="text-xs text-gray-400 mb-2">
+              Limpezas intermédias (estadias longas — sugestão automática)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {suggested.map((d) => (
+                <label
+                  key={d}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer border ${
+                    midStays.has(d)
+                      ? 'bg-blue-500/15 border-blue-500/40 text-blue-200'
+                      : 'bg-white/5 border-white/10 text-gray-400'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={midStays.has(d)}
+                    onChange={() => toggleMid(d)}
+                    className="w-3 h-3"
+                  />
+                  {d} ({weekdayShort(d)})
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Cria tarefas de limpeza adicionais nestas datas (sem custo para o hóspede).
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 mt-5">
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting || !guestName.trim() || numNights <= 0}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium disabled:opacity-50"
+          >
+            {submitting ? 'A criar...' : 'Criar reserva'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const fieldCls =
+  'w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50';
+
+function Field({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={`block ${className || ''}`}>
+      <span className="block text-xs text-gray-400 mb-1">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function weekdayShort(iso: string): string {
+  const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  return labels[new Date(iso + 'T00:00:00Z').getUTCDay()];
 }
 
 function StatusBadge({ status }: { status: string }) {
