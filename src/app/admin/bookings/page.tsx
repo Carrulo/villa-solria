@@ -222,8 +222,108 @@ export default function AdminBookingsPage() {
         }}
       />
 
-      {/* Table */}
-      <div className="bg-[#16213e] rounded-2xl border border-white/5 overflow-hidden">
+      {/* Mobile booking cards */}
+      <div className="sm:hidden space-y-3">
+        {filteredBookings.length === 0 ? (
+          <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6 text-center text-gray-500 text-sm">
+            Nenhuma reserva encontrada
+          </div>
+        ) : (
+          filteredBookings.map((booking) => {
+            const ref = (booking as Booking & { reference?: string }).reference || '-';
+            return (
+              <div
+                key={booking.id}
+                className="bg-[#16213e] border border-white/5 rounded-2xl p-4 space-y-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {booking.guest_name || 'Sem nome'}
+                    </p>
+                    {booking.guest_phone && (
+                      <p className="text-xs text-gray-500">{booking.guest_phone}</p>
+                    )}
+                    {booking.guest_email && (
+                      <p className="text-xs text-gray-500 truncate">{booking.guest_email}</p>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-mono text-blue-400 whitespace-nowrap">
+                    {ref}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-300">
+                    {booking.checkin_date} → {booking.checkout_date}
+                  </span>
+                  <span className="text-gray-500">
+                    {booking.num_nights}n · {booking.num_guests}p
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold text-white">
+                    {booking.total_price}€
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <StatusBadge status={booking.status} />
+                    <StatusBadge status={booking.payment_status} />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <span className="text-[11px] text-gray-500">{booking.source || 'website'}</span>
+                  <div className="flex items-center gap-1">
+                    {booking.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => updateStatus(booking.id, 'confirmed')}
+                          className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20"
+                          title="Confirmar"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                        <button
+                          onClick={() => updateStatus(booking.id, 'cancelled')}
+                          className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                          title="Cancelar"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </>
+                    )}
+                    {booking.status === 'confirmed' && (
+                      <button
+                        onClick={() => updateStatus(booking.id, 'cancelled')}
+                        className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                        title="Cancelar"
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    )}
+                    {booking.payment_status === 'paid' && (
+                      <button
+                        onClick={() => setRefundTarget(booking)}
+                        disabled={refunding === booking.id}
+                        className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 text-xs font-medium disabled:opacity-50"
+                      >
+                        {refunding === booking.id ? '...' : 'Refund'}
+                      </button>
+                    )}
+                    {booking.payment_status === 'refunded' && (
+                      <span className="text-[11px] text-gray-500">reembolsado</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block bg-[#16213e] rounded-2xl border border-white/5 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

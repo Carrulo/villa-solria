@@ -436,8 +436,33 @@ export default function AdminCleaningPage() {
         <span className="text-xs text-gray-500 ml-2">{filtered.length} tarefa(s)</span>
       </div>
 
-      {/* Tasks table */}
-      <div className="bg-[#16213e] rounded-2xl border border-white/5 overflow-hidden">
+      {/* Mobile task cards */}
+      <div className="sm:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6 text-center text-gray-500 text-sm">
+            Nenhuma tarefa {filter === 'pending' ? 'pendente' : filter === 'closed' ? 'fechada' : ''}
+          </div>
+        ) : (
+          filtered.map((t) => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              reference={t.booking_id ? bookingRefs[t.booking_id] : null}
+              seq={sequenceInfo[t.id] || { isTurn: false }}
+              roomOptions={roomOptions}
+              onToggleDone={() => toggleCleaningDone(t)}
+              onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
+              onUnmarkLaundry={() => unmarkLaundry(t)}
+              onCloseCleaning={() => closeCleaning(t)}
+              onCloseLaundry={() => closeLaundry(t)}
+              onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop tasks table */}
+      <div className="hidden sm:block bg-[#16213e] rounded-2xl border border-white/5 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -828,5 +853,228 @@ function TaskRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+function TaskCard({
+  task,
+  reference,
+  seq,
+  roomOptions,
+  onToggleDone,
+  onMarkLaundry,
+  onUnmarkLaundry,
+  onCloseCleaning,
+  onCloseLaundry,
+  onRenameGuest,
+}: {
+  task: CleaningTask;
+  reference: string | null;
+  seq: { isTurn: boolean };
+  roomOptions: number[];
+  onToggleDone: () => void;
+  onMarkLaundry: (rooms: number) => void;
+  onUnmarkLaundry: () => void;
+  onCloseCleaning: () => void;
+  onCloseLaundry: () => void;
+  onRenameGuest: (name: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(task.guest_name || '');
+
+  const weekday = (() => {
+    const d = new Date(task.cleaning_date + 'T00:00:00Z');
+    const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return { label: labels[d.getUTCDay()], isSaturday: d.getUTCDay() === 6 };
+  })();
+
+  const refLabel = (() => {
+    if (reference) return reference;
+    if (task.external_ref) {
+      const cleaned = task.external_ref.split('@')[0];
+      return cleaned.length > 14 ? '…' + cleaned.slice(-12) : cleaned;
+    }
+    return '—';
+  })();
+
+  const amount =
+    (!task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0) +
+    (!task.laundry_paid && task.laundry_taken ? Number(task.laundry_fee_snapshot) : 0);
+
+  const sourceLabel = task.booking_id
+    ? 'Site'
+    : task.external_source === 'airbnb_ical'
+    ? 'Airbnb'
+    : task.external_source === 'booking_ical'
+    ? 'Booking'
+    : '-';
+
+  return (
+    <div
+      className={`bg-[#16213e] border rounded-2xl p-4 space-y-3 ${
+        seq.isTurn ? 'border-red-500/40' : 'border-white/5'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-base font-semibold text-white">{task.cleaning_date}</span>
+            <span
+              className={`text-xs font-semibold ${
+                weekday.isSaturday ? 'text-gray-500' : 'text-amber-400'
+              }`}
+            >
+              {weekday.label}
+            </span>
+            {seq.isTurn && (
+              <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold uppercase tracking-wider">
+                TURN
+              </span>
+            )}
+          </div>
+          {task.stay_checkout_date && (
+            <p className="text-[11px] text-gray-500 mt-0.5">
+              est. {task.cleaning_date.slice(5)} → {task.stay_checkout_date.slice(5)}
+            </p>
+          )}
+        </div>
+        <span className="text-[10px] font-mono text-blue-300/80 mt-1 whitespace-nowrap">
+          {refLabel}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {editing ? (
+            <input
+              autoFocus
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onBlur={() => {
+                setEditing(false);
+                const next = draftName.trim() || null;
+                if ((task.guest_name || null) !== next) onRenameGuest(next);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') {
+                  setDraftName(task.guest_name || '');
+                  setEditing(false);
+                }
+              }}
+              placeholder="Nome do hóspede"
+              className="w-full px-2 py-1 rounded bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-blue-500/50"
+            />
+          ) : (
+            <button
+              onClick={() => {
+                setDraftName(task.guest_name || '');
+                setEditing(true);
+              }}
+              className="text-left w-full"
+            >
+              <p className="text-white text-sm truncate">
+                {task.guest_name || <span className="italic text-gray-500">sem nome</span>}
+              </p>
+            </button>
+          )}
+          <p className="text-[11px] text-gray-500">
+            {task.num_guests != null ? `${task.num_guests} hóspede(s) · ` : ''}
+            {sourceLabel}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+        <button
+          onClick={onToggleDone}
+          disabled={task.cleaning_paid}
+          className="flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {task.cleaning_done ? (
+            <CheckCircle2 size={18} className="text-green-400" />
+          ) : (
+            <Circle size={18} className="text-gray-500" />
+          )}
+          <span className="text-sm text-white">
+            {task.cleaning_done ? 'Limpeza feita' : 'Limpeza pendente'}
+          </span>
+        </button>
+        <span className="text-xs text-gray-400">
+          {Number(task.cleaning_fee_snapshot).toFixed(2)} €
+          {task.cleaning_paid && <span className="text-gray-500"> · paga</span>}
+        </span>
+      </div>
+
+      <div className="bg-white/5 rounded-lg px-3 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-white flex items-center gap-2">
+            <Shirt size={16} className="text-blue-300" /> Roupas
+          </span>
+          {task.laundry_taken && (
+            <span className="text-xs text-blue-300">
+              {task.rooms_with_laundry} q ·{' '}
+              {Number(task.laundry_fee_snapshot).toFixed(2)} €
+              {task.laundry_paid && <span className="text-gray-500"> · paga</span>}
+            </span>
+          )}
+        </div>
+        {task.laundry_taken ? (
+          !task.laundry_paid && (
+            <button
+              onClick={onUnmarkLaundry}
+              className="text-[11px] text-gray-500 hover:text-gray-300"
+            >
+              reset
+            </button>
+          )
+        ) : (
+          <div className="flex items-center gap-1 flex-wrap">
+            <button
+              onClick={() => onMarkLaundry(0)}
+              className="px-2 py-1 rounded bg-white/5 hover:bg-gray-500/30 text-gray-300 text-xs"
+            >
+              sem
+            </button>
+            {roomOptions.map((n) => (
+              <button
+                key={n}
+                onClick={() => onMarkLaundry(n)}
+                className="px-2 py-1 rounded bg-white/5 hover:bg-blue-500/30 text-gray-300 text-xs"
+              >
+                {n}q
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-white/5">
+        <div>
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider">A pagar</p>
+          <p className={`text-base font-semibold ${amount > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+            {amount.toFixed(2)} €
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          {task.cleaning_done && !task.cleaning_paid && (
+            <button
+              onClick={onCloseCleaning}
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded bg-green-500/15 text-green-300 hover:bg-green-500/25 text-xs font-medium"
+            >
+              <Lock size={11} /> limpeza
+            </button>
+          )}
+          {task.laundry_taken && !task.laundry_paid && (
+            <button
+              onClick={onCloseLaundry}
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 text-xs font-medium"
+            >
+              <Lock size={11} /> roupas
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
