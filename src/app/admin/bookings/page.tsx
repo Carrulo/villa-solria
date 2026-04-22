@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote } from 'lucide-react';
 
 interface BlockedDateRow {
   id: string;
@@ -24,6 +24,7 @@ export default function AdminBookingsPage() {
   const [checkoutDays, setCheckoutDays] = useState<Set<string>>(new Set());
   const [sourceByDate, setSourceByDate] = useState<Record<string, string>>({});
   const [guestByDate, setGuestByDate] = useState<Record<string, string>>({});
+  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -174,6 +175,13 @@ export default function AdminBookingsPage() {
         />
       )}
 
+      {detailBooking && (
+        <BookingDetailModal
+          booking={detailBooking}
+          onClose={() => setDetailBooking(null)}
+        />
+      )}
+
       {showManualModal && (
         <ManualBookingModal
           preset={preset}
@@ -292,6 +300,13 @@ export default function AdminBookingsPage() {
                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
                   <span className="text-[11px] text-gray-500">{booking.source || 'website'}</span>
                   <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setDetailBooking(booking)}
+                      className="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10"
+                      title="Ver detalhes e notas"
+                    >
+                      <StickyNote size={14} />
+                    </button>
                     {booking.status === 'pending' && (
                       <>
                         <button
@@ -395,6 +410,13 @@ export default function AdminBookingsPage() {
                     <td className="px-6 py-4 text-sm text-gray-400">{booking.source}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setDetailBooking(booking)}
+                          className="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10"
+                          title="Ver detalhes e notas"
+                        >
+                          <StickyNote size={16} />
+                        </button>
                         {booking.status === 'pending' && (
                           <>
                             <button
@@ -524,6 +546,164 @@ function RefundConfirmModal({
           >
             {isProcessing ? 'A processar...' : `Reembolsar ${booking.total_price}EUR`}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingDetailModal({
+  booking,
+  onClose,
+}: {
+  booking: Booking;
+  onClose: () => void;
+}) {
+  const [notes, setNotes] = useState(booking.message || '');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const dirty = notes.trim() !== (booking.message || '').trim();
+
+  async function save() {
+    setSaving(true);
+    const { error } = await supabase
+      .from('bookings')
+      .update({ message: notes.trim() || null })
+      .eq('id', booking.id);
+    setSaving(false);
+    if (error) {
+      setMsg('Erro ao guardar: ' + error.message);
+      return;
+    }
+    setMsg('Guardado');
+    setTimeout(() => setMsg(null), 1500);
+  }
+
+  function appendStamp(text: string) {
+    const now = new Date();
+    const stamp = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const newLine = `${stamp} — ${text}`;
+    setNotes((prev) => (prev ? prev.trimEnd() + '\n' + newLine : newLine));
+  }
+
+  const ref = (booking as Booking & { reference?: string }).reference || booking.id.slice(0, 8).toUpperCase();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Detalhes da reserva</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <XIcon size={18} />
+          </button>
+        </div>
+
+        <div className="bg-white/5 rounded-xl p-4 mb-4 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Ref.</span>
+            <span className="font-mono text-blue-300">{ref}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Hóspede</span>
+            <span className="text-white font-medium">{booking.guest_name}</span>
+          </div>
+          {booking.guest_phone && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Telefone</span>
+              <a
+                href={`tel:${booking.guest_phone}`}
+                className="text-white hover:text-blue-300"
+              >
+                {booking.guest_phone}
+              </a>
+            </div>
+          )}
+          {booking.guest_email && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Email</span>
+              <span className="text-white truncate ml-2">{booking.guest_email}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-gray-400">Datas</span>
+            <span className="text-white">
+              {booking.checkin_date} → {booking.checkout_date}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Noites · hóspedes</span>
+            <span className="text-white">
+              {booking.num_nights} · {booking.num_guests}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Total</span>
+            <span className="text-white font-semibold">{booking.total_price}€</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Estado</span>
+            <span className="text-white">
+              {booking.status} · {booking.payment_status}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Origem</span>
+            <span className="text-gray-300">{booking.source || '—'}</span>
+          </div>
+        </div>
+
+        <label className="block mb-2">
+          <span className="block text-xs text-gray-400 mb-1">Notas / histórico de pagamentos</span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            disabled={saving}
+            rows={8}
+            placeholder="ex: 15/05/2026 — pagou mais 500€, falta 1900€ em mãos à chegada"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50 font-mono whitespace-pre-wrap"
+          />
+        </label>
+
+        <div className="flex items-center gap-2 flex-wrap mb-3">
+          <span className="text-xs text-gray-500">Adicionar entrada rápida:</span>
+          <button
+            onClick={() => {
+              const amount = prompt('Valor pago agora (€)');
+              if (amount) appendStamp(`pagou ${amount}€`);
+            }}
+            className="px-2 py-1 rounded bg-white/5 hover:bg-green-500/20 text-gray-300 text-xs"
+          >
+            + pagamento
+          </button>
+          <button
+            onClick={() => {
+              const what = prompt('Nota');
+              if (what) appendStamp(what);
+            }}
+            className="px-2 py-1 rounded bg-white/5 hover:bg-blue-500/20 text-gray-300 text-xs"
+          >
+            + nota
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          {msg && <span className="text-xs text-green-400">{msg}</span>}
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={onClose}
+              disabled={saving}
+              className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
+            >
+              Fechar
+            </button>
+            <button
+              onClick={save}
+              disabled={!dirty || saving}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium disabled:opacity-50"
+            >
+              {saving ? 'A guardar...' : 'Guardar notas'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
