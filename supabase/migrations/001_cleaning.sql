@@ -46,9 +46,11 @@ create index if not exists cleaning_tasks_date_idx on public.cleaning_tasks (cle
 create index if not exists cleaning_tasks_booking_idx on public.cleaning_tasks (booking_id);
 create unique index if not exists cleaning_tasks_booking_unique
   on public.cleaning_tasks (booking_id) where booking_id is not null;
+-- Full (non-partial) unique index so ON CONFLICT can use it.
+-- NULLs don't collide in Postgres, so website/avulsa rows (where
+-- external_source and external_ref are NULL) are unaffected.
 create unique index if not exists cleaning_tasks_external_unique
-  on public.cleaning_tasks (external_source, external_ref, cleaning_date)
-  where external_ref is not null;
+  on public.cleaning_tasks (external_source, external_ref, cleaning_date);
 
 -- updated_at trigger
 create or replace function public.touch_updated_at() returns trigger as $$
