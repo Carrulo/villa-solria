@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, CalendarX, Plus, X as XIcon } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BlockedDateRow {
   id: string;
@@ -19,6 +19,7 @@ export default function AdminBookingsPage() {
   const [filter, setFilter] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [preset, setPreset] = useState<{ checkin_date?: string; checkout_date?: string }>({});
 
   useEffect(() => {
     fetchBookings();
@@ -41,9 +42,8 @@ export default function AdminBookingsPage() {
       .from('blocked_dates')
       .select('id, date, source, note')
       .gte('date', today)
-      .in('source', ['airbnb_ical', 'booking_ical'])
       .order('date', { ascending: true })
-      .limit(500);
+      .limit(2000);
     setBlockedDates((data || []) as BlockedDateRow[]);
   }
 
@@ -131,9 +131,14 @@ export default function AdminBookingsPage() {
 
       {showManualModal && (
         <ManualBookingModal
-          onCancel={() => setShowManualModal(false)}
+          preset={preset}
+          onCancel={() => {
+            setShowManualModal(false);
+            setPreset({});
+          }}
           onCreated={async () => {
             setShowManualModal(false);
+            setPreset({});
             await fetchBookings();
             await fetchBlockedDates();
             showToast('Reserva manual criada', 'success');
@@ -172,43 +177,14 @@ export default function AdminBookingsPage() {
         </div>
       </div>
 
-      {/* Blocked dates from external iCal */}
-      {blockedDates.length > 0 && (
-        <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CalendarX size={16} className="text-amber-400" />
-            <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-              Datas Bloqueadas (iCal Externo)
-            </h2>
-            <span className="text-xs text-gray-500">{blockedDates.length} dias</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {blockedDates.slice(0, 120).map((bd) => {
-              const sourceColor =
-                bd.source === 'airbnb_ical'
-                  ? 'bg-pink-500/10 text-pink-300 border-pink-500/20'
-                  : 'bg-blue-500/10 text-blue-300 border-blue-500/20';
-              const label = bd.source === 'airbnb_ical' ? 'Airbnb' : 'Booking';
-              return (
-                <span
-                  key={bd.id}
-                  title={bd.note || ''}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${sourceColor}`}
-                >
-                  {bd.date}
-                  <span className="opacity-60">·</span>
-                  <span className="opacity-80">{label}</span>
-                </span>
-              );
-            })}
-            {blockedDates.length > 120 && (
-              <span className="text-xs text-gray-500 self-center">
-                +{blockedDates.length - 120} mais...
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Availability calendar (month view) */}
+      <AvailabilityCalendar
+        blocked={blockedDates}
+        onPickRange={(checkin, checkout) => {
+          setPreset({ checkin_date: checkin, checkout_date: checkout });
+          setShowManualModal(true);
+        }}
+      />
 
       {/* Table */}
       <div className="bg-[#16213e] rounded-2xl border border-white/5 overflow-hidden">
@@ -401,11 +377,208 @@ function RefundConfirmModal({
   );
 }
 
+function AvailabilityCalendar({
+  blocked,
+  onPickRange,
+}: {
+  blocked: BlockedDateRow[];
+  onPickRange: (checkin: string, checkout: string) => void;
+}) {
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const [cursor, setCursor] = useState(() => new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)));
+  const [rangeStart, setRangeStart] = useState<string | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<string | null>(null);
+
+  const blockedMap = useMemo(() => {
+    const m = new Map<string, BlockedDateRow>();
+    for (const b of blocked) m.set(b.date, b);
+    return m;
+  }, [blocked]);
+
+  const year = cursor.getUTCFullYear();
+  const month = cursor.getUTCMonth();
+  const monthLabel = cursor.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+  // Build a 6-row grid aligned to Monday.
+  const cells: { iso: string; inMonth: boolean }[] = useMemo(() => {
+    const firstOfMonth = new Date(Date.UTC(year, month, 1));
+    const weekday = (firstOfMonth.getUTCDay() + 6) % 7; // 0=Mon
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setUTCDate(gridStart.getUTCDate() - weekday);
+    const out: { iso: string; inMonth: boolean }[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart);
+      d.setUTCDate(d.getUTCDate() + i);
+      out.push({
+        iso: d.toISOString().slice(0, 10),
+        inMonth: d.getUTCMonth() === month,
+      });
+    }
+    return out;
+  }, [year, month]);
+
+  function sourceStyle(src: string) {
+    switch (src) {
+      case 'airbnb_ical':
+        return 'bg-pink-500/25 border-pink-400/40 text-pink-100';
+      case 'booking_ical':
+        return 'bg-blue-500/25 border-blue-400/40 text-blue-100';
+      case 'website':
+        return 'bg-emerald-500/25 border-emerald-400/40 text-emerald-100';
+      default:
+        return 'bg-gray-500/25 border-gray-400/40 text-gray-100';
+    }
+  }
+
+  function onDayClick(iso: string) {
+    const isBlocked = blockedMap.has(iso);
+    if (isBlocked) return;
+    if (!rangeStart || (rangeStart && rangeEnd)) {
+      setRangeStart(iso);
+      setRangeEnd(null);
+    } else if (iso <= rangeStart) {
+      setRangeStart(iso);
+      setRangeEnd(null);
+    } else {
+      setRangeEnd(iso);
+    }
+  }
+
+  function inSelection(iso: string): boolean {
+    if (!rangeStart) return false;
+    const end = rangeEnd || rangeStart;
+    return iso >= rangeStart && iso <= end;
+  }
+
+  const nights = rangeStart && rangeEnd
+    ? Math.round(
+        (new Date(rangeEnd + 'T00:00:00Z').getTime() -
+          new Date(rangeStart + 'T00:00:00Z').getTime()) / 86400000
+      )
+    : 0;
+
+  return (
+    <div className="bg-[#16213e] rounded-2xl border border-white/5 p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+            Disponibilidade
+          </h2>
+          <span className="text-xs text-gray-500 capitalize">· {monthLabel}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCursor(new Date(Date.UTC(year, month - 1, 1)))}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300"
+            aria-label="Mês anterior"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            onClick={() => setCursor(new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)))}
+            className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs"
+          >
+            Hoje
+          </button>
+          <button
+            onClick={() => setCursor(new Date(Date.UTC(year, month + 1, 1)))}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300"
+            aria-label="Mês seguinte"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+        {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => (
+          <div key={d} className="text-center">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map(({ iso, inMonth }) => {
+          const b = blockedMap.get(iso);
+          const isBlocked = !!b;
+          const isToday = iso === today.toISOString().slice(0, 10);
+          const inSel = inSelection(iso);
+          const sourceCls = isBlocked ? sourceStyle(b.source) : 'border-transparent';
+          return (
+            <button
+              key={iso}
+              onClick={() => onDayClick(iso)}
+              disabled={!inMonth || isBlocked}
+              title={b ? `${iso} · ${b.source}${b.note ? ' · ' + b.note : ''}` : iso}
+              className={`relative aspect-square rounded-lg text-xs border transition-colors flex flex-col items-center justify-center
+                ${inMonth ? '' : 'opacity-30'}
+                ${isBlocked ? sourceCls + ' cursor-not-allowed' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-emerald-500/20'}
+                ${inSel && !isBlocked ? '!bg-emerald-500/40 !border-emerald-300/60 !text-white' : ''}
+                ${isToday ? 'ring-1 ring-amber-400/60' : ''}`}
+            >
+              <span className="font-medium">{parseInt(iso.slice(8, 10), 10)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
+        <div className="flex items-center gap-3 text-[11px] text-gray-400 flex-wrap">
+          <Legend color="bg-white/5 border-white/10" label="livre" />
+          <Legend color="bg-emerald-500/25 border-emerald-400/40" label="site" />
+          <Legend color="bg-pink-500/25 border-pink-400/40" label="Airbnb" />
+          <Legend color="bg-blue-500/25 border-blue-400/40" label="Booking" />
+        </div>
+
+        {rangeStart && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-gray-400">
+              {rangeStart}
+              {rangeEnd ? ` → ${rangeEnd} · ${nights} noite${nights !== 1 ? 's' : ''}` : ' · escolhe saída'}
+            </span>
+            {rangeEnd && (
+              <button
+                onClick={() => onPickRange(rangeStart, rangeEnd)}
+                className="px-3 py-1 rounded bg-blue-600 text-white font-medium hover:bg-blue-500"
+              >
+                Criar reserva
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setRangeStart(null);
+                setRangeEnd(null);
+              }}
+              className="px-2 py-1 rounded bg-white/5 text-gray-400 hover:bg-white/10"
+            >
+              limpar
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`w-3 h-3 rounded border ${color}`} />
+      {label}
+    </span>
+  );
+}
+
 function ManualBookingModal({
+  preset,
   onCancel,
   onCreated,
   onError,
 }: {
+  preset?: { checkin_date?: string; checkout_date?: string };
   onCancel: () => void;
   onCreated: () => Promise<void> | void;
   onError: (msg: string) => void;
@@ -413,8 +586,10 @@ function ManualBookingModal({
   const [guestName, setGuestName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [checkin, setCheckin] = useState(() => new Date().toISOString().slice(0, 10));
-  const [checkout, setCheckout] = useState('');
+  const [checkin, setCheckin] = useState(
+    () => preset?.checkin_date || new Date().toISOString().slice(0, 10)
+  );
+  const [checkout, setCheckout] = useState(() => preset?.checkout_date || '');
   const [numGuests, setNumGuests] = useState(2);
   const [totalPrice, setTotalPrice] = useState(0);
   const [deposit, setDeposit] = useState(0);
