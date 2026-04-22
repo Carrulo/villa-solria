@@ -212,8 +212,14 @@ export default function AdminCleaningPage() {
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
-      const isClosed =
-        t.cleaning_paid && (t.laundry_taken ? t.laundry_paid : true);
+      // A task is only closed when BOTH parts are resolved:
+      // - cleaning: done + paid
+      // - laundry: explicitly marked (taken=true), and if rooms>0 also paid.
+      //   laundry_taken=false means "not yet decided" — keep in pending.
+      const cleaningClosed = t.cleaning_done && t.cleaning_paid;
+      const laundryClosed =
+        t.laundry_taken && (t.rooms_with_laundry === 0 || t.laundry_paid);
+      const isClosed = cleaningClosed && laundryClosed;
       if (filter === 'pending') return !isClosed;
       if (filter === 'closed') return isClosed;
       return true;
@@ -528,7 +534,13 @@ function TaskRow({
           </div>
         ) : (
           <div className="flex items-center gap-1 flex-wrap">
-            <span className="text-xs text-gray-500 mr-1">sem roupa</span>
+            <button
+              onClick={() => onMarkLaundry(0)}
+              className="px-2 py-0.5 rounded bg-white/5 hover:bg-gray-500/30 text-gray-300 hover:text-white text-xs"
+              title="Marcar como sem roupa (0€)"
+            >
+              sem
+            </button>
             {roomOptions.map((n) => (
               <button
                 key={n}

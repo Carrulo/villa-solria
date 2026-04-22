@@ -50,12 +50,13 @@ export default function CleaningClient({
     const upcoming: CleaningTask[] = [];
     const done: CleaningTask[] = [];
     for (const t of tasks) {
-      if (t.cleaning_done && (t.laundry_taken || !t.rooms_with_laundry)) {
+      // "Feitas" só depois de ambas as partes resolvidas pela equipa:
+      // limpeza marcada + decisão sobre as roupas (X quartos ou "sem roupa").
+      const fullyMarked = t.cleaning_done && t.laundry_taken;
+      if (fullyMarked) {
         done.push(t);
-      } else if (t.cleaning_date === todayStr) {
-        today.push(t);
-      } else if (t.cleaning_date < todayStr) {
-        today.push(t); // atrasadas
+      } else if (t.cleaning_date <= todayStr) {
+        today.push(t); // hoje + atrasadas
       } else {
         upcoming.push(t);
       }
