@@ -88,6 +88,15 @@ export async function POST(request: NextRequest) {
         .in('date', dates);
     }
 
+    // Remove unpaid cleaning task for this booking. Paid tasks are kept
+    // because they already represent real money owed or paid out.
+    await supabase
+      .from('cleaning_tasks')
+      .delete()
+      .eq('booking_id', bookingId)
+      .eq('cleaning_paid', false)
+      .eq('laundry_paid', false);
+
     // Send refund email + Telegram in parallel
     const ref = booking.reference || bookingId.slice(0, 8).toUpperCase();
     const refundAmount = refund.amount / 100;

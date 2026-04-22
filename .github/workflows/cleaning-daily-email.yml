@@ -1,0 +1,35 @@
+name: Cleaning Daily Email
+
+on:
+  schedule:
+    # 08:00 Europe/Lisbon = 07:00 UTC (for DST months we accept the ~1h shift)
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily email
+        env:
+          CLEANING_EMAIL_SECRET: ${{ secrets.CLEANING_EMAIL_SECRET }}
+        run: |
+          if [ -z "$CLEANING_EMAIL_SECRET" ]; then
+            echo "::warning::CLEANING_EMAIL_SECRET not set — skipping"
+            exit 0
+          fi
+
+          response=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer $CLEANING_EMAIL_SECRET" \
+            "https://villa-solria.vercel.app/api/cleaning/daily-email")
+
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "Status: $status"
+          echo "Response: $body"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Daily email failed with status $status"
+            exit 1
+          fi

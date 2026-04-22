@@ -114,6 +114,33 @@ export async function POST(request: NextRequest) {
               await supabase.from('blocked_dates').insert(dates);
             }
 
+            // Create cleaning task for checkout date (internal ledger).
+            // Snapshot the current base fee from settings so price edits
+            // don't rewrite history.
+            try {
+              const { data: feeRow } = await supabase
+                .from('settings')
+                .select('value')
+                .eq('key', 'cleaning_base_fee')
+                .maybeSingle();
+              const baseFee = Number(feeRow?.value ?? 50) || 50;
+
+              await supabase.from('cleaning_tasks').upsert(
+                {
+                  booking_id: bookingId,
+                  cleaning_date: booking.checkout_date,
+                  guest_name: booking.guest_name || null,
+                  num_guests: booking.num_guests ?? null,
+                  cleaning_fee_snapshot: baseFee,
+                  laundry_fee_snapshot: 0,
+                  rooms_with_laundry: 0,
+                },
+                { onConflict: 'booking_id' }
+              );
+            } catch (err) {
+              console.error('Failed to create cleaning_task for booking:', err);
+            }
+
             // Send email + Telegram in PARALLEL to avoid timeout
             const emailData = {
               reference,

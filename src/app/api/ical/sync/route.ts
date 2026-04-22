@@ -47,7 +47,7 @@ function datesInRange(start: Date, end: Date): string[] {
   return dates;
 }
 
-type VEvent = { dtstart?: string; dtend?: string; summary?: string };
+type VEvent = { dtstart?: string; dtend?: string; summary?: string; uid?: string };
 
 function parseICS(text: string): VEvent[] {
   // Unfold folded lines (RFC 5545: lines starting with space/tab continue previous line)
@@ -73,6 +73,7 @@ function parseICS(text: string): VEvent[] {
       if (propName === 'DTSTART') current.dtstart = value;
       else if (propName === 'DTEND') current.dtend = value;
       else if (propName === 'SUMMARY') current.summary = value;
+      else if (propName === 'UID') current.uid = value;
     }
   }
 
@@ -82,7 +83,8 @@ function parseICS(text: string): VEvent[] {
 async function syncSource(
   supabase: ReturnType<typeof createServerClient>,
   url: string,
-  source: 'airbnb_ical' | 'booking_ical'
+  source: 'airbnb_ical' | 'booking_ical',
+  baseCleaningFee: number
 ): Promise<SyncResult> {
   try {
     const res = await fetch(url, {
@@ -98,6 +100,19 @@ async function syncSource(
     const blockedRows: { date: string; source: string; note: string | null }[] = [];
     let eventCount = 0;
 
+    type CleaningRow = {
+      external_source: 'airbnb_ical' | 'booking_ical';
+      external_ref: string;
+      cleaning_date: string;
+      guest_name: string | null;
+      num_guests: null;
+      cleaning_fee_snapshot: number;
+      laundry_fee_snapshot: number;
+      rooms_with_laundry: number;
+    };
+    const cleaningRows: CleaningRow[] = [];
+    const seenRefs = new Set<string>();
+
     for (const event of events) {
       if (!event.dtstart || !event.dtend) continue;
       const startDate = parseICalDate(event.dtstart);
@@ -109,9 +124,28 @@ async function syncSource(
       for (const date of datesInRange(startDate, endDate)) {
         blockedRows.push({ date, source, note });
       }
+
+      // One cleaning task per external reservation, on its DTEND (checkout day).
+      // Stable ref per platform — prefer UID, fall back to DTSTART.
+      const ref = (event.uid || formatDate(startDate)).slice(0, 200);
+      const cleaningDate = formatDate(endDate);
+      const dedupeKey = `${ref}|${cleaningDate}`;
+      if (!seenRefs.has(dedupeKey)) {
+        seenRefs.add(dedupeKey);
+        cleaningRows.push({
+          external_source: source,
+          external_ref: ref,
+          cleaning_date: cleaningDate,
+          guest_name: note,
+          num_guests: null,
+          cleaning_fee_snapshot: baseCleaningFee,
+          laundry_fee_snapshot: 0,
+          rooms_with_laundry: 0,
+        });
+      }
     }
 
-    // Full refresh
+    // Full refresh of blocked_dates for this source
     const { error: delError } = await supabase.from('blocked_dates').delete().eq('source', source);
     if (delError) {
       return { events: eventCount, dates_blocked: 0, error: `delete failed: ${delError.message}` };
@@ -124,13 +158,52 @@ async function syncSource(
     }
     const rowsToInsert = Array.from(uniqueByDate.values());
 
-    if (rowsToInsert.length === 0) {
-      return { events: eventCount, dates_blocked: 0 };
+    if (rowsToInsert.length > 0) {
+      const { error: insError } = await supabase.from('blocked_dates').insert(rowsToInsert);
+      if (insError) {
+        return { events: eventCount, dates_blocked: 0, error: `insert failed: ${insError.message}` };
+      }
     }
 
-    const { error: insError } = await supabase.from('blocked_dates').insert(rowsToInsert);
-    if (insError) {
-      return { events: eventCount, dates_blocked: 0, error: `insert failed: ${insError.message}` };
+    // Sync cleaning_tasks for this external source.
+    // Keep paid tasks (historical ledger). Remove unpaid tasks whose
+    // reservation no longer exists in the feed.
+    try {
+      const { data: existingRows } = await supabase
+        .from('cleaning_tasks')
+        .select('external_ref, cleaning_date, cleaning_paid, laundry_paid')
+        .eq('external_source', source);
+
+      const currentKeys = new Set(cleaningRows.map((r) => `${r.external_ref}|${r.cleaning_date}`));
+      const toDelete = (existingRows || [])
+        .filter(
+          (r: { external_ref: string | null; cleaning_date: string; cleaning_paid: boolean; laundry_paid: boolean }) =>
+            r.external_ref &&
+            !r.cleaning_paid &&
+            !r.laundry_paid &&
+            !currentKeys.has(`${r.external_ref}|${r.cleaning_date}`)
+        )
+        .map((r: { external_ref: string | null; cleaning_date: string }) => ({
+          external_ref: r.external_ref!,
+          cleaning_date: r.cleaning_date,
+        }));
+
+      for (const row of toDelete) {
+        await supabase
+          .from('cleaning_tasks')
+          .delete()
+          .eq('external_source', source)
+          .eq('external_ref', row.external_ref)
+          .eq('cleaning_date', row.cleaning_date);
+      }
+
+      if (cleaningRows.length > 0) {
+        await supabase
+          .from('cleaning_tasks')
+          .upsert(cleaningRows, { onConflict: 'external_source,external_ref,cleaning_date' });
+      }
+    } catch (err) {
+      console.error('[ical-sync] cleaning_tasks sync failed:', err);
     }
 
     return { events: eventCount, dates_blocked: rowsToInsert.length };
@@ -147,7 +220,7 @@ export async function GET() {
     const { data: settingsRows, error: settingsError } = await supabase
       .from('settings')
       .select('key, value')
-      .in('key', ['ical_airbnb', 'ical_booking']);
+      .in('key', ['ical_airbnb', 'ical_booking', 'cleaning_base_fee']);
 
     if (settingsError) {
       return NextResponse.json({ error: 'Failed to read settings', details: settingsError.message }, { status: 500 });
@@ -158,6 +231,8 @@ export async function GET() {
       settings[row.key] = typeof row.value === 'string' ? row.value : String(row.value ?? '');
     });
 
+    const baseCleaningFee = Number(settings.cleaning_base_fee ?? 50) || 50;
+
     const result: { airbnb: SyncResult; booking: SyncResult } = {
       airbnb: { events: 0, dates_blocked: 0 },
       booking: { events: 0, dates_blocked: 0 },
@@ -165,12 +240,12 @@ export async function GET() {
 
     const airbnbUrl = (settings.ical_airbnb || '').trim();
     if (airbnbUrl) {
-      result.airbnb = await syncSource(supabase, airbnbUrl, 'airbnb_ical');
+      result.airbnb = await syncSource(supabase, airbnbUrl, 'airbnb_ical', baseCleaningFee);
     }
 
     const bookingUrl = (settings.ical_booking || '').trim();
     if (bookingUrl) {
-      result.booking = await syncSource(supabase, bookingUrl, 'booking_ical');
+      result.booking = await syncSource(supabase, bookingUrl, 'booking_ical', baseCleaningFee);
     }
 
     return NextResponse.json(
