@@ -12,6 +12,7 @@ import {
   Sparkles,
   Shirt,
   Lock,
+  Plus,
 } from 'lucide-react';
 
 type LaundryTable = Record<string, number>;
@@ -39,6 +40,7 @@ export default function AdminCleaningPage() {
   const [savingPrices, setSavingPrices] = useState(false);
   const [filter, setFilter] = useState<FilterState>('pending');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showAvulsa, setShowAvulsa] = useState(false);
 
   useEffect(() => {
     void load();
@@ -113,6 +115,28 @@ export default function AdminCleaningPage() {
     }
     setPrices(priceDraft);
     showToast('Preços guardados');
+  }
+
+  async function createAvulsaTask(date: string, note: string | null) {
+    const { error } = await supabase.from('cleaning_tasks').insert({
+      cleaning_date: date,
+      guest_name: note || 'Visita avulsa (só roupas)',
+      cleaning_fee_snapshot: 0,
+      cleaning_done: true,
+      cleaning_done_at: new Date().toISOString(),
+      cleaning_paid: true,
+      cleaning_paid_at: new Date().toISOString(),
+      laundry_fee_snapshot: 0,
+      rooms_with_laundry: 0,
+      notes: note,
+    });
+    if (error) {
+      showToast('Erro ao criar visita: ' + error.message, 'error');
+      return;
+    }
+    showToast('Visita avulsa criada');
+    setShowAvulsa(false);
+    await load();
   }
 
   async function syncTasksFromBookings() {
@@ -255,17 +279,33 @@ export default function AdminCleaningPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">Limpezas</h1>
-        <button
-          onClick={syncTasksFromBookings}
-          disabled={syncing}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors text-sm font-medium disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-          Sincronizar reservas
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAvulsa(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/15 transition-colors text-sm font-medium"
+          >
+            <Plus size={14} />
+            Visita avulsa
+          </button>
+          <button
+            onClick={syncTasksFromBookings}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors text-sm font-medium disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            Sincronizar reservas
+          </button>
+        </div>
       </div>
+
+      {showAvulsa && (
+        <AvulsaModal
+          onCancel={() => setShowAvulsa(false)}
+          onCreate={(date, note) => createAvulsaTask(date, note)}
+        />
+      )}
 
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -397,6 +437,77 @@ export default function AdminCleaningPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AvulsaModal({
+  onCancel,
+  onCreate,
+}: {
+  onCancel: () => void;
+  onCreate: (date: string, note: string | null) => void;
+}) {
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    if (!date) return;
+    setSubmitting(true);
+    await onCreate(date, note.trim() || null);
+    setSubmitting(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <h2 className="text-lg font-semibold text-white mb-1">Visita avulsa</h2>
+        <p className="text-xs text-gray-400 mb-4">
+          Cria uma tarefa só para levantar roupas (sem limpeza associada). A
+          equipa verá no &quot;Hoje&quot; da dashboard e marca os quartos quando for.
+        </p>
+
+        <label className="block mb-3">
+          <span className="block text-xs text-gray-400 mb-1">Data da visita</span>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            disabled={submitting}
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+
+        <label className="block mb-4">
+          <span className="block text-xs text-gray-400 mb-1">Nota (opcional)</span>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            disabled={submitting}
+            placeholder="ex: roupas da Susanne"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting || !date}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium disabled:opacity-50"
+          >
+            {submitting ? 'A criar...' : 'Criar visita'}
+          </button>
         </div>
       </div>
     </div>
