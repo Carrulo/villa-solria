@@ -598,6 +598,12 @@ function TaskRow({
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
 
+  const weekday = (() => {
+    const d = new Date(task.cleaning_date + 'T00:00:00Z');
+    const labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return { label: labels[d.getUTCDay()], isSaturday: d.getUTCDay() === 6 };
+  })();
+
   // Pick a readable reference token.
   // Site booking → the generated reference (e.g. ZMFUTATMQ).
   // External → tail of the UID (Airbnb / Booking usually embed their IDs there).
@@ -623,7 +629,17 @@ function TaskRow({
 
   return (
     <tr className="hover:bg-white/[0.02] text-sm">
-      <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{task.cleaning_date}</td>
+      <td className="px-4 py-3 text-gray-300 whitespace-nowrap">
+        {task.cleaning_date}
+        <span
+          className={`ml-2 text-xs font-semibold ${
+            weekday.isSaturday ? 'text-gray-500' : 'text-amber-400'
+          }`}
+          title={weekday.isSaturday ? 'Sábado (dia habitual)' : 'Não é sábado — atenção'}
+        >
+          {weekday.label}
+        </span>
+      </td>
       <td className="px-4 py-3">
         <span
           className="text-xs font-mono text-blue-300/80"
