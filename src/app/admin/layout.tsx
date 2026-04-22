@@ -38,8 +38,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Don't apply admin layout to login page
-  const isLoginPage = pathname === '/admin/login';
+  // Don't apply admin layout or auth check to login/reset pages
+  const isLoginPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
 
   useEffect(() => {
     if (isLoginPage) {
