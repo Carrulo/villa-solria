@@ -62,10 +62,9 @@ export default function AdminBookingsPage() {
   }
 
   const [refunding, setRefunding] = useState<string | null>(null);
+  const [refundTarget, setRefundTarget] = useState<Booking | null>(null);
 
   async function handleRefund(id: string) {
-    if (!confirm('Tem a certeza que quer reembolsar esta reserva? O valor será devolvido ao cliente via Stripe.')) return;
-
     setRefunding(id);
     try {
       const res = await fetch('/api/bookings/refund', {
@@ -91,6 +90,7 @@ export default function AdminBookingsPage() {
       showToast('Erro de rede ao processar reembolso', 'error');
     } finally {
       setRefunding(null);
+      setRefundTarget(null);
     }
   }
 
@@ -116,6 +116,16 @@ export default function AdminBookingsPage() {
         >
           {toast.message}
         </div>
+      )}
+
+      {/* Refund confirmation modal */}
+      {refundTarget && (
+        <RefundConfirmModal
+          booking={refundTarget}
+          isProcessing={refunding === refundTarget.id}
+          onCancel={() => setRefundTarget(null)}
+          onConfirm={() => handleRefund(refundTarget.id)}
+        />
       )}
 
       {/* Header + Filter */}
@@ -265,7 +275,7 @@ export default function AdminBookingsPage() {
                         )}
                         {booking.payment_status === 'paid' && (
                           <button
-                            onClick={() => handleRefund(booking.id)}
+                            onClick={() => setRefundTarget(booking)}
                             disabled={refunding === booking.id}
                             className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-xs font-medium disabled:opacity-50"
                             title="Reembolsar via Stripe"
@@ -283,6 +293,88 @@ export default function AdminBookingsPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RefundConfirmModal({
+  booking,
+  isProcessing,
+  onCancel,
+  onConfirm,
+}: {
+  booking: Booking;
+  isProcessing: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const expected = (booking as Booking & { reference?: string }).reference || booking.guest_email;
+  const expectedLabel = (booking as Booking & { reference?: string }).reference
+    ? 'referência da reserva'
+    : 'email do hóspede';
+  const [typed, setTyped] = useState('');
+  const matches = typed.trim() === expected;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <h2 className="text-lg font-semibold text-white mb-1">Confirmar Reembolso</h2>
+        <p className="text-xs text-red-400 mb-4">
+          Esta ação é irreversível. O valor será devolvido ao cliente via Stripe.
+        </p>
+
+        <div className="bg-white/5 rounded-xl p-4 mb-4 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Hóspede</span>
+            <span className="text-white font-medium">{booking.guest_name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Email</span>
+            <span className="text-gray-300">{booking.guest_email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Datas</span>
+            <span className="text-gray-300">
+              {booking.checkin_date} → {booking.checkout_date}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Total</span>
+            <span className="text-white font-semibold">{booking.total_price}EUR</span>
+          </div>
+        </div>
+
+        <label className="block text-xs text-gray-400 mb-2">
+          Para confirmar, escreva a {expectedLabel}:{' '}
+          <span className="text-purple-300 font-mono select-all">{expected}</span>
+        </label>
+        <input
+          type="text"
+          autoFocus
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          disabled={isProcessing}
+          placeholder={expected}
+          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500/50 disabled:opacity-50"
+        />
+
+        <div className="flex items-center justify-end gap-2 mt-5">
+          <button
+            onClick={onCancel}
+            disabled={isProcessing}
+            className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 transition-colors text-sm font-medium disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={!matches || isProcessing}
+            className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isProcessing ? 'A processar...' : `Reembolsar ${booking.total_price}EUR`}
+          </button>
         </div>
       </div>
     </div>
