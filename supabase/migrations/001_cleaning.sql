@@ -67,9 +67,9 @@ create trigger cleaning_tasks_touch before update on public.cleaning_tasks
 -- Stored in existing `settings` table as key/value text.
 -- ============================================================
 insert into public.settings (key, value) values
-  ('cleaning_base_fee', '50'),
-  ('laundry_fee_per_room', '{"1":10,"2":15,"3":20}'),
-  ('villa_rooms', '3'),
-  ('cleaner_email', ''),
-  ('cleaner_token', encode(gen_random_bytes(16), 'hex'))
+  ('cleaning_base_fee', to_jsonb(50)),
+  ('laundry_fee_per_room', '{"1":10,"2":15,"3":20}'::jsonb),
+  ('villa_rooms', to_jsonb(3)),
+  ('cleaner_email', to_jsonb(''::text)),
+  ('cleaner_token', to_jsonb(encode(gen_random_bytes(16), 'hex')))
 on conflict (key) do nothing;
