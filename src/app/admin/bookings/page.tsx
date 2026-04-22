@@ -20,6 +20,9 @@ export default function AdminBookingsPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [preset, setPreset] = useState<{ checkin_date?: string; checkout_date?: string }>({});
+  const [checkinDays, setCheckinDays] = useState<Set<string>>(new Set());
+  const [checkoutDays, setCheckoutDays] = useState<Set<string>>(new Set());
+  const [sourceByDate, setSourceByDate] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchBookings();
@@ -45,6 +48,32 @@ export default function AdminBookingsPage() {
       .order('date', { ascending: true })
       .limit(2000);
     setBlockedDates((data || []) as BlockedDateRow[]);
+
+    const { data: tasks } = await supabase
+      .from('cleaning_tasks')
+      .select('checkin_date, stay_checkout_date, external_source, booking_id');
+    const ci = new Set<string>();
+    const co = new Set<string>();
+    const sourceByDate: Record<string, string> = {};
+    for (const t of (tasks || []) as Array<{
+      checkin_date: string | null;
+      stay_checkout_date: string | null;
+      external_source: string | null;
+      booking_id: string | null;
+    }>) {
+      const src = t.external_source || (t.booking_id ? 'website' : 'manual');
+      if (t.checkin_date) {
+        ci.add(t.checkin_date);
+        if (!sourceByDate[t.checkin_date]) sourceByDate[t.checkin_date] = src;
+      }
+      if (t.stay_checkout_date) {
+        co.add(t.stay_checkout_date);
+        if (!sourceByDate[t.stay_checkout_date]) sourceByDate[t.stay_checkout_date] = src;
+      }
+    }
+    setCheckinDays(ci);
+    setCheckoutDays(co);
+    setSourceByDate(sourceByDate);
   }
 
   async function updateStatus(id: string, status: 'confirmed' | 'cancelled') {
@@ -180,6 +209,9 @@ export default function AdminBookingsPage() {
       {/* Availability calendar (month view) */}
       <AvailabilityCalendar
         blocked={blockedDates}
+        checkinDays={checkinDays}
+        checkoutDays={checkoutDays}
+        sourceByDate={sourceByDate}
         onPickRange={(checkin, checkout) => {
           setPreset({ checkin_date: checkin, checkout_date: checkout });
           setShowManualModal(true);
@@ -379,9 +411,15 @@ function RefundConfirmModal({
 
 function AvailabilityCalendar({
   blocked,
+  checkinDays,
+  checkoutDays,
+  sourceByDate,
   onPickRange,
 }: {
   blocked: BlockedDateRow[];
+  checkinDays: Set<string>;
+  checkoutDays: Set<string>;
+  sourceByDate: Record<string, string>;
   onPickRange: (checkin: string, checkout: string) => void;
 }) {
   const today = useMemo(() => {
@@ -403,10 +441,9 @@ function AvailabilityCalendar({
   const month = cursor.getUTCMonth();
   const monthLabel = cursor.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
-  // Build a 6-row grid aligned to Monday.
   const cells: { iso: string; inMonth: boolean }[] = useMemo(() => {
     const firstOfMonth = new Date(Date.UTC(year, month, 1));
-    const weekday = (firstOfMonth.getUTCDay() + 6) % 7; // 0=Mon
+    const weekday = (firstOfMonth.getUTCDay() + 6) % 7;
     const gridStart = new Date(firstOfMonth);
     gridStart.setUTCDate(gridStart.getUTCDate() - weekday);
     const out: { iso: string; inMonth: boolean }[] = [];
@@ -421,22 +458,23 @@ function AvailabilityCalendar({
     return out;
   }, [year, month]);
 
-  function sourceStyle(src: string) {
+  // Solid colors (tailwind-hex) per source, used for diagonal gradients.
+  function colorOf(src: string | undefined): string {
     switch (src) {
       case 'airbnb_ical':
-        return 'bg-pink-500/25 border-pink-400/40 text-pink-100';
+        return 'rgba(236,72,153,0.55)'; // pink-500
       case 'booking_ical':
-        return 'bg-blue-500/25 border-blue-400/40 text-blue-100';
+        return 'rgba(59,130,246,0.55)'; // blue-500
       case 'website':
-        return 'bg-emerald-500/25 border-emerald-400/40 text-emerald-100';
+      case 'manual':
+        return 'rgba(16,185,129,0.55)'; // emerald-500
       default:
-        return 'bg-gray-500/25 border-gray-400/40 text-gray-100';
+        return 'rgba(156,163,175,0.55)'; // gray-400
     }
   }
 
-  function onDayClick(iso: string) {
-    const isBlocked = blockedMap.has(iso);
-    if (isBlocked) return;
+  function onDayClick(iso: string, canSelect: boolean) {
+    if (!canSelect) return;
     if (!rangeStart || (rangeStart && rangeEnd)) {
       setRangeStart(iso);
       setRangeEnd(null);
@@ -461,9 +499,11 @@ function AvailabilityCalendar({
       )
     : 0;
 
+  const todayIso = today.toISOString().slice(0, 10);
+
   return (
-    <div className="bg-[#16213e] rounded-2xl border border-white/5 p-5">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-[#16213e] rounded-2xl border border-white/5 p-3 sm:p-5">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
             Disponibilidade
@@ -494,43 +534,95 @@ function AvailabilityCalendar({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 mb-1">
         {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => (
           <div key={d} className="text-center">{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {cells.map(({ iso, inMonth }) => {
           const b = blockedMap.get(iso);
           const isBlocked = !!b;
-          const isToday = iso === today.toISOString().slice(0, 10);
+          const isCheckin = checkinDays.has(iso);
+          const isCheckout = checkoutDays.has(iso);
+          const isTurn = isCheckin && isCheckout;
+          const isToday = iso === todayIso;
           const inSel = inSelection(iso);
-          const sourceCls = isBlocked ? sourceStyle(b.source) : 'border-transparent';
+
+          // A checkout-only day (morning busy, afternoon free) is still
+          // pickable as a check-in for a new booking, same for the
+          // mirror case. Fully blocked mid-stay days can't be picked.
+          const fullyBooked = isBlocked && !isTurn && !(isCheckin && !isCheckout) && !(isCheckout && !isCheckin);
+          const canSelect = inMonth && !fullyBooked;
+
+          const color = colorOf(sourceByDate[iso] || b?.source);
+
+          // Diagonal painting rules:
+          //   checkout-only → top-left triangle colored (morning busy)
+          //   checkin-only  → bottom-right triangle colored (afternoon busy)
+          //   turn          → diagonal split with both tones
+          //   mid-stay       → solid color
+          let bgStyle: React.CSSProperties | undefined;
+          if (isTurn) {
+            const ci = colorOf(sourceByDate[iso]);
+            bgStyle = {
+              background: `linear-gradient(135deg, ${color} 0%, ${color} 49%, transparent 49%, transparent 51%, ${ci} 51%, ${ci} 100%)`,
+            };
+          } else if (isCheckout && !isCheckin) {
+            bgStyle = {
+              background: `linear-gradient(135deg, ${color} 0%, ${color} 49%, transparent 51%, transparent 100%)`,
+            };
+          } else if (isCheckin && !isCheckout) {
+            bgStyle = {
+              background: `linear-gradient(135deg, transparent 0%, transparent 49%, ${color} 51%, ${color} 100%)`,
+            };
+          } else if (fullyBooked) {
+            bgStyle = { background: color };
+          }
+
+          const titleParts: string[] = [iso];
+          if (isCheckin) titleParts.push('check-in');
+          if (isCheckout) titleParts.push('check-out');
+          if (isTurn) titleParts.push('mesmo dia');
+          if (b?.note) titleParts.push(b.note);
+
           return (
             <button
               key={iso}
-              onClick={() => onDayClick(iso)}
-              disabled={!inMonth || isBlocked}
-              title={b ? `${iso} · ${b.source}${b.note ? ' · ' + b.note : ''}` : iso}
-              className={`relative aspect-square rounded-lg text-xs border transition-colors flex flex-col items-center justify-center
+              onClick={() => onDayClick(iso, canSelect)}
+              disabled={!canSelect}
+              title={titleParts.join(' · ')}
+              style={bgStyle}
+              className={`relative h-10 sm:h-14 rounded-md sm:rounded-lg text-[11px] sm:text-xs border transition-colors flex items-start justify-start p-1
                 ${inMonth ? '' : 'opacity-30'}
-                ${isBlocked ? sourceCls + ' cursor-not-allowed' : 'bg-white/5 border-white/10 text-gray-200 hover:bg-emerald-500/20'}
-                ${inSel && !isBlocked ? '!bg-emerald-500/40 !border-emerald-300/60 !text-white' : ''}
-                ${isToday ? 'ring-1 ring-amber-400/60' : ''}`}
+                ${fullyBooked ? 'border-white/10 cursor-not-allowed text-white/90' : 'border-white/10 text-gray-200'}
+                ${canSelect ? 'hover:ring-1 hover:ring-emerald-300/60' : ''}
+                ${inSel && canSelect ? '!border-emerald-300/60 ring-1 ring-emerald-300/60' : ''}
+                ${isToday ? 'outline outline-1 outline-amber-400/60' : ''}
+                ${isTurn ? 'ring-1 ring-red-400/70' : ''}`}
             >
-              <span className="font-medium">{parseInt(iso.slice(8, 10), 10)}</span>
+              <span className="font-medium leading-none">{parseInt(iso.slice(8, 10), 10)}</span>
+              {isTurn && (
+                <span className="absolute bottom-0.5 right-0.5 text-[8px] font-bold text-red-200 bg-red-500/40 rounded px-0.5">
+                  T
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
       <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
-        <div className="flex items-center gap-3 text-[11px] text-gray-400 flex-wrap">
+        <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-gray-400 flex-wrap">
           <Legend color="bg-white/5 border-white/10" label="livre" />
-          <Legend color="bg-emerald-500/25 border-emerald-400/40" label="site" />
-          <Legend color="bg-pink-500/25 border-pink-400/40" label="Airbnb" />
-          <Legend color="bg-blue-500/25 border-blue-400/40" label="Booking" />
+          <Legend color="bg-emerald-500/55 border-emerald-400/40" label="site/manual" />
+          <Legend color="bg-pink-500/55 border-pink-400/40" label="Airbnb" />
+          <Legend color="bg-blue-500/55 border-blue-400/40" label="Booking" />
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded border border-red-400/70" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.55) 49%, transparent 51%)' }} />
+            mudança
+          </span>
         </div>
 
         {rangeStart && (
