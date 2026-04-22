@@ -33,6 +33,7 @@ type FilterState = 'pending' | 'closed' | 'all';
 
 export default function AdminCleaningPage() {
   const [tasks, setTasks] = useState<CleaningTask[]>([]);
+  const [bookingRefs, setBookingRefs] = useState<Record<string, string>>({});
   const [prices, setPrices] = useState<PriceSettings>(DEFAULT_PRICES);
   const [priceDraft, setPriceDraft] = useState<PriceSettings>(DEFAULT_PRICES);
   const [loading, setLoading] = useState(true);
@@ -61,7 +62,25 @@ export default function AdminCleaningPage() {
         .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room']),
     ]);
 
-    setTasks((tasksRes.data || []) as CleaningTask[]);
+    const loadedTasks = (tasksRes.data || []) as CleaningTask[];
+    setTasks(loadedTasks);
+
+    const bookingIds = Array.from(
+      new Set(loadedTasks.map((t) => t.booking_id).filter((v): v is string => !!v))
+    );
+    if (bookingIds.length > 0) {
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select('id, reference')
+        .in('id', bookingIds);
+      const map: Record<string, string> = {};
+      (bookings || []).forEach((b: { id: string; reference: string | null }) => {
+        if (b.reference) map[b.id] = b.reference;
+      });
+      setBookingRefs(map);
+    } else {
+      setBookingRefs({});
+    }
 
     const byKey: Record<string, string> = {};
     (settingsRes.data || []).forEach((r: { key: string; value: string }) => {
@@ -406,6 +425,7 @@ export default function AdminCleaningPage() {
             <thead>
               <tr className="text-left text-xs text-gray-400 uppercase tracking-wider border-b border-white/5">
                 <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Ref.</th>
                 <th className="px-4 py-3">Hóspede</th>
                 <th className="px-4 py-3">Origem</th>
                 <th className="px-4 py-3">Limpeza</th>
@@ -417,7 +437,7 @@ export default function AdminCleaningPage() {
             <tbody className="divide-y divide-white/5">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-gray-500 text-sm">
+                  <td colSpan={8} className="px-6 py-10 text-center text-gray-500 text-sm">
                     Nenhuma tarefa {filter === 'pending' ? 'pendente' : filter === 'closed' ? 'fechada' : ''}
                   </td>
                 </tr>
@@ -426,6 +446,7 @@ export default function AdminCleaningPage() {
                   <TaskRow
                     key={t.id}
                     task={t}
+                    reference={t.booking_id ? bookingRefs[t.booking_id] : null}
                     roomOptions={roomOptions}
                     onToggleDone={() => toggleCleaningDone(t)}
                     onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
@@ -555,6 +576,7 @@ function PriceInput({
 
 function TaskRow({
   task,
+  reference,
   roomOptions,
   onToggleDone,
   onMarkLaundry,
@@ -564,6 +586,7 @@ function TaskRow({
   onRenameGuest,
 }: {
   task: CleaningTask;
+  reference: string | null;
   roomOptions: number[];
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
@@ -574,6 +597,18 @@ function TaskRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
+
+  // Pick a readable reference token.
+  // Site booking → the generated reference (e.g. ZMFUTATMQ).
+  // External → tail of the UID (Airbnb / Booking usually embed their IDs there).
+  const refLabel = (() => {
+    if (reference) return reference;
+    if (task.external_ref) {
+      const cleaned = task.external_ref.split('@')[0];
+      return cleaned.length > 14 ? '…' + cleaned.slice(-12) : cleaned;
+    }
+    return '—';
+  })();
   const amount =
     (!task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0) +
     (!task.laundry_paid && task.laundry_taken ? Number(task.laundry_fee_snapshot) : 0);
@@ -589,6 +624,14 @@ function TaskRow({
   return (
     <tr className="hover:bg-white/[0.02] text-sm">
       <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{task.cleaning_date}</td>
+      <td className="px-4 py-3">
+        <span
+          className="text-xs font-mono text-blue-300/80"
+          title={task.external_ref || reference || ''}
+        >
+          {refLabel}
+        </span>
+      </td>
       <td className="px-4 py-3">
         {editing ? (
           <input
