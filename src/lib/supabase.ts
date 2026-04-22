@@ -66,6 +66,7 @@ export interface CleaningTask {
   external_source: 'airbnb_ical' | 'booking_ical' | null;
   external_ref: string | null;
   cleaning_date: string;
+  checkin_date: string | null;
   guest_name: string | null;
   num_guests: number | null;
   cleaning_done: boolean;

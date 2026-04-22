@@ -163,7 +163,7 @@ export default function AdminCleaningPage() {
     try {
       const { data: bookings } = await supabase
         .from('bookings')
-        .select('id, guest_name, num_guests, checkout_date, status, payment_status')
+        .select('id, guest_name, num_guests, checkin_date, checkout_date, status, payment_status')
         .in('status', ['confirmed'])
         .in('payment_status', ['paid'])
         .order('checkout_date', { ascending: true });
@@ -180,6 +180,7 @@ export default function AdminCleaningPage() {
         .map((b) => ({
           booking_id: b.id,
           cleaning_date: b.checkout_date,
+          checkin_date: b.checkin_date,
           guest_name: b.guest_name,
           num_guests: b.num_guests,
           cleaning_fee_snapshot: prices.cleaning_base_fee,
@@ -252,6 +253,33 @@ export default function AdminCleaningPage() {
       laundry_paid_at: new Date().toISOString(),
     });
   }
+
+  // Map task.id → { isTurn, gapDays, nextDate } based on sorted sequence.
+  // Same-day turnover = cleaning_date equals the next task's checkin_date.
+  // gapDays = days between this cleaning_date and the next task's checkin.
+  const sequenceInfo = useMemo(() => {
+    const sorted = [...tasks].sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date));
+    const info: Record<string, { isTurn: boolean; gapDays: number | null; nextDate: string | null }> = {};
+    for (let i = 0; i < sorted.length; i++) {
+      const cur = sorted[i];
+      const next = sorted[i + 1];
+      const nextCi = next?.checkin_date || next?.cleaning_date || null;
+      if (!nextCi) {
+        info[cur.id] = { isTurn: false, gapDays: null, nextDate: null };
+        continue;
+      }
+      const dayMs = 86400000;
+      const diff = Math.round(
+        (new Date(nextCi + 'T00:00:00Z').getTime() - new Date(cur.cleaning_date + 'T00:00:00Z').getTime()) / dayMs
+      );
+      info[cur.id] = {
+        isTurn: diff === 0,
+        gapDays: diff >= 0 ? diff : null,
+        nextDate: nextCi,
+      };
+    }
+    return info;
+  }, [tasks]);
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
@@ -447,6 +475,7 @@ export default function AdminCleaningPage() {
                     key={t.id}
                     task={t}
                     reference={t.booking_id ? bookingRefs[t.booking_id] : null}
+                    seq={sequenceInfo[t.id] || { isTurn: false, gapDays: null, nextDate: null }}
                     roomOptions={roomOptions}
                     onToggleDone={() => toggleCleaningDone(t)}
                     onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
@@ -577,6 +606,7 @@ function PriceInput({
 function TaskRow({
   task,
   reference,
+  seq,
   roomOptions,
   onToggleDone,
   onMarkLaundry,
@@ -587,6 +617,7 @@ function TaskRow({
 }: {
   task: CleaningTask;
   reference: string | null;
+  seq: { isTurn: boolean; gapDays: number | null; nextDate: string | null };
   roomOptions: number[];
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
@@ -630,15 +661,35 @@ function TaskRow({
   return (
     <tr className="hover:bg-white/[0.02] text-sm">
       <td className="px-4 py-3 text-gray-300 whitespace-nowrap">
-        {task.cleaning_date}
-        <span
-          className={`ml-2 text-xs font-semibold ${
-            weekday.isSaturday ? 'text-gray-500' : 'text-amber-400'
-          }`}
-          title={weekday.isSaturday ? 'Sábado (dia habitual)' : 'Não é sábado — atenção'}
-        >
-          {weekday.label}
-        </span>
+        <div className="flex items-center gap-2">
+          <span>{task.cleaning_date}</span>
+          <span
+            className={`text-xs font-semibold ${
+              weekday.isSaturday ? 'text-gray-500' : 'text-amber-400'
+            }`}
+            title={weekday.isSaturday ? 'Sábado' : 'Não é sábado'}
+          >
+            {weekday.label}
+          </span>
+          {seq.isTurn && (
+            <span
+              className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold uppercase tracking-wider"
+              title="Turnover no mesmo dia: hóspede sai e outro entra no mesmo dia"
+            >
+              TURN
+            </span>
+          )}
+        </div>
+        {task.checkin_date && (
+          <p className="text-xs text-gray-500 mt-0.5">
+            est. {task.checkin_date.slice(5)} → {task.cleaning_date.slice(5)}
+          </p>
+        )}
+        {seq.gapDays !== null && seq.gapDays > 0 && (
+          <p className="text-xs text-gray-500 mt-0.5">
+            +{seq.gapDays} dia{seq.gapDays !== 1 ? 's' : ''} até próxima
+          </p>
+        )}
       </td>
       <td className="px-4 py-3">
         <span

@@ -129,6 +129,7 @@ export async function POST(request: NextRequest) {
                 {
                   booking_id: bookingId,
                   cleaning_date: booking.checkout_date,
+                  checkin_date: booking.checkin_date,
                   guest_name: booking.guest_name || null,
                   num_guests: booking.num_guests ?? null,
                   cleaning_fee_snapshot: baseFee,

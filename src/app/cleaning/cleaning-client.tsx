@@ -64,6 +64,18 @@ export default function CleaningClient({
     return { today, upcoming, done };
   }, [tasks, todayStr]);
 
+  const turnIds = useMemo(() => {
+    const sorted = [...tasks].sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date));
+    const ids = new Set<string>();
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const cur = sorted[i];
+      const next = sorted[i + 1];
+      const nextCi = next.checkin_date || next.cleaning_date;
+      if (nextCi === cur.cleaning_date) ids.add(cur.id);
+    }
+    return ids;
+  }, [tasks]);
+
   const visible =
     tab === 'today' ? tabs.today : tab === 'upcoming' ? tabs.upcoming : tabs.done;
 
@@ -111,6 +123,7 @@ export default function CleaningClient({
               <TaskCard
                 key={t.id}
                 task={t}
+                isTurn={turnIds.has(t.id)}
                 busy={busyId === t.id}
                 onToggleCleaning={() =>
                   callApi({ id: t.id, cleaning_done: !t.cleaning_done })
@@ -159,12 +172,14 @@ function TabButton({
 
 function TaskCard({
   task,
+  isTurn,
   busy,
   onToggleCleaning,
   onMarkLaundry,
   onUnmarkLaundry,
 }: {
   task: CleaningTask;
+  isTurn: boolean;
   busy: boolean;
   onToggleCleaning: () => void;
   onMarkLaundry: (rooms: number) => void;
@@ -175,7 +190,9 @@ function TaskCard({
   return (
     <div
       className={`rounded-2xl p-4 sm:p-5 border ${
-        overdue
+        isTurn
+          ? 'bg-red-500/10 border-red-500/40'
+          : overdue
           ? 'bg-red-500/5 border-red-500/30'
           : 'bg-white/5 border-white/10'
       }`}
@@ -191,13 +208,30 @@ function TaskCard({
               {task.num_guests ? ` · ${task.num_guests} hóspede(s)` : ''}
             </p>
           )}
+          {task.checkin_date && (
+            <p className="text-xs text-gray-500 mt-1">
+              Estadia {task.checkin_date.slice(5)} → {task.cleaning_date.slice(5)}
+            </p>
+          )}
         </div>
-        {overdue && (
-          <span className="px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-300">
-            atrasada
-          </span>
-        )}
+        <div className="flex flex-col gap-1 items-end">
+          {isTurn && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/30 text-red-200 uppercase">
+              Mesmo dia ⚡
+            </span>
+          )}
+          {overdue && !isTurn && (
+            <span className="px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-300">
+              atrasada
+            </span>
+          )}
+        </div>
       </div>
+      {isTurn && (
+        <p className="mt-2 text-xs text-red-200">
+          ⚠️ Outro hóspede entra neste dia. Limpar o quanto antes após check-out.
+        </p>
+      )}
 
       <div className="mt-4 space-y-3">
         <button
