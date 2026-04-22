@@ -67,6 +67,7 @@ export interface CleaningTask {
   external_ref: string | null;
   cleaning_date: string;
   checkin_date: string | null;
+  stay_checkout_date: string | null;
   guest_name: string | null;
   num_guests: number | null;
   cleaning_done: boolean;

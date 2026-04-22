@@ -105,6 +105,7 @@ async function syncSource(
       external_ref: string;
       cleaning_date: string;
       checkin_date: string;
+      stay_checkout_date: string;
       guest_name: string | null;
       num_guests: null;
       cleaning_fee_snapshot: number;
@@ -126,10 +127,14 @@ async function syncSource(
         blockedRows.push({ date, source, note });
       }
 
-      // One cleaning task per external reservation, on its DTEND (checkout day).
+      // One cleaning task per external reservation, on its DTSTART (the
+      // arrival day — the cleaner preps the villa before the guest gets
+      // in). DTEND is kept as stay_checkout_date for the stay range and
+      // same-day turn detection.
       // Stable ref per platform — prefer UID, fall back to DTSTART.
       const ref = (event.uid || formatDate(startDate)).slice(0, 200);
-      const cleaningDate = formatDate(endDate);
+      const cleaningDate = formatDate(startDate);
+      const stayCheckout = formatDate(endDate);
       const dedupeKey = `${ref}|${cleaningDate}`;
       if (!seenRefs.has(dedupeKey)) {
         seenRefs.add(dedupeKey);
@@ -137,7 +142,8 @@ async function syncSource(
           external_source: source,
           external_ref: ref,
           cleaning_date: cleaningDate,
-          checkin_date: formatDate(startDate),
+          checkin_date: cleaningDate,
+          stay_checkout_date: stayCheckout,
           guest_name: note,
           num_guests: null,
           cleaning_fee_snapshot: baseCleaningFee,
@@ -210,15 +216,15 @@ async function syncSource(
             ignoreDuplicates: true,
           });
 
-        // Backfill checkin_date on existing rows that predate the column.
+        // Backfill stay_checkout_date on existing rows that predate the column.
         for (const row of cleaningRows) {
           await supabase
             .from('cleaning_tasks')
-            .update({ checkin_date: row.checkin_date })
+            .update({ stay_checkout_date: row.stay_checkout_date })
             .eq('external_source', row.external_source)
             .eq('external_ref', row.external_ref)
             .eq('cleaning_date', row.cleaning_date)
-            .is('checkin_date', null);
+            .is('stay_checkout_date', null);
         }
       }
     } catch (err) {

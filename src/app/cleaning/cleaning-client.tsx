@@ -65,13 +65,11 @@ export default function CleaningClient({
   }, [tasks, todayStr]);
 
   const turnIds = useMemo(() => {
-    const sorted = [...tasks].sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date));
+    const checkoutDays = new Set<string>();
+    for (const t of tasks) if (t.stay_checkout_date) checkoutDays.add(t.stay_checkout_date);
     const ids = new Set<string>();
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const cur = sorted[i];
-      const next = sorted[i + 1];
-      const nextCi = next.checkin_date || next.cleaning_date;
-      if (nextCi === cur.cleaning_date) ids.add(cur.id);
+    for (const t of tasks) {
+      if (checkoutDays.has(t.cleaning_date)) ids.add(t.id);
     }
     return ids;
   }, [tasks]);
@@ -208,9 +206,9 @@ function TaskCard({
               {task.num_guests ? ` · ${task.num_guests} hóspede(s)` : ''}
             </p>
           )}
-          {task.checkin_date && (
+          {task.stay_checkout_date && (
             <p className="text-xs text-gray-500 mt-1">
-              Estadia {task.checkin_date.slice(5)} → {task.cleaning_date.slice(5)}
+              Estadia {task.cleaning_date.slice(5)} → {task.stay_checkout_date.slice(5)}
             </p>
           )}
         </div>

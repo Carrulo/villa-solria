@@ -125,11 +125,14 @@ export async function POST(request: NextRequest) {
                 .maybeSingle();
               const baseFee = Number(feeRow?.value ?? 50) || 50;
 
+              // cleaning_date = checkin (prep day for the arriving guest).
+              // stay_checkout_date kept for the stay range display + TURN.
               await supabase.from('cleaning_tasks').upsert(
                 {
                   booking_id: bookingId,
-                  cleaning_date: booking.checkout_date,
+                  cleaning_date: booking.checkin_date,
                   checkin_date: booking.checkin_date,
+                  stay_checkout_date: booking.checkout_date,
                   guest_name: booking.guest_name || null,
                   num_guests: booking.num_guests ?? null,
                   cleaning_fee_snapshot: baseFee,

@@ -139,6 +139,8 @@ export default function AdminCleaningPage() {
   async function createAvulsaTask(date: string, note: string | null) {
     const { error } = await supabase.from('cleaning_tasks').insert({
       cleaning_date: date,
+      checkin_date: date,
+      stay_checkout_date: date,
       guest_name: note || 'Visita avulsa (só roupas)',
       cleaning_fee_snapshot: 0,
       cleaning_done: true,
@@ -179,8 +181,9 @@ export default function AdminCleaningPage() {
         .filter((b) => !existingIds.has(b.id))
         .map((b) => ({
           booking_id: b.id,
-          cleaning_date: b.checkout_date,
+          cleaning_date: b.checkin_date,
           checkin_date: b.checkin_date,
+          stay_checkout_date: b.checkout_date,
           guest_name: b.guest_name,
           num_guests: b.num_guests,
           cleaning_fee_snapshot: prices.cleaning_base_fee,
@@ -254,29 +257,16 @@ export default function AdminCleaningPage() {
     });
   }
 
-  // Map task.id → { isTurn, gapDays, nextDate } based on sorted sequence.
-  // Same-day turnover = cleaning_date equals the next task's checkin_date.
-  // gapDays = days between this cleaning_date and the next task's checkin.
+  // For each task, is there any OTHER task where the previous guest
+  // checks out on the SAME day this cleaning happens? That's a same-day
+  // turnover — the cleaner has only a few hours between departure and
+  // arrival.
   const sequenceInfo = useMemo(() => {
-    const sorted = [...tasks].sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date));
-    const info: Record<string, { isTurn: boolean; gapDays: number | null; nextDate: string | null }> = {};
-    for (let i = 0; i < sorted.length; i++) {
-      const cur = sorted[i];
-      const next = sorted[i + 1];
-      const nextCi = next?.checkin_date || next?.cleaning_date || null;
-      if (!nextCi) {
-        info[cur.id] = { isTurn: false, gapDays: null, nextDate: null };
-        continue;
-      }
-      const dayMs = 86400000;
-      const diff = Math.round(
-        (new Date(nextCi + 'T00:00:00Z').getTime() - new Date(cur.cleaning_date + 'T00:00:00Z').getTime()) / dayMs
-      );
-      info[cur.id] = {
-        isTurn: diff === 0,
-        gapDays: diff >= 0 ? diff : null,
-        nextDate: nextCi,
-      };
+    const checkoutDays = new Set<string>();
+    for (const t of tasks) if (t.stay_checkout_date) checkoutDays.add(t.stay_checkout_date);
+    const info: Record<string, { isTurn: boolean }> = {};
+    for (const t of tasks) {
+      info[t.id] = { isTurn: checkoutDays.has(t.cleaning_date) };
     }
     return info;
   }, [tasks]);
@@ -475,7 +465,7 @@ export default function AdminCleaningPage() {
                     key={t.id}
                     task={t}
                     reference={t.booking_id ? bookingRefs[t.booking_id] : null}
-                    seq={sequenceInfo[t.id] || { isTurn: false, gapDays: null, nextDate: null }}
+                    seq={sequenceInfo[t.id] || { isTurn: false }}
                     roomOptions={roomOptions}
                     onToggleDone={() => toggleCleaningDone(t)}
                     onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
@@ -617,7 +607,7 @@ function TaskRow({
 }: {
   task: CleaningTask;
   reference: string | null;
-  seq: { isTurn: boolean; gapDays: number | null; nextDate: string | null };
+  seq: { isTurn: boolean };
   roomOptions: number[];
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
@@ -680,14 +670,9 @@ function TaskRow({
             </span>
           )}
         </div>
-        {task.checkin_date && (
+        {task.stay_checkout_date && (
           <p className="text-xs text-gray-500 mt-0.5">
-            est. {task.checkin_date.slice(5)} → {task.cleaning_date.slice(5)}
-          </p>
-        )}
-        {seq.gapDays !== null && seq.gapDays > 0 && (
-          <p className="text-xs text-gray-500 mt-0.5">
-            +{seq.gapDays} dia{seq.gapDays !== 1 ? 's' : ''} até próxima
+            est. {task.cleaning_date.slice(5)} → {task.stay_checkout_date.slice(5)}
           </p>
         )}
       </td>
