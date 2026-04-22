@@ -432,6 +432,7 @@ export default function AdminCleaningPage() {
                     onUnmarkLaundry={() => unmarkLaundry(t)}
                     onCloseCleaning={() => closeCleaning(t)}
                     onCloseLaundry={() => closeLaundry(t)}
+                    onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
                   />
                 ))
               )}
@@ -560,6 +561,7 @@ function TaskRow({
   onUnmarkLaundry,
   onCloseCleaning,
   onCloseLaundry,
+  onRenameGuest,
 }: {
   task: CleaningTask;
   roomOptions: number[];
@@ -568,7 +570,10 @@ function TaskRow({
   onUnmarkLaundry: () => void;
   onCloseCleaning: () => void;
   onCloseLaundry: () => void;
+  onRenameGuest: (name: string | null) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(task.guest_name || '');
   const amount =
     (!task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0) +
     (!task.laundry_paid && task.laundry_taken ? Number(task.laundry_fee_snapshot) : 0);
@@ -585,7 +590,40 @@ function TaskRow({
     <tr className="hover:bg-white/[0.02] text-sm">
       <td className="px-4 py-3 text-gray-300 whitespace-nowrap">{task.cleaning_date}</td>
       <td className="px-4 py-3">
-        <p className="text-white">{task.guest_name || '—'}</p>
+        {editing ? (
+          <input
+            autoFocus
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onBlur={() => {
+              setEditing(false);
+              const next = draftName.trim() || null;
+              if ((task.guest_name || null) !== next) onRenameGuest(next);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') {
+                setDraftName(task.guest_name || '');
+                setEditing(false);
+              }
+            }}
+            placeholder="Nome do hóspede"
+            className="w-full px-2 py-1 rounded bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        ) : (
+          <button
+            onClick={() => {
+              setDraftName(task.guest_name || '');
+              setEditing(true);
+            }}
+            className="text-left w-full"
+            title="Clica para editar"
+          >
+            <p className="text-white hover:text-blue-300 transition-colors">
+              {task.guest_name || <span className="italic text-gray-500">sem nome</span>}
+            </p>
+          </button>
+        )}
         {task.num_guests != null && (
           <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
         )}

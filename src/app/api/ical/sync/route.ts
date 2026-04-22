@@ -198,9 +198,15 @@ async function syncSource(
       }
 
       if (cleaningRows.length > 0) {
+        // ignoreDuplicates: true → only insert new rows, leave existing
+        // ones untouched. This preserves admin-edited guest_name and
+        // team-entered rooms_with_laundry between syncs.
         await supabase
           .from('cleaning_tasks')
-          .upsert(cleaningRows, { onConflict: 'external_source,external_ref,cleaning_date' });
+          .upsert(cleaningRows, {
+            onConflict: 'external_source,external_ref,cleaning_date',
+            ignoreDuplicates: true,
+          });
       }
     } catch (err) {
       console.error('[ical-sync] cleaning_tasks sync failed:', err);
