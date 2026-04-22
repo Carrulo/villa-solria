@@ -17,12 +17,14 @@ import {
   ImageIcon,
   Mail,
   Inbox,
+  Sparkles,
 } from 'lucide-react';
 import '../globals.css';
 
 const navItems = [
   { href: '/admin', label: 'Painel', icon: LayoutDashboard },
   { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
+  { href: '/admin/cleaning', label: 'Limpezas', icon: Sparkles },
   { href: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
   { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   { href: '/admin/inbox', label: 'Mensagens', icon: Inbox },

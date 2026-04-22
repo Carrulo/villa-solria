@@ -60,6 +60,30 @@ export interface Setting {
   created_at: string;
 }
 
+export interface CleaningTask {
+  id: string;
+  booking_id: string | null;
+  external_source: 'airbnb_ical' | 'booking_ical' | null;
+  external_ref: string | null;
+  cleaning_date: string;
+  guest_name: string | null;
+  num_guests: number | null;
+  cleaning_done: boolean;
+  cleaning_done_at: string | null;
+  laundry_taken: boolean;
+  laundry_taken_at: string | null;
+  rooms_with_laundry: number;
+  cleaning_paid: boolean;
+  cleaning_paid_at: string | null;
+  laundry_paid: boolean;
+  laundry_paid_at: string | null;
+  cleaning_fee_snapshot: number;
+  laundry_fee_snapshot: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Photo {
   id: string;
   filename: string;
