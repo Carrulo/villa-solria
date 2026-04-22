@@ -458,18 +458,32 @@ function AvailabilityCalendar({
     return out;
   }, [year, month]);
 
-  // Solid colors (tailwind-hex) per source, used for diagonal gradients.
+  // Solid colors per source, used for diagonal gradients.
   function colorOf(src: string | undefined): string {
     switch (src) {
       case 'airbnb_ical':
-        return 'rgba(236,72,153,0.55)'; // pink-500
+        return 'rgba(236,72,153,0.85)'; // pink-500
       case 'booking_ical':
-        return 'rgba(59,130,246,0.55)'; // blue-500
+        return 'rgba(59,130,246,0.85)'; // blue-500
       case 'website':
       case 'manual':
-        return 'rgba(16,185,129,0.55)'; // emerald-500
+        return 'rgba(16,185,129,0.85)'; // emerald-500
       default:
-        return 'rgba(156,163,175,0.55)'; // gray-400
+        return 'rgba(156,163,175,0.85)'; // gray-400
+    }
+  }
+
+  function initialOf(src: string | undefined): string {
+    switch (src) {
+      case 'airbnb_ical':
+        return 'A';
+      case 'booking_ical':
+        return 'B';
+      case 'website':
+      case 'manual':
+        return 'S';
+      default:
+        return '·';
     }
   }
 
@@ -503,13 +517,10 @@ function AvailabilityCalendar({
 
   return (
     <div className="bg-[#16213e] rounded-2xl border border-white/5 p-3 sm:p-5">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-            Disponibilidade
-          </h2>
-          <span className="text-xs text-gray-500 capitalize">· {monthLabel}</span>
-        </div>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          Disponibilidade
+        </h2>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCursor(new Date(Date.UTC(year, month - 1, 1)))}
@@ -533,6 +544,7 @@ function AvailabilityCalendar({
           </button>
         </div>
       </div>
+      <p className="text-lg sm:text-xl font-semibold text-white capitalize mb-3">{monthLabel}</p>
 
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-500 mb-1">
         {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => (
@@ -558,33 +570,38 @@ function AvailabilityCalendar({
 
           const color = colorOf(sourceByDate[iso] || b?.source);
 
-          // Diagonal painting rules:
+          // Diagonal painting with a visible white line separating the halves.
           //   checkout-only → top-left triangle colored (morning busy)
           //   checkin-only  → bottom-right triangle colored (afternoon busy)
-          //   turn          → diagonal split with both tones
-          //   mid-stay       → solid color
+          //   turn          → diagonal split bicolor
+          //   mid-stay      → solid color
+          const diagLine = 'rgba(255,255,255,0.35)';
           let bgStyle: React.CSSProperties | undefined;
           if (isTurn) {
             const ci = colorOf(sourceByDate[iso]);
             bgStyle = {
-              background: `linear-gradient(135deg, ${color} 0%, ${color} 49%, transparent 49%, transparent 51%, ${ci} 51%, ${ci} 100%)`,
+              background: `linear-gradient(135deg, ${color} 0%, ${color} 48%, ${diagLine} 48%, ${diagLine} 52%, ${ci} 52%, ${ci} 100%)`,
             };
           } else if (isCheckout && !isCheckin) {
             bgStyle = {
-              background: `linear-gradient(135deg, ${color} 0%, ${color} 49%, transparent 51%, transparent 100%)`,
+              background: `linear-gradient(135deg, ${color} 0%, ${color} 48%, ${diagLine} 48%, ${diagLine} 52%, transparent 52%, transparent 100%)`,
             };
           } else if (isCheckin && !isCheckout) {
             bgStyle = {
-              background: `linear-gradient(135deg, transparent 0%, transparent 49%, ${color} 51%, ${color} 100%)`,
+              background: `linear-gradient(135deg, transparent 0%, transparent 48%, ${diagLine} 48%, ${diagLine} 52%, ${color} 52%, ${color} 100%)`,
             };
           } else if (fullyBooked) {
             bgStyle = { background: color };
           }
 
+          const src = sourceByDate[iso] || b?.source;
+          const initial = initialOf(src);
+
           const titleParts: string[] = [iso];
-          if (isCheckin) titleParts.push('check-in');
-          if (isCheckout) titleParts.push('check-out');
-          if (isTurn) titleParts.push('mesmo dia');
+          if (isCheckin) titleParts.push('entrada');
+          if (isCheckout) titleParts.push('saída');
+          if (isTurn) titleParts.push('mudança no mesmo dia');
+          if (src) titleParts.push(src);
           if (b?.note) titleParts.push(b.note);
 
           return (
@@ -594,18 +611,34 @@ function AvailabilityCalendar({
               disabled={!canSelect}
               title={titleParts.join(' · ')}
               style={bgStyle}
-              className={`relative h-10 sm:h-14 rounded-md sm:rounded-lg text-[11px] sm:text-xs border transition-colors flex items-start justify-start p-1
+              className={`relative h-11 sm:h-16 rounded-md sm:rounded-lg text-[11px] sm:text-xs border transition-colors flex items-start justify-between p-1
                 ${inMonth ? '' : 'opacity-30'}
-                ${fullyBooked ? 'border-white/10 cursor-not-allowed text-white/90' : 'border-white/10 text-gray-200'}
+                ${fullyBooked ? 'border-white/10 cursor-not-allowed text-white' : 'border-white/10 text-gray-200'}
                 ${canSelect ? 'hover:ring-1 hover:ring-emerald-300/60' : ''}
                 ${inSel && canSelect ? '!border-emerald-300/60 ring-1 ring-emerald-300/60' : ''}
                 ${isToday ? 'outline outline-1 outline-amber-400/60' : ''}
                 ${isTurn ? 'ring-1 ring-red-400/70' : ''}`}
             >
-              <span className="font-medium leading-none">{parseInt(iso.slice(8, 10), 10)}</span>
+              <span className="font-semibold leading-none">{parseInt(iso.slice(8, 10), 10)}</span>
+              {/* Source letter in the colored corner */}
+              {isCheckout && !isCheckin && (
+                <span className="absolute top-0.5 left-1 text-[9px] sm:text-[10px] font-bold text-white/90 leading-none">
+                  {initial}
+                </span>
+              )}
+              {isCheckin && !isCheckout && (
+                <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-white/90 leading-none">
+                  {initial}
+                </span>
+              )}
+              {fullyBooked && (
+                <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-white/90 leading-none">
+                  {initial}
+                </span>
+              )}
               {isTurn && (
-                <span className="absolute bottom-0.5 right-0.5 text-[8px] font-bold text-red-200 bg-red-500/40 rounded px-0.5">
-                  T
+                <span className="absolute bottom-0.5 right-1 text-[8px] font-bold text-white bg-red-600 rounded px-1 leading-tight">
+                  TURN
                 </span>
               )}
             </button>
@@ -616,11 +649,17 @@ function AvailabilityCalendar({
       <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
         <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-gray-400 flex-wrap">
           <Legend color="bg-white/5 border-white/10" label="livre" />
-          <Legend color="bg-emerald-500/55 border-emerald-400/40" label="site/manual" />
-          <Legend color="bg-pink-500/55 border-pink-400/40" label="Airbnb" />
-          <Legend color="bg-blue-500/55 border-blue-400/40" label="Booking" />
+          <Legend color="bg-emerald-500/85 border-emerald-400/40" label="S·site/manual" />
+          <Legend color="bg-pink-500/85 border-pink-400/40" label="A·Airbnb" />
+          <Legend color="bg-blue-500/85 border-blue-400/40" label="B·Booking" />
           <span className="inline-flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded border border-red-400/70" style={{ background: 'linear-gradient(135deg, rgba(236,72,153,0.55) 49%, transparent 51%)' }} />
+            <span
+              className="w-3 h-3 rounded border border-red-400/70"
+              style={{
+                background:
+                  'linear-gradient(135deg, rgba(59,130,246,0.85) 48%, rgba(255,255,255,0.35) 48%, rgba(255,255,255,0.35) 52%, rgba(236,72,153,0.85) 52%)',
+              }}
+            />
             mudança
           </span>
         </div>
