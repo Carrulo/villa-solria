@@ -23,6 +23,7 @@ export default function AdminBookingsPage() {
   const [checkinDays, setCheckinDays] = useState<Set<string>>(new Set());
   const [checkoutDays, setCheckoutDays] = useState<Set<string>>(new Set());
   const [sourceByDate, setSourceByDate] = useState<Record<string, string>>({});
+  const [guestByDate, setGuestByDate] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchBookings();
@@ -51,15 +52,17 @@ export default function AdminBookingsPage() {
 
     const { data: tasks } = await supabase
       .from('cleaning_tasks')
-      .select('checkin_date, stay_checkout_date, external_source, booking_id');
+      .select('checkin_date, stay_checkout_date, external_source, booking_id, guest_name');
     const ci = new Set<string>();
     const co = new Set<string>();
     const sourceByDate: Record<string, string> = {};
+    const guestByDate: Record<string, string> = {};
     for (const t of (tasks || []) as Array<{
       checkin_date: string | null;
       stay_checkout_date: string | null;
       external_source: string | null;
       booking_id: string | null;
+      guest_name: string | null;
     }>) {
       const src = t.external_source || (t.booking_id ? 'website' : 'manual');
       if (t.checkin_date) {
@@ -70,10 +73,23 @@ export default function AdminBookingsPage() {
         co.add(t.stay_checkout_date);
         if (!sourceByDate[t.stay_checkout_date]) sourceByDate[t.stay_checkout_date] = src;
       }
+      // Spread guest_name across the whole stay so midstay days show it too.
+      if (t.guest_name && t.checkin_date && t.stay_checkout_date) {
+        const cur = new Date(t.checkin_date + 'T00:00:00Z');
+        const end = new Date(t.stay_checkout_date + 'T00:00:00Z');
+        while (cur <= end) {
+          const iso = cur.toISOString().slice(0, 10);
+          if (!guestByDate[iso]) guestByDate[iso] = t.guest_name;
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
+      } else if (t.guest_name && t.checkin_date) {
+        if (!guestByDate[t.checkin_date]) guestByDate[t.checkin_date] = t.guest_name;
+      }
     }
     setCheckinDays(ci);
     setCheckoutDays(co);
     setSourceByDate(sourceByDate);
+    setGuestByDate(guestByDate);
   }
 
   async function updateStatus(id: string, status: 'confirmed' | 'cancelled') {
@@ -216,6 +232,7 @@ export default function AdminBookingsPage() {
         checkinDays={checkinDays}
         checkoutDays={checkoutDays}
         sourceByDate={sourceByDate}
+        guestByDate={guestByDate}
         onPickRange={(checkin, checkout) => {
           setPreset({ checkin_date: checkin, checkout_date: checkout });
           setShowManualModal(true);
@@ -693,12 +710,14 @@ function AvailabilityCalendar({
   checkinDays,
   checkoutDays,
   sourceByDate,
+  guestByDate,
   onPickRange,
 }: {
   blocked: BlockedDateRow[];
   checkinDays: Set<string>;
   checkoutDays: Set<string>;
   sourceByDate: Record<string, string>;
+  guestByDate: Record<string, string>;
   onPickRange: (checkin: string, checkout: string) => void;
 }) {
   const today = useMemo(() => {
@@ -875,8 +894,12 @@ function AvailabilityCalendar({
 
           const src = sourceByDate[iso] || b?.source;
           const initial = initialOf(src);
+          const guest = guestByDate[iso];
+          const firstName = guest ? guest.replace(/\s*\(.*$/, '').split(' ')[0] : '';
+          const showName = !!guest && (isCheckin || fullyBooked) && firstName.length > 0;
 
           const titleParts: string[] = [iso];
+          if (guest) titleParts.push(guest);
           if (isCheckin) titleParts.push('entrada');
           if (isCheckout) titleParts.push('saída');
           if (isTurn) titleParts.push('mudança no mesmo dia');
@@ -899,24 +922,33 @@ function AvailabilityCalendar({
                 ${isTurn ? 'ring-1 ring-red-400/70' : ''}`}
             >
               <span className="font-semibold leading-none">{parseInt(iso.slice(8, 10), 10)}</span>
+              {/* Guest first-name — hidden on tiny screens */}
+              {showName && (
+                <span
+                  className="hidden sm:block absolute bottom-1 left-1 right-1 text-[10px] font-medium text-white/95 leading-tight truncate"
+                  title={guest}
+                >
+                  {firstName}
+                </span>
+              )}
               {/* Source letter in the colored corner */}
               {isCheckout && !isCheckin && (
                 <span className="absolute top-0.5 left-1 text-[9px] sm:text-[10px] font-bold text-white/90 leading-none">
                   {initial}
                 </span>
               )}
-              {isCheckin && !isCheckout && (
+              {isCheckin && !isCheckout && !showName && (
                 <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-white/90 leading-none">
                   {initial}
                 </span>
               )}
-              {fullyBooked && (
+              {fullyBooked && !showName && (
                 <span className="absolute bottom-0.5 right-1 text-[9px] sm:text-[10px] font-bold text-white/90 leading-none">
                   {initial}
                 </span>
               )}
               {isTurn && (
-                <span className="absolute bottom-0.5 right-1 text-[8px] font-bold text-white bg-red-600 rounded px-1 leading-tight">
+                <span className="absolute top-0.5 right-1 text-[8px] font-bold text-white bg-red-600 rounded px-1 leading-tight">
                   TURN
                 </span>
               )}
