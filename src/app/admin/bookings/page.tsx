@@ -161,6 +161,10 @@ export default function AdminBookingsPage() {
       {showManualModal && (
         <ManualBookingModal
           preset={preset}
+          blocked={blockedDates}
+          checkinDays={checkinDays}
+          checkoutDays={checkoutDays}
+          sourceByDate={sourceByDate}
           onCancel={() => {
             setShowManualModal(false);
             setPreset({});
@@ -405,6 +409,181 @@ function RefundConfirmModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MiniRangeCalendar({
+  blocked,
+  checkinDays,
+  checkoutDays,
+  sourceByDate,
+  start,
+  end,
+  onPick,
+}: {
+  blocked: BlockedDateRow[];
+  checkinDays: Set<string>;
+  checkoutDays: Set<string>;
+  sourceByDate: Record<string, string>;
+  start: string;
+  end: string;
+  onPick: (start: string, end: string) => void;
+}) {
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const initial = start || new Date().toISOString().slice(0, 10);
+  const [cursor, setCursor] = useState(
+    () => new Date(Date.UTC(parseInt(initial.slice(0, 4)), parseInt(initial.slice(5, 7)) - 1, 1))
+  );
+
+  const year = cursor.getUTCFullYear();
+  const month = cursor.getUTCMonth();
+  const label = cursor.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+  const blockedMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const b of blocked) m.set(b.date, b.source);
+    return m;
+  }, [blocked]);
+
+  const cells = useMemo(() => {
+    const first = new Date(Date.UTC(year, month, 1));
+    const weekday = (first.getUTCDay() + 6) % 7;
+    const gridStart = new Date(first);
+    gridStart.setUTCDate(gridStart.getUTCDate() - weekday);
+    const out: { iso: string; inMonth: boolean }[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart);
+      d.setUTCDate(d.getUTCDate() + i);
+      out.push({ iso: d.toISOString().slice(0, 10), inMonth: d.getUTCMonth() === month });
+    }
+    return out;
+  }, [year, month]);
+
+  function colorOf(src: string | undefined): string {
+    switch (src) {
+      case 'airbnb_ical':
+        return 'rgba(236,72,153,0.85)';
+      case 'booking_ical':
+        return 'rgba(59,130,246,0.85)';
+      case 'website':
+      case 'manual':
+        return 'rgba(16,185,129,0.85)';
+      default:
+        return 'rgba(156,163,175,0.85)';
+    }
+  }
+
+  function onClick(iso: string, canPick: boolean) {
+    if (!canPick) return;
+    if (!start || (start && end)) {
+      onPick(iso, '');
+    } else if (iso <= start) {
+      onPick(iso, '');
+    } else {
+      onPick(start, iso);
+    }
+  }
+
+  function inSelection(iso: string) {
+    if (!start) return false;
+    const e = end || start;
+    return iso >= start && iso <= e;
+  }
+
+  const todayIso = today.toISOString().slice(0, 10);
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-gray-300 capitalize">{label}</p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setCursor(new Date(Date.UTC(year, month - 1, 1)))}
+            className="p-1 rounded hover:bg-white/10 text-gray-300"
+            aria-label="Mês anterior"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setCursor(new Date(Date.UTC(year, month + 1, 1)))}
+            className="p-1 rounded hover:bg-white/10 text-gray-300"
+            aria-label="Mês seguinte"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-0.5 text-[9px] uppercase tracking-wider text-gray-500 mb-0.5">
+        {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => (
+          <div key={i} className="text-center">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-0.5">
+        {cells.map(({ iso, inMonth }) => {
+          const src = sourceByDate[iso] || blockedMap.get(iso);
+          const isBlocked = blockedMap.has(iso);
+          const isCheckin = checkinDays.has(iso);
+          const isCheckout = checkoutDays.has(iso);
+          const isTurn = isCheckin && isCheckout;
+          const fullyBooked = isBlocked && !isTurn && !(isCheckin && !isCheckout) && !(isCheckout && !isCheckin);
+          const canPick = inMonth && !fullyBooked;
+
+          const color = colorOf(src);
+          const diag = 'rgba(255,255,255,0.35)';
+          let bgStyle: React.CSSProperties | undefined;
+          if (isTurn) {
+            const ci = colorOf(sourceByDate[iso]);
+            bgStyle = {
+              background: `linear-gradient(135deg, ${color} 0%, ${color} 48%, ${diag} 48%, ${diag} 52%, ${ci} 52%, ${ci} 100%)`,
+            };
+          } else if (isCheckout && !isCheckin) {
+            bgStyle = {
+              background: `linear-gradient(135deg, ${color} 0%, ${color} 48%, ${diag} 48%, ${diag} 52%, transparent 52%)`,
+            };
+          } else if (isCheckin && !isCheckout) {
+            bgStyle = {
+              background: `linear-gradient(135deg, transparent 0%, transparent 48%, ${diag} 48%, ${diag} 52%, ${color} 52%)`,
+            };
+          } else if (fullyBooked) {
+            bgStyle = { background: color };
+          }
+
+          const inSel = inSelection(iso);
+          const isToday = iso === todayIso;
+
+          return (
+            <button
+              type="button"
+              key={iso}
+              onClick={() => onClick(iso, canPick)}
+              disabled={!canPick}
+              style={bgStyle}
+              className={`relative h-7 sm:h-8 rounded text-[10px] border flex items-center justify-center
+                ${inMonth ? '' : 'opacity-30'}
+                ${fullyBooked ? 'border-white/10 cursor-not-allowed text-white/90' : 'border-white/10 text-gray-200'}
+                ${canPick ? 'hover:ring-1 hover:ring-emerald-300/60' : ''}
+                ${inSel && canPick ? '!border-emerald-300/80 !bg-emerald-500/30 !text-white' : ''}
+                ${isToday ? 'outline outline-1 outline-amber-400/60' : ''}
+                ${isTurn ? 'ring-1 ring-red-400/70' : ''}`}
+            >
+              <span className="font-medium leading-none">{parseInt(iso.slice(8, 10), 10)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[10px] text-gray-500 mt-2">
+        Clica em 2 dias livres para definir entrada/saída. Dias ocupados não são seleccionáveis.
+      </p>
     </div>
   );
 }
@@ -705,11 +884,19 @@ function Legend({ color, label }: { color: string; label: string }) {
 
 function ManualBookingModal({
   preset,
+  blocked,
+  checkinDays,
+  checkoutDays,
+  sourceByDate,
   onCancel,
   onCreated,
   onError,
 }: {
   preset?: { checkin_date?: string; checkout_date?: string };
+  blocked: BlockedDateRow[];
+  checkinDays: Set<string>;
+  checkoutDays: Set<string>;
+  sourceByDate: Record<string, string>;
   onCancel: () => void;
   onCreated: () => Promise<void> | void;
   onError: (msg: string) => void;
@@ -868,7 +1055,10 @@ function ManualBookingModal({
             <input
               type="date"
               value={checkin}
-              onChange={(e) => setCheckin(e.target.value)}
+              onChange={(e) => {
+                setCheckin(e.target.value);
+                if (checkout && e.target.value >= checkout) setCheckout('');
+              }}
               className={fieldCls}
             />
           </Field>
@@ -880,6 +1070,20 @@ function ManualBookingModal({
               className={fieldCls}
             />
           </Field>
+          <div className="sm:col-span-2">
+            <MiniRangeCalendar
+              blocked={blocked}
+              checkinDays={checkinDays}
+              checkoutDays={checkoutDays}
+              sourceByDate={sourceByDate}
+              start={checkin}
+              end={checkout}
+              onPick={(s, e) => {
+                setCheckin(s);
+                setCheckout(e);
+              }}
+            />
+          </div>
           <Field label="Hóspedes">
             <input
               type="number"
