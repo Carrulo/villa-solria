@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
 import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote } from 'lucide-react';
+import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
 
 interface BlockedDateRow {
   id: string;
@@ -1284,6 +1285,8 @@ function ManualBookingModal({
   const [deposit, setDeposit] = useState(0);
   const [depositDate, setDepositDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'de'>('pt');
+  const [country, setCountry] = useState<string>('');
+  const [languageTouched, setLanguageTouched] = useState(false);
   const [notes, setNotes] = useState('');
   const [midStays, setMidStays] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
@@ -1376,6 +1379,7 @@ function ManualBookingModal({
           deposit_paid: deposit,
           deposit_date: depositDate,
           language,
+          country: country || null,
           notes,
           mid_stay_dates: Array.from(midStays),
         }),
@@ -1500,10 +1504,33 @@ function ManualBookingModal({
               className={fieldCls + ' disabled:opacity-40'}
             />
           </Field>
-          <Field label="Idioma do hóspede (email)">
+          <Field label="País de origem">
+            <select
+              value={country}
+              onChange={(e) => {
+                const code = e.target.value;
+                setCountry(code);
+                if (!languageTouched && code) {
+                  setLanguage(countryToLanguage(code));
+                }
+              }}
+              className={fieldCls}
+            >
+              <option value="">—</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.flag} {c.name_pt}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Idioma do email">
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value as 'pt' | 'en' | 'es' | 'de')}
+              onChange={(e) => {
+                setLanguageTouched(true);
+                setLanguage(e.target.value as 'pt' | 'en' | 'es' | 'de');
+              }}
               className={fieldCls}
             >
               <option value="pt">Português</option>

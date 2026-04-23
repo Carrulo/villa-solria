@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Send, Check, Clock, CalendarDays } from 'lucide-react';
+import { countryFlag } from '@/lib/countries';
 
 interface Row {
   id: string;
   guest_name: string | null;
   guest_email: string | null;
+  guest_country: string | null;
   checkin_date: string;
   checkout_date: string;
   language: string | null;
@@ -48,7 +50,7 @@ export default function ReviewRequestsPage() {
     const to = addDays(today, 7);
     const { data } = await supabase
       .from('bookings')
-      .select('id, guest_name, guest_email, checkin_date, checkout_date, language, source, review_requested_at, status')
+      .select('id, guest_name, guest_email, guest_country, checkin_date, checkout_date, language, source, review_requested_at, status')
       .in('source', ['website', 'manual'])
       .eq('status', 'confirmed')
       .gte('checkout_date', from)
@@ -320,6 +322,11 @@ function RowCard({
     <li className="py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
+          {r.guest_country && (
+            <span className="text-base leading-none" title={r.guest_country}>
+              {countryFlag(r.guest_country)}
+            </span>
+          )}
           <span className="text-sm font-medium text-white truncate">{r.guest_name || '(sem nome)'}</span>
           {langPicker(r, editable)}
           <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-white/5 text-gray-400">{r.source}</span>

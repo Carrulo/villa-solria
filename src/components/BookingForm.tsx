@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
+import { COUNTRIES } from '@/lib/countries';
 import { useEffect, useMemo, useState } from 'react';
 import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
 import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
@@ -137,6 +138,8 @@ export default function BookingForm() {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
+      country: (formData.get('country') as string) || null,
+      locale,
       checkIn: range.checkIn,
       checkOut: range.checkOut,
       guests: formData.get('guests') as string,
@@ -347,6 +350,25 @@ export default function BookingForm() {
               className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all bg-white"
             />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1.5">
+            {locale === 'pt' ? 'País' : locale === 'es' ? 'País' : locale === 'de' ? 'Land' : 'Country'}
+          </label>
+          <select
+            id="country"
+            name="country"
+            defaultValue=""
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all bg-white"
+          >
+            <option value="">—</option>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.flag} {c.name_pt}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

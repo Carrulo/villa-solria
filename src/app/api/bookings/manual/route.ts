@@ -16,6 +16,7 @@ type Body = {
   deposit_paid?: number;
   deposit_date?: string;
   language?: string;
+  country?: string | null;
   notes?: string;
   mid_stay_dates?: string[];
 };
@@ -127,6 +128,9 @@ export async function POST(req: Request) {
       guest_name,
       guest_email: guest_email || '',
       guest_phone: guest_phone || null,
+      guest_country: typeof body.country === 'string' && body.country.trim()
+        ? body.country.trim().toUpperCase()
+        : null,
       checkin_date,
       checkout_date,
       num_guests,

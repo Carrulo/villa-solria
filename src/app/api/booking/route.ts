@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import { countryToLanguage } from '@/lib/countries';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, checkIn, checkOut, guests, message } = body;
+    const { name, email, phone, country, locale, checkIn, checkOut, guests, message } = body;
 
     if (!name || !email || !checkIn || !checkOut || !guests) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -69,12 +70,22 @@ export async function POST(request: NextRequest) {
     const discountAmount = Math.round(subTotal * (discountPercent / 100));
     let totalPrice = subTotal - discountAmount + cleaningFee;
 
+    // Language: country override wins; otherwise use the site locale the
+    // guest was browsing. Falls back to English for safety.
+    const countryCode = typeof country === 'string' && country.trim() ? country.trim().toUpperCase() : null;
+    const localeLang = ['pt', 'en', 'es', 'de'].includes((locale || '').toLowerCase())
+      ? (locale as string).toLowerCase()
+      : 'en';
+    const language = countryCode ? countryToLanguage(countryCode) : localeLang;
+
     const { data, error } = await supabase
       .from('bookings')
       .insert({
         guest_name: name,
         guest_email: email,
         guest_phone: phone || null,
+        guest_country: countryCode,
+        language,
         checkin_date: checkIn,
         checkout_date: checkOut,
         num_guests: parseInt(guests),
