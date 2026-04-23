@@ -1138,6 +1138,7 @@ function AvailabilityCalendar({
           if (b?.note) titleParts.push(b.note);
 
           const dayBooking = bookingByDate[iso];
+          const isPast = iso < todayIso;
 
           return (
             <button
@@ -1155,10 +1156,11 @@ function AvailabilityCalendar({
               style={bgStyle}
               className={`relative h-11 sm:h-16 rounded-md sm:rounded-lg text-[11px] sm:text-xs border transition-colors flex items-start justify-between p-1
                 ${inMonth ? '' : 'opacity-30'}
+                ${isPast && inMonth ? 'opacity-40 grayscale' : ''}
                 ${fullyBooked ? (dayBooking ? 'border-white/10 cursor-pointer text-white' : 'border-white/10 cursor-not-allowed text-white') : 'border-white/10 text-gray-200'}
                 ${canSelect ? 'hover:ring-1 hover:ring-emerald-300/60' : ''}
                 ${inSel && canSelect ? '!border-emerald-300/60 ring-1 ring-emerald-300/60' : ''}
-                ${isToday ? 'outline outline-1 outline-amber-400/60' : ''}
+                ${isToday ? 'outline outline-2 outline-amber-400 ring-2 ring-amber-400/40' : ''}
                 ${isTurn ? 'ring-1 ring-red-400/70' : ''}`}
             >
               <span className="font-semibold leading-none">{parseInt(iso.slice(8, 10), 10)}</span>
