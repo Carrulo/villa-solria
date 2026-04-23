@@ -13,6 +13,7 @@ type Body = {
   num_guests?: number;
   total_price?: number;
   deposit_paid?: number;
+  deposit_date?: string;
   notes?: string;
   mid_stay_dates?: string[];
 };
@@ -101,9 +102,18 @@ export async function POST(req: Request) {
 
   // Compose the booking row.
   const reference = await nextManualReference(supabase);
+  let stamp: string;
+  const depositDateRaw = (body.deposit_date || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(depositDateRaw)) {
+    const [y, mo, d] = depositDateRaw.split('-');
+    stamp = `${d}/${mo}/${y}`;
+  } else {
+    const today = new Date();
+    stamp = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+  }
   const messageBlob = [
     notes || '',
-    deposit_paid > 0 ? `Sinal pago: ${deposit_paid}€` : '',
+    deposit_paid > 0 ? `${stamp} — Sinal pago: ${deposit_paid}€` : '',
     guest_phone ? `Tel: ${guest_phone}` : '',
   ]
     .filter(Boolean)

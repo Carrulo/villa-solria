@@ -1282,6 +1282,7 @@ function ManualBookingModal({
   const [numGuests, setNumGuests] = useState(2);
   const [totalPrice, setTotalPrice] = useState(0);
   const [deposit, setDeposit] = useState(0);
+  const [depositDate, setDepositDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
   const [midStays, setMidStays] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
@@ -1372,6 +1373,7 @@ function ManualBookingModal({
           num_guests: numGuests,
           total_price: totalPrice,
           deposit_paid: deposit,
+          deposit_date: depositDate,
           notes,
           mid_stay_dates: Array.from(midStays),
         }),
@@ -1485,6 +1487,15 @@ function ManualBookingModal({
               value={deposit}
               onChange={(e) => setDeposit(Number(e.target.value) || 0)}
               className={fieldCls}
+            />
+          </Field>
+          <Field label="Data do sinal">
+            <input
+              type="date"
+              value={depositDate}
+              onChange={(e) => setDepositDate(e.target.value)}
+              disabled={deposit <= 0}
+              className={fieldCls + ' disabled:opacity-40'}
             />
           </Field>
           <Field label="Notas (opcional)" className="sm:col-span-2">
