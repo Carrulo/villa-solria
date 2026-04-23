@@ -1,0 +1,26 @@
+name: Review requests
+
+on:
+  schedule:
+    # Every day at 09:00 Europe/Lisbon (08:00 UTC winter, 08:00 UTC summer ≈)
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger review request endpoint
+        run: |
+          echo "Requesting reviews at $(date)"
+          response=$(curl -s -w "\n%{http_code}" https://villasolria.com/api/reviews/request)
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "Status: $status"
+          echo "Response: $body"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Review request failed with status $status"
+            exit 1
+          fi

@@ -894,3 +894,121 @@ export async function sendRefundEmail(
     return { success: false, error: message };
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Review request email — sent ~2 days after checkout                */
+/* ------------------------------------------------------------------ */
+
+export interface ReviewEmailData {
+  guest_name: string;
+  guest_email: string;
+  checkin_date: string;
+  checkout_date: string;
+  language?: string;
+}
+
+const reviewStrings: Record<SupportedLocale, {
+  subject: string;
+  hello: string;
+  intro: string;
+  ask: string;
+  cta: string;
+  thanks: string;
+  signature: string;
+}> = {
+  pt: {
+    subject: 'Como foi a sua estadia na Villa Solria? 💛',
+    hello: 'Olá',
+    intro: 'Esperamos que tenha tido uma estadia maravilhosa na Villa Solria.',
+    ask: 'Se puder partilhar 2 minutos connosco, uma avaliação no Facebook ajuda outras famílias a descobrir-nos e significa muito para nós.',
+    cta: 'Deixar avaliação no Facebook',
+    thanks: 'Muito obrigado e esperamos vê-lo em breve!',
+    signature: 'Equipa Villa Solria',
+  },
+  en: {
+    subject: 'How was your stay at Villa Solria? 💛',
+    hello: 'Hi',
+    intro: 'We hope you had a wonderful stay at Villa Solria.',
+    ask: 'If you can spare 2 minutes, a review on Facebook helps other families find us and means a lot to us.',
+    cta: 'Leave a Facebook review',
+    thanks: 'Thank you so much and we hope to see you again soon!',
+    signature: 'The Villa Solria team',
+  },
+  es: {
+    subject: '¿Cómo fue su estancia en Villa Solria? 💛',
+    hello: 'Hola',
+    intro: 'Esperamos que haya tenido una estancia maravillosa en Villa Solria.',
+    ask: 'Si puede dedicarnos 2 minutos, una valoración en Facebook ayuda a otras familias a descubrirnos y significa mucho para nosotros.',
+    cta: 'Dejar valoración en Facebook',
+    thanks: '¡Muchas gracias y esperamos verle pronto!',
+    signature: 'Equipo Villa Solria',
+  },
+  de: {
+    subject: 'Wie war Ihr Aufenthalt in der Villa Solria? 💛',
+    hello: 'Hallo',
+    intro: 'Wir hoffen, Sie hatten einen wunderbaren Aufenthalt in der Villa Solria.',
+    ask: 'Wenn Sie 2 Minuten Zeit haben, hilft eine Bewertung auf Facebook anderen Familien, uns zu finden.',
+    cta: 'Facebook-Bewertung hinterlassen',
+    thanks: 'Vielen Dank und bis zum nächsten Mal!',
+    signature: 'Das Villa Solria Team',
+  },
+};
+
+export async function sendReviewRequestEmail(
+  data: ReviewEmailData,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerClient();
+
+  const { data: settingsRows } = await supabase
+    .from('settings')
+    .select('key, value')
+    .in('key', ['resend_api_key', 'email_from_address', 'review_fb_url']);
+
+  const settings: Record<string, string> = {};
+  for (const row of settingsRows ?? []) {
+    settings[row.key] = typeof row.value === 'string' ? row.value : String(row.value ?? '');
+  }
+
+  const apiKey = settings['resend_api_key'];
+  if (!apiKey) {
+    return { success: false, error: 'Resend API key not configured' };
+  }
+
+  const fromAddress = settings['email_from_address'] || 'Villa Solria <reservas@villasolria.com>';
+  const reviewUrl = settings['review_fb_url'] || 'https://www.facebook.com/VillaSolria/reviews';
+  const rawLang = (data.language ?? 'pt').toLowerCase() as SupportedLocale;
+  const locale: SupportedLocale = rawLang in reviewStrings ? rawLang : 'en';
+  const s = reviewStrings[locale];
+  const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
+
+  const html = `<!DOCTYPE html><html lang="${locale}"><head><meta charset="utf-8"><title>${s.subject}</title></head>
+  <body style="margin:0;padding:0;background:#f6f6f4;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f4;padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+          <tr><td style="padding:32px 32px 16px 32px;">
+            <h1 style="margin:0 0 16px;font-size:22px;color:#1c1c1c;">${s.hello}${firstName ? ' ' + firstName : ''},</h1>
+            <p style="margin:0 0 12px;font-size:15px;line-height:1.55;color:#333;">${s.intro}</p>
+            <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#333;">${s.ask}</p>
+            <p style="margin:0 0 28px;text-align:center;">
+              <a href="${reviewUrl}" style="display:inline-block;padding:14px 28px;background:#1877f2;color:#ffffff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:600;">${s.cta}</a>
+            </p>
+            <p style="margin:0 0 4px;font-size:15px;line-height:1.55;color:#333;">${s.thanks}</p>
+            <p style="margin:0;font-size:15px;color:#666;">${s.signature}</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body></html>`;
+
+  try {
+    const resend = new Resend(apiKey);
+    await resend.emails.send({ from: fromAddress, to: data.guest_email, subject: s.subject, html });
+    console.log(`[email] Review request sent to ${data.guest_email}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[email] Failed to send review email:`, message);
+    return { success: false, error: message };
+  }
+}
