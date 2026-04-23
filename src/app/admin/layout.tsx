@@ -19,6 +19,7 @@ import {
   Inbox,
   Sparkles,
 } from 'lucide-react';
+import NotificationBell from '@/components/admin/NotificationBell';
 import '../globals.css';
 
 const navItems = [
@@ -160,8 +161,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="hidden lg:block text-sm text-gray-400">
                 {navItems.find((i) => i.href === pathname)?.label || 'Painel'}
               </div>
-              <div className="text-xs text-gray-500">
-                Villa Solria Admin
+              <div className="flex items-center gap-3">
+                <NotificationBell />
+                <div className="text-xs text-gray-500 hidden sm:block">
+                  Villa Solria Admin
+                </div>
               </div>
             </header>
 
