@@ -150,10 +150,10 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       {/* Month selector */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-[#16213e] border border-white/5 rounded-2xl px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white capitalize">{monthLabel}</h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             {stats.monthStays} reserva{stats.monthStays === 1 ? '' : 's'} direta{stats.monthStays === 1 ? '' : 's'} · {stats.occupiedNights}/{stats.daysInMonth} noites ocupadas
           </p>
         </div>
