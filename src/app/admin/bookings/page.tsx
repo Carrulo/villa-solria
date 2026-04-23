@@ -26,6 +26,22 @@ export default function AdminBookingsPage() {
   const [guestByDate, setGuestByDate] = useState<Record<string, string>>({});
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
 
+  const bookingByDate = useMemo(() => {
+    const map: Record<string, Booking> = {};
+    for (const b of bookings) {
+      if (!b.checkin_date || !b.checkout_date) continue;
+      if (b.status === 'cancelled') continue;
+      const cur = new Date(b.checkin_date + 'T00:00:00Z');
+      const end = new Date(b.checkout_date + 'T00:00:00Z');
+      while (cur <= end) {
+        const iso = cur.toISOString().slice(0, 10);
+        if (!map[iso]) map[iso] = b;
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    }
+    return map;
+  }, [bookings]);
+
   useEffect(() => {
     fetchBookings();
     fetchBlockedDates();
@@ -241,6 +257,8 @@ export default function AdminBookingsPage() {
         checkoutDays={checkoutDays}
         sourceByDate={sourceByDate}
         guestByDate={guestByDate}
+        bookingByDate={bookingByDate}
+        onOpenBooking={(b) => setDetailBooking(b)}
         onPickRange={(checkin, checkout) => {
           setPreset({ checkin_date: checkin, checkout_date: checkout });
           setShowManualModal(true);
@@ -891,6 +909,8 @@ function AvailabilityCalendar({
   checkoutDays,
   sourceByDate,
   guestByDate,
+  bookingByDate,
+  onOpenBooking,
   onPickRange,
 }: {
   blocked: BlockedDateRow[];
@@ -898,6 +918,8 @@ function AvailabilityCalendar({
   checkoutDays: Set<string>;
   sourceByDate: Record<string, string>;
   guestByDate: Record<string, string>;
+  bookingByDate: Record<string, Booking>;
+  onOpenBooking: (booking: Booking) => void;
   onPickRange: (checkin: string, checkout: string) => void;
 }) {
   const today = useMemo(() => {
@@ -1086,16 +1108,25 @@ function AvailabilityCalendar({
           if (src) titleParts.push(src);
           if (b?.note) titleParts.push(b.note);
 
+          const dayBooking = bookingByDate[iso];
+
           return (
             <button
               key={iso}
               onClick={() => onDayClick(iso, canSelect)}
-              disabled={!canSelect}
-              title={titleParts.join(' · ')}
+              onDoubleClick={(e) => {
+                if (dayBooking) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenBooking(dayBooking);
+                }
+              }}
+              disabled={!canSelect && !dayBooking}
+              title={dayBooking ? titleParts.join(' · ') + ' · duplo-clique: abrir notas' : titleParts.join(' · ')}
               style={bgStyle}
               className={`relative h-11 sm:h-16 rounded-md sm:rounded-lg text-[11px] sm:text-xs border transition-colors flex items-start justify-between p-1
                 ${inMonth ? '' : 'opacity-30'}
-                ${fullyBooked ? 'border-white/10 cursor-not-allowed text-white' : 'border-white/10 text-gray-200'}
+                ${fullyBooked ? (dayBooking ? 'border-white/10 cursor-pointer text-white' : 'border-white/10 cursor-not-allowed text-white') : 'border-white/10 text-gray-200'}
                 ${canSelect ? 'hover:ring-1 hover:ring-emerald-300/60' : ''}
                 ${inSel && canSelect ? '!border-emerald-300/60 ring-1 ring-emerald-300/60' : ''}
                 ${isToday ? 'outline outline-1 outline-amber-400/60' : ''}
