@@ -24,7 +24,26 @@ function isoDateDaysAgo(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const testEmail = url.searchParams.get('test_email');
+  const testLang = url.searchParams.get('lang') || 'pt';
+  const testName = url.searchParams.get('name') || 'Teste';
+
+  if (testEmail) {
+    const sent = await sendReviewRequestEmail({
+      guest_name: testName,
+      guest_email: testEmail,
+      checkin_date: '2026-04-15',
+      checkout_date: '2026-04-21',
+      language: testLang,
+    });
+    return NextResponse.json(
+      { test: true, to: testEmail, lang: testLang, ...sent },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
   const supabase = createServerClient();
 
   const target = isoDateDaysAgo(2);

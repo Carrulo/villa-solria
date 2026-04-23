@@ -14,6 +14,7 @@ type Body = {
   total_price?: number;
   deposit_paid?: number;
   deposit_date?: string;
+  language?: string;
   notes?: string;
   mid_stay_dates?: string[];
 };
@@ -135,7 +136,9 @@ export async function POST(req: Request) {
       status: 'confirmed',
       payment_status: 'paid',
       source: 'manual',
-      language: 'pt',
+      language: ['pt', 'en', 'es', 'de'].includes((body.language || '').toLowerCase())
+        ? (body.language || '').toLowerCase()
+        : 'pt',
       message: messageBlob || null,
       reference,
     })

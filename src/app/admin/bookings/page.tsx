@@ -1283,6 +1283,7 @@ function ManualBookingModal({
   const [totalPrice, setTotalPrice] = useState(0);
   const [deposit, setDeposit] = useState(0);
   const [depositDate, setDepositDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'de'>('pt');
   const [notes, setNotes] = useState('');
   const [midStays, setMidStays] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
@@ -1374,6 +1375,7 @@ function ManualBookingModal({
           total_price: totalPrice,
           deposit_paid: deposit,
           deposit_date: depositDate,
+          language,
           notes,
           mid_stay_dates: Array.from(midStays),
         }),
@@ -1497,6 +1499,18 @@ function ManualBookingModal({
               disabled={deposit <= 0}
               className={fieldCls + ' disabled:opacity-40'}
             />
+          </Field>
+          <Field label="Idioma do hóspede (email)">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as 'pt' | 'en' | 'es' | 'de')}
+              className={fieldCls}
+            >
+              <option value="pt">Português</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="de">Deutsch</option>
+            </select>
           </Field>
           <Field label="Notas (opcional)" className="sm:col-span-2">
             <textarea
