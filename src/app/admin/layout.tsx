@@ -24,19 +24,42 @@ import {
 import NotificationBell from '@/components/admin/NotificationBell';
 import '../globals.css';
 
-const navItems = [
-  { href: '/admin', label: 'Painel', icon: LayoutDashboard },
-  { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
-  { href: '/admin/cleaning', label: 'Limpezas', icon: Sparkles },
-  { href: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
-  { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
-  { href: '/admin/inbox', label: 'Mensagens', icon: Inbox },
-  { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
-  { href: '/admin/reviews', label: 'Avaliações', icon: Star },
-  { href: '/admin/review-requests', label: 'Pedidos de review', icon: Mail },
-  { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
-  { href: '/admin/settings', label: 'Definições', icon: Settings },
+const navGroups: { label: string | null; items: { href: string; label: string; icon: typeof LayoutDashboard }[] }[] = [
+  {
+    label: null,
+    items: [{ href: '/admin', label: 'Painel', icon: LayoutDashboard }],
+  },
+  {
+    label: 'Operações',
+    items: [
+      { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
+      { href: '/admin/cleaning', label: 'Limpezas', icon: Sparkles },
+      { href: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
+      { href: '/admin/review-requests', label: 'Pedidos de review', icon: Mail },
+    ],
+  },
+  {
+    label: 'Comunicação',
+    items: [
+      { href: '/admin/inbox', label: 'Mensagens', icon: Inbox },
+      { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
+    ],
+  },
+  {
+    label: 'Conteúdo do site',
+    items: [
+      { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
+      { href: '/admin/reviews', label: 'Avaliações publicadas', icon: Star },
+      { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
+    ],
+  },
+  {
+    label: 'Sistema',
+    items: [{ href: '/admin/settings', label: 'Definições', icon: Settings }],
+  },
 ];
+
+const navItems = navGroups.flatMap((g) => g.items);
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -147,28 +170,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </button>
             </div>
 
-            <nav className={`flex-1 space-y-1 ${collapsed ? 'p-2' : 'p-4'}`}>
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    title={collapsed ? item.label : undefined}
-                    className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all ${
-                      collapsed ? 'lg:justify-center lg:px-0 lg:py-3 px-4 py-3' : 'px-4 py-3'
-                    } ${
-                      isActive
-                        ? 'bg-blue-600/20 text-blue-400'
-                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <item.icon size={18} />
-                    <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
-                  </a>
-                );
-              })}
+            <nav className={`flex-1 space-y-1 overflow-y-auto ${collapsed ? 'p-2' : 'p-4'}`}>
+              {navGroups.map((group, gi) => (
+                <div key={gi} className={gi > 0 ? 'mt-4 pt-3 border-t border-white/5' : ''}>
+                  {group.label && !collapsed && (
+                    <p className="px-4 mb-2 text-[10px] uppercase tracking-widest text-gray-500 font-semibold">
+                      {group.label}
+                    </p>
+                  )}
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <a
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          title={collapsed ? item.label : undefined}
+                          className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all ${
+                            collapsed ? 'lg:justify-center lg:px-0 lg:py-3 px-4 py-3' : 'px-4 py-3'
+                          } ${
+                            isActive
+                              ? 'bg-blue-600/20 text-blue-400'
+                              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <item.icon size={18} />
+                          <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
 
             <div className={`border-t border-white/5 ${collapsed ? 'p-2' : 'p-4'}`}>
