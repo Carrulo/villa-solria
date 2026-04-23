@@ -67,6 +67,12 @@ export default function ReviewRequestsPage() {
     setTimeout(() => setToast(null), 2500);
   }
 
+  async function changeLanguage(id: string, lang: 'pt' | 'en' | 'es' | 'de') {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, language: lang } : r)));
+    const { error } = await supabase.from('bookings').update({ language: lang }).eq('id', id);
+    if (error) showToast('Erro ao guardar idioma', 'err');
+  }
+
   async function sendNow(id: string) {
     setSending(id);
     try {
@@ -114,18 +120,33 @@ export default function ReviewRequestsPage() {
     return { dueNow, upcoming, sent };
   }, [rows, today, scheduledDay]);
 
-  function langBadge(lang: string | null) {
-    const l = (lang || 'pt').toLowerCase();
+  function langPicker(row: Row, editable: boolean) {
+    const l = (row.language || 'pt').toLowerCase();
     const colors: Record<string, string> = {
       pt: 'bg-green-500/20 text-green-300',
       en: 'bg-blue-500/20 text-blue-300',
       es: 'bg-amber-500/20 text-amber-300',
       de: 'bg-purple-500/20 text-purple-300',
     };
+    if (!editable) {
+      return (
+        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${colors[l] || 'bg-white/10 text-gray-300'}`}>
+          {l}
+        </span>
+      );
+    }
     return (
-      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${colors[l] || 'bg-white/10 text-gray-300'}`}>
-        {l}
-      </span>
+      <select
+        value={l}
+        onChange={(e) => changeLanguage(row.id, e.target.value as 'pt' | 'en' | 'es' | 'de')}
+        className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase outline-none cursor-pointer border-0 ${colors[l] || 'bg-white/10 text-gray-300'}`}
+        title="Alterar idioma do email"
+      >
+        <option value="pt">PT</option>
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+        <option value="de">DE</option>
+      </select>
     );
   }
 
@@ -191,7 +212,7 @@ export default function ReviewRequestsPage() {
                     {sending === r.id ? 'A enviar…' : 'Enviar agora'}
                   </button>
                 }
-                langBadge={langBadge}
+                langPicker={langPicker}
                 scheduledLabel={scheduledLabel}
               />
             ))}
@@ -212,7 +233,7 @@ export default function ReviewRequestsPage() {
                     {scheduledLabel(r.checkout_date)}
                   </span>
                 }
-                langBadge={langBadge}
+                langPicker={langPicker}
                 scheduledLabel={scheduledLabel}
                 showHelper={false}
               />
@@ -235,7 +256,7 @@ export default function ReviewRequestsPage() {
                     {r.review_requested_at ? new Date(r.review_requested_at).toLocaleDateString('pt-PT') : 'enviado'}
                   </span>
                 }
-                langBadge={langBadge}
+                langPicker={langPicker}
                 scheduledLabel={scheduledLabel}
                 showHelper={false}
               />
@@ -284,22 +305,23 @@ function Section({
 function RowCard({
   r,
   rightSlot,
-  langBadge,
+  langPicker,
   scheduledLabel,
   showHelper = true,
 }: {
   r: Row;
   rightSlot: React.ReactNode;
-  langBadge: (l: string | null) => React.ReactNode;
+  langPicker: (row: Row, editable: boolean) => React.ReactNode;
   scheduledLabel: (iso: string) => string;
   showHelper?: boolean;
 }) {
+  const editable = !r.review_requested_at;
   return (
     <li className="py-3 flex items-center gap-3 flex-wrap sm:flex-nowrap">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-white truncate">{r.guest_name || '(sem nome)'}</span>
-          {langBadge(r.language)}
+          {langPicker(r, editable)}
           <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-white/5 text-gray-400">{r.source}</span>
         </div>
         <div className="text-xs text-gray-400 mt-0.5 truncate">
