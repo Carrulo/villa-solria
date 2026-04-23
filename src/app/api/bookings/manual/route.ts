@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -203,6 +204,25 @@ export async function POST(req: Request) {
 
   if (validMidStays.length > 0) {
     await supabase.from('cleaning_tasks').insert(validMidStays);
+  }
+
+  // Send confirmation email if the guest has one. Fire-and-forget so a
+  // Resend hiccup doesn't fail the whole booking create.
+  if (guest_email) {
+    sendBookingConfirmationEmail({
+      reference,
+      guest_name,
+      guest_email,
+      checkin_date,
+      checkout_date,
+      num_nights,
+      num_guests,
+      total_price,
+      language:
+        ['pt', 'en', 'es', 'de'].includes((body.language || '').toLowerCase())
+          ? (body.language || '').toLowerCase()
+          : 'pt',
+    }).catch((e) => console.error('[manual-booking] confirmation email failed:', e));
   }
 
   return NextResponse.json({
