@@ -2,8 +2,8 @@ name: iCal Sync
 
 on:
   schedule:
-    # Every 4 hours
-    - cron: '0 */4 * * *'
+    # Every 30 minutes (GitHub may delay by 5-15 min under load)
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     # Allow manual trigger from GitHub UI
 
@@ -14,7 +14,7 @@ jobs:
       - name: Call sync endpoint
         run: |
           echo "Triggering iCal sync at $(date)"
-          response=$(curl -s -w "\n%{http_code}" https://villa-solria.vercel.app/api/ical/sync)
+          response=$(curl -s -w "\n%{http_code}" https://villasolria.com/api/ical/sync)
           body=$(echo "$response" | head -n -1)
           status=$(echo "$response" | tail -n 1)
 
