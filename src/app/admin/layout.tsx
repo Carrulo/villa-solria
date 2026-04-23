@@ -33,6 +33,7 @@ const navItems = [
   { href: '/admin/inbox', label: 'Mensagens', icon: Inbox },
   { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
   { href: '/admin/reviews', label: 'Avaliações', icon: Star },
+  { href: '/admin/review-requests', label: 'Pedidos de review', icon: Mail },
   { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
   { href: '/admin/settings', label: 'Definições', icon: Settings },
 ];
