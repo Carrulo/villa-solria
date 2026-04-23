@@ -606,6 +606,22 @@ function BookingDetailModal({
 
   const ref = (booking as Booking & { reference?: string }).reference || booking.id.slice(0, 8).toUpperCase();
 
+  // Parse the most recent "Sinal pago: X€" / "pagou X€" lines out of the
+  // notes blob so we can show a proper paid/owed summary. We sum all of
+  // them because the admin keeps appending new payment lines.
+  const paidFromNotes = (() => {
+    let sum = 0;
+    const text = notes || '';
+    const re = /(?:sinal pago|pagou|paguei|recebido)[^\d]*([\d.,]+)\s*(?:€|eur)/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const n = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
+      if (!isNaN(n)) sum += n;
+    }
+    return sum;
+  })();
+  const owed = Math.max(0, (booking.total_price || 0) - paidFromNotes);
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8">
@@ -658,6 +674,18 @@ function BookingDetailModal({
             <span className="text-gray-400">Total</span>
             <span className="text-white font-semibold">{booking.total_price}€</span>
           </div>
+          {paidFromNotes > 0 && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Pago</span>
+                <span className="text-green-300 font-medium">{paidFromNotes}€</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Falta pagar</span>
+                <span className={`font-semibold ${owed > 0 ? 'text-amber-300' : 'text-green-300'}`}>{owed}€</span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-400">Estado</span>
             <span className="text-white">
