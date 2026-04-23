@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2 } from 'lucide-react';
 import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
 
 interface BlockedDateRow {
@@ -26,6 +26,24 @@ export default function AdminBookingsPage() {
   const [sourceByDate, setSourceByDate] = useState<Record<string, string>>({});
   const [guestByDate, setGuestByDate] = useState<Record<string, string>>({});
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null);
+
+  async function handleDelete(booking: Booking, confirmation: string) {
+    const res = await fetch(`/api/bookings/${booking.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmation }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Erro ao apagar', 'error');
+      return false;
+    }
+    setBookings((prev) => prev.filter((b) => b.id !== booking.id));
+    await fetchBlockedDates();
+    showToast('Reserva apagada', 'success');
+    return true;
+  }
 
   const bookingByDate = useMemo(() => {
     const map: Record<string, Booking> = {};
@@ -199,6 +217,17 @@ export default function AdminBookingsPage() {
         />
       )}
 
+      {deleteTarget && (
+        <DeleteBookingModal
+          booking={deleteTarget}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async (confirmation) => {
+            const ok = await handleDelete(deleteTarget, confirmation);
+            if (ok) setDeleteTarget(null);
+          }}
+        />
+      )}
+
       {showManualModal && (
         <ManualBookingModal
           preset={preset}
@@ -365,6 +394,13 @@ export default function AdminBookingsPage() {
                     {booking.payment_status === 'refunded' && (
                       <span className="text-[11px] text-gray-500">reembolsado</span>
                     )}
+                    <button
+                      onClick={() => setDeleteTarget(booking)}
+                      className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                      title="Apagar reserva"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -476,6 +512,13 @@ export default function AdminBookingsPage() {
                         {booking.payment_status === 'refunded' && (
                           <span className="text-xs text-gray-500">Reembolsado</span>
                         )}
+                        <button
+                          onClick={() => setDeleteTarget(booking)}
+                          className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                          title="Apagar reserva (permanente)"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -483,6 +526,71 @@ export default function AdminBookingsPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteBookingModal({
+  booking,
+  onCancel,
+  onConfirm,
+}: {
+  booking: Booking;
+  onCancel: () => void;
+  onConfirm: (confirmation: string) => Promise<void> | void;
+}) {
+  const reference = (booking as Booking & { reference?: string }).reference || '';
+  const expected = reference || 'APAGAR';
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const matches = input.trim().toUpperCase() === expected.toUpperCase();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#16213e] border border-red-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <h2 className="text-lg font-semibold text-white mb-2">Apagar reserva permanentemente</h2>
+        <p className="text-sm text-gray-400 mb-4">
+          Esta acção remove a reserva de <span className="text-white font-medium">{booking.guest_name}</span>
+          {' '}({booking.checkin_date} → {booking.checkout_date}), as tarefas de limpeza associadas e desbloqueia
+          os dias correspondentes. <span className="text-red-400">Não é possível recuperar.</span>
+        </p>
+        <label className="block">
+          <span className="block text-xs text-gray-400 mb-1.5">
+            Para confirmar, escreve <span className="font-mono text-red-300">{expected}</span>:
+          </span>
+          <input
+            autoFocus
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={busy}
+            placeholder={expected}
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-red-500/50"
+          />
+        </label>
+        <div className="flex items-center justify-end gap-2 mt-5">
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onConfirm(input.trim());
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={!matches || busy}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {busy ? 'A apagar…' : 'Apagar definitivamente'}
+          </button>
         </div>
       </div>
     </div>
