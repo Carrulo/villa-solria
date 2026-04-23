@@ -910,46 +910,56 @@ export interface ReviewEmailData {
 const reviewStrings: Record<SupportedLocale, {
   subject: string;
   hello: string;
-  intro: string;
+  thanks_first: string;
   ask: string;
+  follow: string;
   cta: string;
-  thanks: string;
+  reply_open: string;
+  signoff: string;
   signature: string;
 }> = {
   pt: {
-    subject: 'Como foi a sua estadia na Villa Solria? 💛',
+    subject: 'Obrigado por ter escolhido a Villa Solria 💛',
     hello: 'Olá',
-    intro: 'Esperamos que tenha tido uma estadia maravilhosa na Villa Solria.',
-    ask: 'Se puder partilhar 2 minutos connosco, uma avaliação no Facebook ajuda outras famílias a descobrir-nos e significa muito para nós.',
-    cta: 'Deixar avaliação no Facebook',
-    thanks: 'Muito obrigado e esperamos vê-lo em breve!',
+    thanks_first: 'Muito obrigado por nos ter escolhido para a sua estadia em Cabanas de Tavira. Esperamos sinceramente que tenha descansado e criado boas memórias.',
+    ask: 'A sua opinião ajuda muitas outras famílias a encontrarem-nos. Se puder partilhar 1 minuto, ficaríamos muito gratos por uma avaliação na nossa página de Facebook.',
+    follow: 'Enquanto lá estiver, siga-nos também — partilhamos novidades, promoções e fotos da casa.',
+    cta: 'Avaliar e seguir no Facebook',
+    reply_open: 'Se algo não correu como esperado, responda a este email — lemos cada mensagem pessoalmente e gostávamos de saber.',
+    signoff: 'Até breve!',
     signature: 'Equipa Villa Solria',
   },
   en: {
-    subject: 'How was your stay at Villa Solria? 💛',
+    subject: 'Thank you for choosing Villa Solria 💛',
     hello: 'Hi',
-    intro: 'We hope you had a wonderful stay at Villa Solria.',
-    ask: 'If you can spare 2 minutes, a review on Facebook helps other families find us and means a lot to us.',
-    cta: 'Leave a Facebook review',
-    thanks: 'Thank you so much and we hope to see you again soon!',
+    thanks_first: 'Thank you so much for choosing us for your stay in Cabanas de Tavira. We truly hope you had a restful time and made good memories.',
+    ask: 'Your opinion helps other families find us. If you can spare 1 minute, we would be really grateful for a review on our Facebook page.',
+    follow: 'While you are there, please follow us too — we share updates, offers, and photos of the house.',
+    cta: 'Leave a review & follow on Facebook',
+    reply_open: 'If anything did not go as expected, just reply to this email — we read every message personally and would love to hear.',
+    signoff: 'See you soon!',
     signature: 'The Villa Solria team',
   },
   es: {
-    subject: '¿Cómo fue su estancia en Villa Solria? 💛',
+    subject: 'Gracias por haber elegido Villa Solria 💛',
     hello: 'Hola',
-    intro: 'Esperamos que haya tenido una estancia maravillosa en Villa Solria.',
-    ask: 'Si puede dedicarnos 2 minutos, una valoración en Facebook ayuda a otras familias a descubrirnos y significa mucho para nosotros.',
-    cta: 'Dejar valoración en Facebook',
-    thanks: '¡Muchas gracias y esperamos verle pronto!',
+    thanks_first: 'Muchas gracias por elegirnos para su estancia en Cabanas de Tavira. Esperamos sinceramente que hayan descansado y creado bonitos recuerdos.',
+    ask: 'Su opinión ayuda a otras familias a encontrarnos. Si puede dedicarnos 1 minuto, le estaríamos muy agradecidos por una valoración en nuestra página de Facebook.',
+    follow: 'Y ya que está allí, síganos también — compartimos novedades, ofertas y fotos de la casa.',
+    cta: 'Valorar y seguir en Facebook',
+    reply_open: 'Si algo no salió como esperaba, responda a este email — leemos cada mensaje personalmente y nos gustaría saberlo.',
+    signoff: '¡Hasta pronto!',
     signature: 'Equipo Villa Solria',
   },
   de: {
-    subject: 'Wie war Ihr Aufenthalt in der Villa Solria? 💛',
+    subject: 'Danke, dass Sie sich für Villa Solria entschieden haben 💛',
     hello: 'Hallo',
-    intro: 'Wir hoffen, Sie hatten einen wunderbaren Aufenthalt in der Villa Solria.',
-    ask: 'Wenn Sie 2 Minuten Zeit haben, hilft eine Bewertung auf Facebook anderen Familien, uns zu finden.',
-    cta: 'Facebook-Bewertung hinterlassen',
-    thanks: 'Vielen Dank und bis zum nächsten Mal!',
+    thanks_first: 'Vielen Dank, dass Sie uns für Ihren Aufenthalt in Cabanas de Tavira gewählt haben. Wir hoffen sehr, dass Sie sich erholt und schöne Erinnerungen geschaffen haben.',
+    ask: 'Ihre Meinung hilft anderen Familien, uns zu finden. Wenn Sie 1 Minute Zeit haben, würden wir uns sehr über eine Bewertung auf unserer Facebook-Seite freuen.',
+    follow: 'Und wenn Sie schon dort sind, folgen Sie uns auch gerne — wir teilen Neuigkeiten, Angebote und Fotos des Hauses.',
+    cta: 'Auf Facebook bewerten & folgen',
+    reply_open: 'Falls etwas nicht wie erwartet war, antworten Sie einfach auf diese E-Mail — wir lesen jede Nachricht persönlich.',
+    signoff: 'Bis bald!',
     signature: 'Das Villa Solria Team',
   },
 };
@@ -962,7 +972,18 @@ export async function sendReviewRequestEmail(
   const { data: settingsRows } = await supabase
     .from('settings')
     .select('key, value')
-    .in('key', ['resend_api_key', 'email_from_address', 'review_fb_url']);
+    .in('key', [
+      'resend_api_key',
+      'email_from_address',
+      'review_fb_url',
+      'review_email_subject',
+      'review_email_thanks_first',
+      'review_email_ask',
+      'review_email_follow',
+      'review_email_cta',
+      'review_email_reply_open',
+      'review_email_signoff',
+    ]);
 
   const settings: Record<string, string> = {};
   for (const row of settingsRows ?? []) {
@@ -978,7 +999,21 @@ export async function sendReviewRequestEmail(
   const reviewUrl = settings['review_fb_url'] || 'https://www.facebook.com/VillaSolria/reviews';
   const rawLang = (data.language ?? 'pt').toLowerCase() as SupportedLocale;
   const locale: SupportedLocale = rawLang in reviewStrings ? rawLang : 'en';
-  const s = reviewStrings[locale];
+  const s = { ...reviewStrings[locale] };
+
+  // PT can be fully overridden from the settings table; other locales
+  // fall back to the built-in copy to avoid admin mistakes in languages
+  // they may not speak.
+  if (locale === 'pt') {
+    if (settings['review_email_subject']) s.subject = settings['review_email_subject'];
+    if (settings['review_email_thanks_first']) s.thanks_first = settings['review_email_thanks_first'];
+    if (settings['review_email_ask']) s.ask = settings['review_email_ask'];
+    if (settings['review_email_follow']) s.follow = settings['review_email_follow'];
+    if (settings['review_email_cta']) s.cta = settings['review_email_cta'];
+    if (settings['review_email_reply_open']) s.reply_open = settings['review_email_reply_open'];
+    if (settings['review_email_signoff']) s.signoff = settings['review_email_signoff'];
+  }
+
   const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
 
   const html = `<!DOCTYPE html><html lang="${locale}"><head><meta charset="utf-8"><title>${s.subject}</title></head>
@@ -986,14 +1021,16 @@ export async function sendReviewRequestEmail(
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f4;padding:24px 0;">
       <tr><td align="center">
         <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
-          <tr><td style="padding:32px 32px 16px 32px;">
+          <tr><td style="padding:32px 32px 24px 32px;">
             <h1 style="margin:0 0 16px;font-size:22px;color:#1c1c1c;">${s.hello}${firstName ? ' ' + firstName : ''},</h1>
-            <p style="margin:0 0 12px;font-size:15px;line-height:1.55;color:#333;">${s.intro}</p>
-            <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#333;">${s.ask}</p>
-            <p style="margin:0 0 28px;text-align:center;">
+            <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#333;">${s.thanks_first}</p>
+            <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#333;">${s.ask}</p>
+            <p style="margin:0 0 22px;font-size:14px;line-height:1.6;color:#555;">${s.follow}</p>
+            <p style="margin:0 0 26px;text-align:center;">
               <a href="${reviewUrl}" style="display:inline-block;padding:14px 28px;background:#1877f2;color:#ffffff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:600;">${s.cta}</a>
             </p>
-            <p style="margin:0 0 4px;font-size:15px;line-height:1.55;color:#333;">${s.thanks}</p>
+            <p style="margin:0 0 20px;padding:12px 16px;background:#fbfaf4;border-left:3px solid #d4b95b;font-size:14px;line-height:1.55;color:#555;">${s.reply_open}</p>
+            <p style="margin:0 0 4px;font-size:15px;line-height:1.55;color:#333;">${s.signoff}</p>
             <p style="margin:0;font-size:15px;color:#666;">${s.signature}</p>
           </td></tr>
         </table>
