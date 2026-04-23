@@ -18,6 +18,8 @@ import {
   Mail,
   Inbox,
   Sparkles,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import NotificationBell from '@/components/admin/NotificationBell';
 import '../globals.css';
@@ -40,6 +42,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('admin_sidebar_collapsed') : null;
+    if (saved === '1') setCollapsed(true);
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem('admin_sidebar_collapsed', next ? '1' : '0');
+      } catch {}
+      return next;
+    });
+  }
 
   // Don't apply admin layout or auth check to login/reset pages
   const isLoginPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
@@ -107,16 +125,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Sidebar */}
           <aside
-            className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#16213e] border-r border-white/5 flex flex-col transform transition-transform lg:translate-x-0 ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className={`fixed lg:static inset-y-0 left-0 z-50 bg-[#16213e] border-r border-white/5 flex flex-col transform transition-all lg:translate-x-0 ${
+              sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'
+            } ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}
           >
-            <div className="p-6 border-b border-white/5">
-              <h1 className="text-xl font-bold text-white">Villa Solria</h1>
-              <p className="text-xs text-gray-400 mt-1">Painel Admin</p>
+            <div className={`border-b border-white/5 flex items-center justify-between ${collapsed ? 'p-3' : 'p-6'}`}>
+              {!collapsed && (
+                <div>
+                  <h1 className="text-xl font-bold text-white">Villa Solria</h1>
+                  <p className="text-xs text-gray-400 mt-1">Painel Admin</p>
+                </div>
+              )}
+              <button
+                onClick={toggleCollapsed}
+                className="hidden lg:flex p-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+                aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+                title={collapsed ? 'Expandir' : 'Recolher'}
+              >
+                {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
+              </button>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className={`flex-1 space-y-1 ${collapsed ? 'p-2' : 'p-4'}`}>
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -124,26 +154,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     key={item.href}
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center gap-3 rounded-xl text-sm font-medium transition-all ${
+                      collapsed ? 'lg:justify-center lg:px-0 lg:py-3 px-4 py-3' : 'px-4 py-3'
+                    } ${
                       isActive
                         ? 'bg-blue-600/20 text-blue-400'
                         : 'text-gray-400 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <item.icon size={18} />
-                    {item.label}
+                    <span className={collapsed ? 'lg:hidden' : ''}>{item.label}</span>
                   </a>
                 );
               })}
             </nav>
 
-            <div className="p-4 border-t border-white/5">
+            <div className={`border-t border-white/5 ${collapsed ? 'p-2' : 'p-4'}`}>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all w-full"
+                title={collapsed ? 'Sair' : undefined}
+                className={`flex items-center gap-3 rounded-xl text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-all w-full ${
+                  collapsed ? 'lg:justify-center lg:px-0 lg:py-3 px-4 py-3' : 'px-4 py-3'
+                }`}
               >
                 <LogOut size={18} />
-                Sair
+                <span className={collapsed ? 'lg:hidden' : ''}>Sair</span>
               </button>
             </div>
           </aside>
