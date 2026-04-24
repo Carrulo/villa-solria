@@ -20,7 +20,7 @@ export default function CleaningClient({
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  async function callApi(body: {
+  async function update(body: {
     id: string;
     cleaning_done?: boolean;
     laundry_taken?: boolean;
@@ -124,13 +124,13 @@ export default function CleaningClient({
                 isTurn={turnIds.has(t.id)}
                 busy={busyId === t.id}
                 onToggleCleaning={() =>
-                  callApi({ id: t.id, cleaning_done: !t.cleaning_done })
+                  update({ id: t.id, cleaning_done: !t.cleaning_done })
                 }
                 onMarkLaundry={(rooms) =>
-                  callApi({ id: t.id, laundry_taken: true, rooms_with_laundry: rooms })
+                  update({ id: t.id, laundry_taken: true, rooms_with_laundry: rooms })
                 }
                 onUnmarkLaundry={() =>
-                  callApi({ id: t.id, laundry_taken: false, rooms_with_laundry: 0 })
+                  update({ id: t.id, laundry_taken: false, rooms_with_laundry: 0 })
                 }
               />
             ))
@@ -275,7 +275,7 @@ function TaskCard({
           ) : (
             <div className="flex flex-wrap gap-2">
               <RoomButton disabled={busy} onClick={() => onMarkLaundry(0)} label="Sem roupa" />
-              {[1, 2, 3, 4].map((n) => (
+              {[1, 2, 3].map((n) => (
                 <RoomButton
                   key={n}
                   disabled={busy}
