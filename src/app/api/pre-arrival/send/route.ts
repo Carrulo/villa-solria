@@ -51,10 +51,14 @@ export async function GET(req: Request) {
   const supabase = createServerClient();
   const target = addDays(todayIso(), 1);
 
+  // checkin exactly tomorrow, and not already in the past (belt + braces —
+  // the equality on `target` already guarantees this, but explicit keeps
+  // the intent obvious if the window ever widens).
   const { data, error } = await supabase
     .from('bookings')
     .select('id, guest_name, guest_email, checkin_date, checkout_date, language, status, source, guide_token, door_code')
     .eq('checkin_date', target)
+    .gte('checkin_date', todayIso())
     .in('source', ['website', 'manual'])
     .eq('status', 'confirmed')
     .is('pre_arrival_sent_at', null);

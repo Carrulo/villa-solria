@@ -105,9 +105,13 @@ export default function PreArrivalsPage() {
         continue;
       }
       if (!r.guest_email || !r.guide_token) continue;
-      if (r.checkin_date === tomorrow || (r.checkin_date <= today && r.checkin_date >= addDays(today, -2))) {
+      // Only include bookings whose stay hasn't started yet. A pre-arrival
+      // email has no purpose once the guest is already in the house (or
+      // gone). Stops obvious clutter like "atraso 3d" for a past stay.
+      if (r.checkin_date < today) continue;
+      if (r.checkin_date === today || r.checkin_date === tomorrow) {
         dueTomorrow.push(r);
-      } else if (r.checkin_date > tomorrow && r.checkin_date <= addDays(today, 14)) {
+      } else if (r.checkin_date <= addDays(today, 14)) {
         upcoming.push(r);
       }
     }
