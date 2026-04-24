@@ -1,8 +1,108 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Save, Plus, Trash2, Copy } from 'lucide-react';
+import { Save, Plus, Trash2, Copy, Upload, Loader2, X } from 'lucide-react';
+
+const STORAGE_BUCKET = 'property-photos';
+
+async function uploadGuideFile(file: File, kind: 'image' | 'video'): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || (kind === 'video' ? 'mp4' : 'jpg');
+  const safeName = file.name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9-]/g, '_')
+    .toLowerCase()
+    .slice(0, 40);
+  const path = `guide/${kind}-${Date.now()}-${safeName}.${ext}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
+    contentType: file.type,
+    cacheControl: '3600',
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function FileUploadField({
+  value,
+  onChange,
+  accept,
+  kind,
+  label,
+  placeholder,
+}: {
+  value: string | null;
+  onChange: (url: string | null) => void;
+  accept: string;
+  kind: 'image' | 'video';
+  label: string;
+  placeholder?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const url = await uploadGuideFile(f, kind);
+      onChange(url);
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : 'upload failed');
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-xs text-gray-400">{label}</label>
+      <div className="flex gap-2 items-center">
+        <input
+          type="url"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value || null)}
+          placeholder={placeholder || 'URL ou fica vazio e carrega um ficheiro →'}
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs font-medium disabled:opacity-50"
+          title="Carregar do computador"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+          {busy ? 'A carregar…' : 'Carregar'}
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="p-2 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10"
+            title="Remover"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onPick} />
+      {err && <p className="text-[11px] text-red-400">{err}</p>}
+      {value && kind === 'image' && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="preview" className="mt-2 h-24 w-auto rounded-lg border border-white/10 object-cover" />
+      )}
+      {value && kind === 'video' && (
+        <video src={value} controls className="mt-2 max-h-32 rounded-lg border border-white/10" />
+      )}
+    </div>
+  );
+}
 
 type Locale = 'pt' | 'en' | 'es' | 'de';
 const LOCALES: Locale[] = ['pt', 'en', 'es', 'de'];
@@ -191,14 +291,13 @@ function SectionsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
             />
           </div>
 
-          <div className="space-y-2 mt-3">
-            <label className="block text-xs text-gray-400">URL da imagem (opcional)</label>
-            <input
-              type="url"
-              value={s.media_url || ''}
-              onChange={(e) => update(s.id, 'media_url', e.target.value || null)}
-              placeholder="https://…"
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          <div className="mt-3">
+            <FileUploadField
+              label="Imagem da secção (opcional)"
+              value={s.media_url}
+              onChange={(url) => update(s.id, 'media_url', url)}
+              accept="image/*"
+              kind="image"
             />
           </div>
 
@@ -335,13 +434,22 @@ function PlacesTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err')
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">URL da foto</label>
-              <input type="url" value={p.photo_url || ''} onChange={(e) => update(p.id, 'photo_url', e.target.value || null)} placeholder="https://…" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white" />
-            </div>
+            <FileUploadField
+              label="Foto do sítio"
+              value={p.photo_url}
+              onChange={(url) => update(p.id, 'photo_url', url)}
+              accept="image/*"
+              kind="image"
+            />
             <div>
               <label className="block text-xs text-gray-400 mb-1">URL Google Maps</label>
-              <input type="url" value={p.map_url || ''} onChange={(e) => update(p.id, 'map_url', e.target.value || null)} placeholder="https://maps.google.com/?q=…" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white" />
+              <input
+                type="url"
+                value={p.map_url || ''}
+                onChange={(e) => update(p.id, 'map_url', e.target.value || null)}
+                placeholder="https://maps.google.com/?q=…"
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              />
             </div>
           </div>
 
@@ -401,17 +509,32 @@ function SettingsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
       <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
         Estes valores só aparecem no guia quando a estadia está activa (3 dias antes do check-in a 3 dias depois do check-out).
       </p>
-      {SENSITIVE_KEYS.map(({ key, label, type }) => (
-        <div key={key}>
-          <label className="block text-xs text-gray-400 mb-1">{label}</label>
-          <input
-            type={type}
-            value={values[key] || ''}
-            onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono"
-          />
-        </div>
-      ))}
+      {SENSITIVE_KEYS.map(({ key, label, type }) => {
+        if (key === 'guide_lock_video_url') {
+          return (
+            <FileUploadField
+              key={key}
+              label={label}
+              value={values[key] || null}
+              onChange={(url) => setValues((prev) => ({ ...prev, [key]: url || '' }))}
+              accept="video/*"
+              kind="video"
+              placeholder="URL do vídeo ou carrega MP4 →"
+            />
+          );
+        }
+        return (
+          <div key={key}>
+            <label className="block text-xs text-gray-400 mb-1">{label}</label>
+            <input
+              type={type}
+              value={values[key] || ''}
+              onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono"
+            />
+          </div>
+        );
+      })}
       <div className="flex justify-end pt-2">
         <button onClick={saveAll} disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold disabled:opacity-50">
           <Save size={14} /> {saving ? 'A guardar…' : 'Guardar tudo'}
