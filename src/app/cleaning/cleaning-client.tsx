@@ -154,7 +154,7 @@ export default function CleaningClient({
         </div>
 
         <footer className="mt-8 text-center text-xs text-gray-500">
-          Marca as tarefas à medida que vais fazendo. Dúvidas? Manda SMS ao Bruno.
+          Dúvidas: WhatsApp ao Bruno
         </footer>
       </div>
     </div>
@@ -230,6 +230,9 @@ function TaskCard({
   const [notes, setNotes] = useState(initialNotes);
   const [notesSaved, setNotesSaved] = useState(false);
   const notesDirty = notes.trim() !== initialNotes.trim();
+  // Collapsible checklist — open while incomplete, closed once all 14 ticked
+  // (auto sync) and overridable by user click.
+  const [checklistOpen, setChecklistOpen] = useState(!checklistDone && !completed);
 
   async function uploadFiles(files: FileList) {
     setUploading(true);
@@ -272,9 +275,6 @@ function TaskCard({
   }
 
   const editable = !completed && !task.cleaning_paid;
-  // Auto-open the checklist while still in progress so the user doesn't have
-  // to tap to start. Closes itself once everything is ticked.
-  const initiallyOpen = !checklistDone && !completed;
 
   return (
     <div
@@ -310,47 +310,61 @@ function TaskCard({
 
       <div className="mt-3 space-y-2">
         {/* 1. Checklist (collapsible) */}
-        <details
-          open={initiallyOpen}
-          className="rounded-xl bg-white/5 border border-white/10 overflow-hidden group"
-        >
-          <summary className="flex items-center justify-between px-3 py-2.5 cursor-pointer select-none list-none">
-            <span className="text-sm font-medium text-gray-200 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold flex items-center justify-center">1</span>
+        <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setChecklistOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.03] transition-colors"
+          >
+            <span className="flex items-center gap-2.5 text-sm font-medium text-gray-200">
+              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold inline-flex items-center justify-center">
+                1
+              </span>
               Limpar
             </span>
-            <span className={`text-xs font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
-              {checklist.done}/{checklist.total} {checklistDone && '✓'}
+            <span className="flex items-center gap-2">
+              <span className={`text-xs font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
+                {checklist.done}/{checklist.total}{checklistDone ? ' ✓' : ''}
+              </span>
+              <span className={`text-gray-400 text-xs transition-transform ${checklistOpen ? 'rotate-180' : ''}`}>▾</span>
             </span>
-          </summary>
-          <div className="grid grid-cols-2 gap-1.5 p-3 pt-0">
-            {CLEANING_SUBTASKS.map((s) => {
-              const done = progress[s.key] === true;
-              return (
-                <button
-                  key={s.key}
-                  onClick={() => editable && !busy && onToggleSubtask(s.key, !done)}
-                  disabled={busy || !editable}
-                  className={`flex items-center gap-1.5 px-2 py-2 rounded-lg border text-left text-xs sm:text-sm disabled:opacity-60 ${
-                    done
-                      ? 'bg-green-500/10 border-green-500/30 text-green-200'
-                      : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  {done ? <CheckCircle2 size={14} className="shrink-0" /> : <Circle size={14} className="shrink-0 text-gray-500" />}
-                  <span className="leading-none">{s.icon}</span>
-                  <span className="truncate">{s.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </details>
+          </button>
+          {checklistOpen && (
+            <div className="grid grid-cols-2 gap-1.5 px-3 pb-3">
+              {CLEANING_SUBTASKS.map((s) => {
+                const done = progress[s.key] === true;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => editable && !busy && onToggleSubtask(s.key, !done)}
+                    disabled={busy || !editable}
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left text-sm disabled:opacity-60 ${
+                      done
+                        ? 'bg-green-500/10 border-green-500/30 text-green-200'
+                        : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                    }`}
+                  >
+                    {done ? (
+                      <CheckCircle2 size={15} className="shrink-0" />
+                    ) : (
+                      <Circle size={15} className="shrink-0 text-gray-500" />
+                    )}
+                    <span className="leading-none text-base">{s.icon}</span>
+                    <span className="truncate">{s.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* 2. Roupas */}
         <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-gray-200 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold flex items-center justify-center">2</span>
+            <span className="flex items-center gap-2.5 text-sm font-medium text-gray-200">
+              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold inline-flex items-center justify-center">
+                2
+              </span>
               Roupas
             </span>
             {task.laundry_taken && (
@@ -376,8 +390,10 @@ function TaskCard({
         {/* 3. Fotos */}
         <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-200 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold flex items-center justify-center">3</span>
+            <span className="flex items-center gap-2.5 text-sm font-medium text-gray-200">
+              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold inline-flex items-center justify-center">
+                3
+              </span>
               Fotos
             </span>
             <span className={`text-xs font-mono ${photoCount >= 3 ? 'text-green-300' : 'text-gray-400'}`}>
