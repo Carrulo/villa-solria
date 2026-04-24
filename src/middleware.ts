@@ -5,14 +5,20 @@ import { NextRequest } from 'next/server';
 const intlMiddleware = createMiddleware(routing);
 
 export default function middleware(request: NextRequest) {
-  // Skip i18n middleware for admin and api routes
+  // Skip i18n middleware for admin, api and team-facing routes that don't
+  // need locale negotiation (cleaning dashboard is token-gated and uses
+  // its own PT-only chrome).
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith('/admin') || pathname.startsWith('/api')) {
+  if (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/cleaning')
+  ) {
     return;
   }
   return intlMiddleware(request);
 }
 
 export const config = {
-  matcher: ['/((?!_next|images|favicon|api|admin).*)', '/', '/(pt|en|es|de)/:path*']
+  matcher: ['/((?!_next|images|favicon|api|admin|cleaning).*)', '/', '/(pt|en|es|de)/:path*']
 };
