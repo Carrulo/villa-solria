@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import {
+  CLEANING_SUBTASK_KEYS,
+  isChecklistComplete,
+} from '@/lib/cleaning-checklist';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -10,6 +14,9 @@ type UpdateBody = {
   cleaning_done?: boolean;
   laundry_taken?: boolean;
   rooms_with_laundry?: number;
+  subtask_toggle?: { key: string; done: boolean };
+  start?: boolean;
+  close?: boolean;
 };
 
 export async function POST(req: Request) {
@@ -94,6 +101,58 @@ export async function POST(req: Request) {
       patch.laundry_taken_at = null;
       patch.rooms_with_laundry = 0;
       patch.laundry_fee_snapshot = 0;
+    }
+  }
+
+  // Subtask checkbox toggle (one item at a time, atomic).
+  if (body.subtask_toggle && CLEANING_SUBTASK_KEYS.includes(body.subtask_toggle.key)) {
+    const current = (task.subtask_progress || {}) as Record<string, unknown>;
+    const next: Record<string, boolean> = { ...current } as Record<string, boolean>;
+    next[body.subtask_toggle.key] = body.subtask_toggle.done === true;
+    patch.subtask_progress = next;
+    // Mark started_at the first time anything is ticked.
+    if (!task.started_at && body.subtask_toggle.done === true) {
+      patch.started_at = new Date().toISOString();
+    }
+  }
+
+  if (body.start === true && !task.started_at) {
+    patch.started_at = new Date().toISOString();
+  }
+
+  // Close the cleaning: validate everything is done before stamping.
+  if (body.close === true) {
+    if (task.cleaning_paid) {
+      return NextResponse.json({ error: 'Limpeza já paga — não pode fechar.' }, { status: 409 });
+    }
+    const finalProgress = (patch.subtask_progress as Record<string, boolean> | undefined) ||
+      (task.subtask_progress as Record<string, boolean> | undefined) ||
+      {};
+    if (!isChecklistComplete(finalProgress)) {
+      return NextResponse.json(
+        { error: 'Marca todos os items da checklist antes de fechar.' },
+        { status: 400 },
+      );
+    }
+    if (!task.laundry_taken && body.laundry_taken !== true) {
+      return NextResponse.json(
+        { error: 'Indica primeiro quantos quartos têm roupa (ou "sem roupa").' },
+        { status: 400 },
+      );
+    }
+    const photos = Array.isArray(task.photo_urls) ? task.photo_urls : [];
+    const incomingPhotos = patch.photo_urls as unknown[] | undefined;
+    const photoCount = (incomingPhotos?.length ?? photos.length);
+    if (photoCount < 3) {
+      return NextResponse.json(
+        { error: `Faltam fotos de prova (${photoCount}/3 mínimo).` },
+        { status: 400 },
+      );
+    }
+    patch.completed_at = new Date().toISOString();
+    if (!task.cleaning_done) {
+      patch.cleaning_done = true;
+      patch.cleaning_done_at = new Date().toISOString();
     }
   }
 

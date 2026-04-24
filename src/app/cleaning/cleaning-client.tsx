@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import type { CleaningTask } from '@/lib/supabase';
-import { CheckCircle2, Circle, Sparkles, Shirt } from 'lucide-react';
+import { CheckCircle2, Circle, Sparkles, Shirt, Lock } from 'lucide-react';
+import { CLEANING_SUBTASKS, checklistCount, isChecklistComplete } from '@/lib/cleaning-checklist';
 
 type Tab = 'today' | 'upcoming' | 'done';
 
@@ -25,6 +26,9 @@ export default function CleaningClient({
     cleaning_done?: boolean;
     laundry_taken?: boolean;
     rooms_with_laundry?: number;
+    subtask_toggle?: { key: string; done: boolean };
+    start?: boolean;
+    close?: boolean;
   }) {
     setBusyId(body.id);
     try {
@@ -50,10 +54,11 @@ export default function CleaningClient({
     const upcoming: CleaningTask[] = [];
     const done: CleaningTask[] = [];
     for (const t of tasks) {
-      // "Feitas" só depois de ambas as partes resolvidas pela equipa:
-      // limpeza marcada + decisão sobre as roupas (X quartos ou "sem roupa").
-      const fullyMarked = t.cleaning_done && t.laundry_taken;
-      if (fullyMarked) {
+      // "Feitas" agora exige fechar formal — completed_at preenchido ao
+      // carregar "Fechar limpeza" (que valida checklist + roupas + fotos).
+      const tt = t as CleaningTask & { completed_at?: string | null };
+      const closed = !!tt.completed_at || (t.cleaning_done && t.laundry_taken);
+      if (closed) {
         done.push(t);
       } else if (t.cleaning_date <= todayStr) {
         today.push(t); // hoje + atrasadas
@@ -123,8 +128,8 @@ export default function CleaningClient({
                 task={t}
                 isTurn={turnIds.has(t.id)}
                 busy={busyId === t.id}
-                onToggleCleaning={() =>
-                  update({ id: t.id, cleaning_done: !t.cleaning_done })
+                onToggleSubtask={(key, done) =>
+                  update({ id: t.id, subtask_toggle: { key, done } })
                 }
                 onMarkLaundry={(rooms) =>
                   update({ id: t.id, laundry_taken: true, rooms_with_laundry: rooms })
@@ -132,6 +137,11 @@ export default function CleaningClient({
                 onUnmarkLaundry={() =>
                   update({ id: t.id, laundry_taken: false, rooms_with_laundry: 0 })
                 }
+                onClose={() => update({ id: t.id, close: true })}
+                onErrorMessage={(m) => {
+                  setMessage(m);
+                  setTimeout(() => setMessage(null), 3000);
+                }}
               />
             ))
           )}
@@ -172,18 +182,34 @@ function TaskCard({
   task,
   isTurn,
   busy,
-  onToggleCleaning,
+  onToggleSubtask,
   onMarkLaundry,
   onUnmarkLaundry,
+  onClose,
+  onErrorMessage,
 }: {
   task: CleaningTask;
   isTurn: boolean;
   busy: boolean;
-  onToggleCleaning: () => void;
+  onToggleSubtask: (key: string, done: boolean) => void;
   onMarkLaundry: (rooms: number) => void;
   onUnmarkLaundry: () => void;
+  onClose: () => void;
+  onErrorMessage: (m: string) => void;
 }) {
   const overdue = task.cleaning_date < new Date().toISOString().slice(0, 10) && !task.cleaning_done;
+  const taskAny = task as CleaningTask & {
+    subtask_progress?: Record<string, boolean>;
+    started_at?: string | null;
+    completed_at?: string | null;
+    photo_urls?: string[];
+  };
+  const progress = taskAny.subtask_progress || {};
+  const completed = !!taskAny.completed_at;
+  const checklist = checklistCount(progress);
+  const checklistDone = isChecklistComplete(progress);
+  const photoCount = Array.isArray(taskAny.photo_urls) ? taskAny.photo_urls.length : 0;
+  const canClose = !completed && !task.cleaning_paid && checklistDone && task.laundry_taken && photoCount >= 3;
 
   return (
     <div
@@ -232,24 +258,36 @@ function TaskCard({
       )}
 
       <div className="mt-4 space-y-3">
-        <button
-          onClick={onToggleCleaning}
-          disabled={busy || task.cleaning_paid}
-          className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-            task.cleaning_done
-              ? 'bg-green-500/10 border-green-500/30 text-green-300'
-              : 'bg-white/5 border-white/10 text-gray-200 hover:bg-white/10'
-          } disabled:opacity-60`}
-        >
-          {task.cleaning_done ? (
-            <CheckCircle2 size={22} />
-          ) : (
-            <Circle size={22} className="text-gray-400" />
-          )}
-          <span className="text-sm font-medium">
-            {task.cleaning_done ? 'Limpeza feita' : 'Marcar limpeza como feita'}
-          </span>
-        </button>
+        {/* Checklist */}
+        <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-200">Checklist da limpeza</p>
+            <span className={`text-xs font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
+              {checklist.done}/{checklist.total}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {CLEANING_SUBTASKS.map((s) => {
+              const done = progress[s.key] === true;
+              return (
+                <button
+                  key={s.key}
+                  onClick={() => !completed && !busy && onToggleSubtask(s.key, !done)}
+                  disabled={busy || completed || task.cleaning_paid}
+                  className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-colors text-sm disabled:opacity-60 ${
+                    done
+                      ? 'bg-green-500/10 border-green-500/30 text-green-200'
+                      : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  {done ? <CheckCircle2 size={16} className="shrink-0" /> : <Circle size={16} className="shrink-0 text-gray-500" />}
+                  <span className="leading-none">{s.icon}</span>
+                  <span className="truncate">{s.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="rounded-xl bg-white/5 border border-white/10 p-3">
           <div className="flex items-center gap-2 mb-2">
@@ -286,6 +324,52 @@ function TaskCard({
             </div>
           )}
         </div>
+
+        {/* Close cleaning */}
+        {completed ? (
+          <div className="rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-3 text-sm text-green-200 flex items-center gap-2">
+            <CheckCircle2 size={18} />
+            Limpeza fechada{taskAny.completed_at ? ' em ' + new Date(taskAny.completed_at).toLocaleDateString('pt-PT') : ''}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <button
+              onClick={() => {
+                if (!checklistDone) {
+                  onErrorMessage('Marca todos os items da checklist primeiro.');
+                  return;
+                }
+                if (!task.laundry_taken) {
+                  onErrorMessage('Indica quantos quartos têm roupa (ou "sem roupa").');
+                  return;
+                }
+                if (photoCount < 3) {
+                  onErrorMessage(`Faltam fotos de prova (${photoCount}/3 mínimo).`);
+                  return;
+                }
+                onClose();
+              }}
+              disabled={busy || !canClose}
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                canClose
+                  ? 'bg-yellow-400 hover:bg-yellow-300 text-slate-900'
+                  : 'bg-white/5 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <Lock size={16} />
+              Fechar limpeza
+            </button>
+            {!canClose && (
+              <p className="text-[11px] text-gray-500 text-center">
+                Falta: {!checklistDone && `checklist (${checklist.done}/${checklist.total})`}
+                {!checklistDone && (!task.laundry_taken || photoCount < 3) && ' · '}
+                {!task.laundry_taken && 'roupas'}
+                {!task.laundry_taken && photoCount < 3 && ' · '}
+                {photoCount < 3 && `fotos (${photoCount}/3)`}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
