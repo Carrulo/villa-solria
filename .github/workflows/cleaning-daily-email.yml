@@ -21,7 +21,7 @@ jobs:
 
           response=$(curl -s -w "\n%{http_code}" \
             -H "Authorization: Bearer $CLEANING_EMAIL_SECRET" \
-            "https://villa-solria.vercel.app/api/cleaning/daily-email")
+            "https://villasolria.com/api/cleaning/daily-email")
 
           body=$(echo "$response" | head -n -1)
           status=$(echo "$response" | tail -n 1)
