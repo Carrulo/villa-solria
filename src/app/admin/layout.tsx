@@ -36,6 +36,7 @@ const navGroups: { label: string | null; items: { href: string; label: string; i
       { href: '/admin/bookings', label: 'Reservas', icon: BookOpen },
       { href: '/admin/cleaning', label: 'Limpezas', icon: Sparkles },
       { href: '/admin/payments', label: 'Pagamentos', icon: CreditCard },
+      { href: '/admin/pre-arrivals', label: 'Pre-arrival (guia)', icon: CalendarDays },
       { href: '/admin/review-requests', label: 'Pedidos de review', icon: Mail },
     ],
   },

@@ -1,0 +1,26 @@
+name: Pre-arrival emails
+
+on:
+  schedule:
+    # Daily at 10:00 Europe/Lisbon (guests usually plan the trip in the morning)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger pre-arrival endpoint
+        run: |
+          echo "Sending pre-arrival emails at $(date)"
+          response=$(curl -s -w "\n%{http_code}" https://villasolria.com/api/pre-arrival/send)
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "Status: $status"
+          echo "Response: $body"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Pre-arrival send failed with status $status"
+            exit 1
+          fi

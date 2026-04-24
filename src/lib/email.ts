@@ -964,6 +964,160 @@ const reviewStrings: Record<SupportedLocale, {
   },
 };
 
+/* ------------------------------------------------------------------ */
+/*  Pre-arrival email — sent 1 day before check-in                    */
+/* ------------------------------------------------------------------ */
+
+export interface PreArrivalEmailData {
+  guest_name: string;
+  guest_email: string;
+  checkin_date: string;
+  checkout_date: string;
+  guide_token: string;
+  language?: string;
+}
+
+const preArrivalStrings: Record<SupportedLocale, {
+  subject: string;
+  hello: string;
+  lead: string;
+  ask: string;
+  cta: string;
+  info_items: string[];
+  closing: string;
+  signature: string;
+}> = {
+  pt: {
+    subject: 'A sua estadia é amanhã — guia Villa Solria 🌞',
+    hello: 'Olá',
+    lead: 'Amanhã é o dia da sua chegada à Villa Solria. Preparámos um guia personalizado com tudo o que precisa.',
+    ask: 'Abra-o no telemóvel — fica lá durante toda a estadia, sempre à mão.',
+    cta: 'Abrir o meu guia',
+    info_items: [
+      'Código da fechadura e como entrar',
+      'WiFi e instruções da casa',
+      'Praias, restaurantes e passeios à sua volta',
+      'O nosso contacto 24/7',
+    ],
+    closing: 'Boa viagem e até amanhã!',
+    signature: 'Equipa Villa Solria',
+  },
+  en: {
+    subject: 'Your stay starts tomorrow — Villa Solria guide 🌞',
+    hello: 'Hi',
+    lead: 'Tomorrow is your arrival day at Villa Solria. We have prepared a personal guide with everything you need.',
+    ask: 'Open it on your phone — it stays with you throughout the stay.',
+    cta: 'Open my guide',
+    info_items: [
+      'Door code and how to get in',
+      'WiFi and house instructions',
+      'Beaches, restaurants and activities nearby',
+      'Our 24/7 contact',
+    ],
+    closing: 'Safe travels — see you tomorrow!',
+    signature: 'The Villa Solria team',
+  },
+  es: {
+    subject: 'Su estancia es mañana — guía Villa Solria 🌞',
+    hello: 'Hola',
+    lead: 'Mañana es su día de llegada a Villa Solria. Hemos preparado una guía personalizada con todo lo necesario.',
+    ask: 'Ábrala en el móvil — estará disponible durante toda la estancia.',
+    cta: 'Abrir mi guía',
+    info_items: [
+      'Código de la cerradura y cómo entrar',
+      'WiFi e instrucciones de la casa',
+      'Playas, restaurantes y actividades cerca',
+      'Nuestro contacto 24/7',
+    ],
+    closing: '¡Buen viaje y hasta mañana!',
+    signature: 'Equipo Villa Solria',
+  },
+  de: {
+    subject: 'Ihr Aufenthalt beginnt morgen — Villa Solria Leitfaden 🌞',
+    hello: 'Hallo',
+    lead: 'Morgen ist Ihr Anreisetag in der Villa Solria. Wir haben einen persönlichen Leitfaden vorbereitet.',
+    ask: 'Öffnen Sie ihn auf dem Handy — er begleitet Sie während des gesamten Aufenthalts.',
+    cta: 'Meinen Leitfaden öffnen',
+    info_items: [
+      'Türcode und Einlass',
+      'WLAN und Hausinfos',
+      'Strände, Restaurants und Aktivitäten in der Nähe',
+      'Unsere 24/7-Kontaktdaten',
+    ],
+    closing: 'Gute Reise — bis morgen!',
+    signature: 'Das Villa Solria Team',
+  },
+};
+
+function publicBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || 'https://villasolria.com').replace(/\/$/, '');
+}
+
+export async function sendPreArrivalEmail(
+  data: PreArrivalEmailData,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerClient();
+
+  const { data: settingsRows } = await supabase
+    .from('settings')
+    .select('key, value')
+    .in('key', ['resend_api_key', 'email_from_address']);
+
+  const settings: Record<string, string> = {};
+  for (const row of settingsRows ?? []) {
+    settings[row.key] = typeof row.value === 'string' ? row.value : String(row.value ?? '');
+  }
+
+  const apiKey = settings['resend_api_key'];
+  if (!apiKey) return { success: false, error: 'Resend API key not configured' };
+
+  const fromAddress = settings['email_from_address'] || 'Villa Solria <reservas@villasolria.com>';
+  const rawLang = (data.language ?? 'pt').toLowerCase() as SupportedLocale;
+  const locale: SupportedLocale = rawLang in preArrivalStrings ? rawLang : 'en';
+  const s = preArrivalStrings[locale];
+
+  const guideUrl = `${publicBaseUrl()}/${locale}/guia/${data.guide_token}`;
+  const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
+
+  const html = `<!DOCTYPE html><html lang="${locale}"><head><meta charset="utf-8"><title>${s.subject}</title></head>
+  <body style="margin:0;padding:0;background:#f6f4ef;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4ef;padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+          <tr><td style="padding:32px 32px 24px 32px;">
+            <h1 style="margin:0 0 12px;font-size:22px;color:#1c1c1c;">${s.hello}${firstName ? ' ' + firstName : ''},</h1>
+            <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#333;">${s.lead}</p>
+            <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#333;">${s.ask}</p>
+            <p style="margin:0 0 26px;text-align:center;">
+              <a href="${guideUrl}" style="display:inline-block;padding:14px 30px;background:#c97a45;color:#ffffff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:600;">${s.cta}</a>
+            </p>
+            <div style="border-top:1px solid #eee;padding-top:18px;margin-top:6px;">
+              <p style="margin:0 0 8px;font-size:13px;color:#777;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">O que vai encontrar</p>
+              <ul style="margin:0 0 0 18px;padding:0;font-size:14px;line-height:1.7;color:#444;">
+                ${s.info_items.map((i) => `<li>${i}</li>`).join('')}
+              </ul>
+            </div>
+            <p style="margin:22px 0 4px;font-size:15px;color:#333;">${s.closing}</p>
+            <p style="margin:0;font-size:15px;color:#666;">${s.signature}</p>
+          </td></tr>
+        </table>
+        <p style="font-size:11px;color:#999;margin:12px 0 0;">Villa Solria · Cabanas de Tavira</p>
+      </td></tr>
+    </table>
+  </body></html>`;
+
+  try {
+    const resend = new Resend(apiKey);
+    await resend.emails.send({ from: fromAddress, to: data.guest_email, subject: s.subject, html });
+    console.log(`[email] Pre-arrival sent to ${data.guest_email}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[email] Failed to send pre-arrival email:`, message);
+    return { success: false, error: message };
+  }
+}
+
 export async function sendReviewRequestEmail(
   data: ReviewEmailData,
 ): Promise<{ success: boolean; error?: string }> {
