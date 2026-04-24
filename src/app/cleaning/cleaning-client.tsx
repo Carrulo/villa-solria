@@ -55,14 +55,22 @@ export default function CleaningClient({
     const upcoming: CleaningTask[] = [];
     const done: CleaningTask[] = [];
     for (const t of tasks) {
-      // "Feitas" agora exige fechar formal — completed_at preenchido ao
-      // carregar "Fechar limpeza" (que valida checklist + roupas + fotos).
       const tt = t as CleaningTask & { completed_at?: string | null };
       const closed = !!tt.completed_at || (t.cleaning_done && t.laundry_taken);
       if (closed) {
         done.push(t);
-      } else if (t.cleaning_date <= todayStr) {
-        today.push(t); // hoje + atrasadas
+        continue;
+      }
+      // Auto-arquivar: se a estadia já acabou há mais de 1 dia e a tarefa
+      // ficou aberta, não interessa à equipa para o trabalho de hoje.
+      // Aparece na aba "Feitas" para histórico, sem aparecer em "Hoje".
+      const stayEnd = t.stay_checkout_date || t.cleaning_date;
+      if (stayEnd < todayStr) {
+        done.push(t);
+        continue;
+      }
+      if (t.cleaning_date <= todayStr) {
+        today.push(t);
       } else {
         upcoming.push(t);
       }
