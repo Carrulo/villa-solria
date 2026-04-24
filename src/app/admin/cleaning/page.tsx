@@ -747,6 +747,7 @@ function TaskRow({
         {task.num_guests != null && (
           <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
         )}
+        <PhotoStrip task={task} />
       </td>
       <td className="px-4 py-3 text-xs text-gray-400">{sourceLabel}</td>
 
@@ -1076,5 +1077,41 @@ function TaskCard({
         </div>
       </div>
     </div>
+  );
+}
+
+function PhotoStrip({ task }: { task: CleaningTask }) {
+  const photos = (task as CleaningTask & { photo_urls?: string[] }).photo_urls || [];
+  const [lightbox, setLightbox] = useState<string | null>(null);
+  if (!photos.length) return null;
+  return (
+    <>
+      <div className="mt-1.5 flex items-center gap-1 flex-wrap">
+        {photos.slice(0, 4).map((u) => (
+          <button
+            key={u}
+            type="button"
+            onClick={() => setLightbox(u)}
+            className="relative w-10 h-10 rounded overflow-hidden bg-white/5 border border-white/10 hover:ring-1 hover:ring-blue-400"
+            title="Ver foto"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={u} alt="prova" className="w-full h-full object-cover" />
+          </button>
+        ))}
+        {photos.length > 4 && (
+          <span className="text-[10px] text-gray-400 ml-1">+{photos.length - 4}</span>
+        )}
+      </div>
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="prova" className="max-h-full max-w-full rounded-lg" />
+        </div>
+      )}
+    </>
   );
 }

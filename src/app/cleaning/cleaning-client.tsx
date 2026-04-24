@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { CleaningTask } from '@/lib/supabase';
-import { CheckCircle2, Circle, Sparkles, Shirt, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, Sparkles, Shirt, Lock, Camera, X as XIcon } from 'lucide-react';
 import { CLEANING_SUBTASKS, checklistCount, isChecklistComplete } from '@/lib/cleaning-checklist';
 
 type Tab = 'today' | 'upcoming' | 'done';
@@ -126,6 +126,7 @@ export default function CleaningClient({
               <TaskCard
                 key={t.id}
                 task={t}
+                token={token}
                 isTurn={turnIds.has(t.id)}
                 busy={busyId === t.id}
                 onToggleSubtask={(key, done) =>
@@ -142,6 +143,9 @@ export default function CleaningClient({
                   setMessage(m);
                   setTimeout(() => setMessage(null), 3000);
                 }}
+                onPhotosUpdated={(updatedTask) =>
+                  setTasks((prev) => prev.map((x) => (x.id === t.id ? updatedTask : x)))
+                }
               />
             ))
           )}
@@ -180,6 +184,7 @@ function TabButton({
 
 function TaskCard({
   task,
+  token,
   isTurn,
   busy,
   onToggleSubtask,
@@ -187,8 +192,10 @@ function TaskCard({
   onUnmarkLaundry,
   onClose,
   onErrorMessage,
+  onPhotosUpdated,
 }: {
   task: CleaningTask;
+  token: string;
   isTurn: boolean;
   busy: boolean;
   onToggleSubtask: (key: string, done: boolean) => void;
@@ -196,6 +203,7 @@ function TaskCard({
   onUnmarkLaundry: () => void;
   onClose: () => void;
   onErrorMessage: (m: string) => void;
+  onPhotosUpdated: (task: CleaningTask) => void;
 }) {
   const overdue = task.cleaning_date < new Date().toISOString().slice(0, 10) && !task.cleaning_done;
   const taskAny = task as CleaningTask & {
@@ -208,8 +216,52 @@ function TaskCard({
   const completed = !!taskAny.completed_at;
   const checklist = checklistCount(progress);
   const checklistDone = isChecklistComplete(progress);
-  const photoCount = Array.isArray(taskAny.photo_urls) ? taskAny.photo_urls.length : 0;
+  const photos = Array.isArray(taskAny.photo_urls) ? taskAny.photo_urls : [];
+  const photoCount = photos.length;
   const canClose = !completed && !task.cleaning_paid && checklistDone && task.laundry_taken && photoCount >= 3;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [removingUrl, setRemovingUrl] = useState<string | null>(null);
+
+  async function uploadFiles(files: FileList) {
+    setUploading(true);
+    let lastTask: CleaningTask | null = null;
+    try {
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append('token', token);
+        fd.append('task_id', task.id);
+        fd.append('file', file);
+        const res = await fetch('/api/cleaning/photo-upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) {
+          onErrorMessage(data.error || 'Erro ao enviar foto');
+          break;
+        }
+        if (data.task) lastTask = data.task as CleaningTask;
+      }
+    } finally {
+      setUploading(false);
+      if (lastTask) onPhotosUpdated(lastTask);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  async function removePhoto(url: string) {
+    setRemovingUrl(url);
+    try {
+      const params = new URLSearchParams({ token, task_id: task.id, url });
+      const res = await fetch('/api/cleaning/photo-upload?' + params.toString(), { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        onErrorMessage(data.error || 'Erro ao remover');
+        return;
+      }
+      if (data.task) onPhotosUpdated(data.task as CleaningTask);
+    } finally {
+      setRemovingUrl(null);
+    }
+  }
 
   return (
     <div
@@ -322,6 +374,65 @@ function TaskCard({
                 />
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Photos */}
+        <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Camera size={18} className="text-amber-300" />
+              <p className="text-sm font-medium text-gray-200">Fotos de prova</p>
+            </div>
+            <span className={`text-xs font-mono ${photoCount >= 3 ? 'text-green-300' : 'text-gray-400'}`}>
+              {photoCount}/3 mín
+            </span>
+          </div>
+          {photoCount > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {photos.map((url) => (
+                <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-black/40">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="prova" className="w-full h-full object-cover" />
+                  {!completed && !task.cleaning_paid && (
+                    <button
+                      onClick={() => removePhoto(url)}
+                      disabled={removingUrl === url}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white hover:bg-red-500/80 disabled:opacity-50"
+                      title="Remover"
+                    >
+                      <XIcon size={12} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {!completed && !task.cleaning_paid && (
+            <>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-sm font-medium disabled:opacity-50"
+              >
+                <Camera size={16} />
+                {uploading ? 'A enviar…' : 'Tirar / escolher fotos'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) uploadFiles(e.target.files);
+                }}
+              />
+              <p className="text-[11px] text-gray-500 mt-1.5 text-center">
+                Tirar fotos da cozinha, casa de banho e sala depois de limpar.
+              </p>
+            </>
           )}
         </div>
 
