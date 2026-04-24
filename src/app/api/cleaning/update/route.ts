@@ -17,6 +17,7 @@ type UpdateBody = {
   subtask_toggle?: { key: string; done: boolean };
   start?: boolean;
   close?: boolean;
+  cleaner_notes?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -102,6 +103,14 @@ export async function POST(req: Request) {
       patch.rooms_with_laundry = 0;
       patch.laundry_fee_snapshot = 0;
     }
+  }
+
+  // Free-text note from the cleaner.
+  if (typeof body.cleaner_notes === 'string') {
+    const trimmed = body.cleaner_notes.trim();
+    patch.cleaner_notes = trimmed.length > 0 ? trimmed.slice(0, 2000) : null;
+  } else if (body.cleaner_notes === null) {
+    patch.cleaner_notes = null;
   }
 
   // Subtask checkbox toggle (one item at a time, atomic).

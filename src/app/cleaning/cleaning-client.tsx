@@ -29,6 +29,7 @@ export default function CleaningClient({
     subtask_toggle?: { key: string; done: boolean };
     start?: boolean;
     close?: boolean;
+    cleaner_notes?: string | null;
   }) {
     setBusyId(body.id);
     try {
@@ -146,6 +147,7 @@ export default function CleaningClient({
                 onPhotosUpdated={(updatedTask) =>
                   setTasks((prev) => prev.map((x) => (x.id === t.id ? updatedTask : x)))
                 }
+                onSaveNotes={(text) => update({ id: t.id, cleaner_notes: text })}
               />
             ))
           )}
@@ -193,6 +195,7 @@ function TaskCard({
   onClose,
   onErrorMessage,
   onPhotosUpdated,
+  onSaveNotes,
 }: {
   task: CleaningTask;
   token: string;
@@ -204,6 +207,7 @@ function TaskCard({
   onClose: () => void;
   onErrorMessage: (m: string) => void;
   onPhotosUpdated: (task: CleaningTask) => void;
+  onSaveNotes: (text: string) => void;
 }) {
   const overdue = task.cleaning_date < new Date().toISOString().slice(0, 10) && !task.cleaning_done;
   const taskAny = task as CleaningTask & {
@@ -222,6 +226,10 @@ function TaskCard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [removingUrl, setRemovingUrl] = useState<string | null>(null);
+  const initialNotes = (task as CleaningTask & { cleaner_notes?: string | null }).cleaner_notes || '';
+  const [notes, setNotes] = useState(initialNotes);
+  const [notesSaved, setNotesSaved] = useState(false);
+  const notesDirty = notes.trim() !== initialNotes.trim();
 
   async function uploadFiles(files: FileList) {
     setUploading(true);
@@ -419,6 +427,32 @@ function TaskCard({
               />
             </>
           )}
+        </div>
+
+        {/* Notas livres */}
+        <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-200">Notas / avisos</span>
+            {notesSaved && <span className="text-[11px] text-green-300">guardado ✓</span>}
+          </div>
+          <textarea
+            value={notes}
+            onChange={(e) => {
+              setNotes(e.target.value);
+              setNotesSaved(false);
+            }}
+            onBlur={() => {
+              if (notesDirty) {
+                onSaveNotes(notes);
+                setNotesSaved(true);
+                setTimeout(() => setNotesSaved(false), 1500);
+              }
+            }}
+            disabled={!editable}
+            rows={2}
+            placeholder="ex: falta detergente WC1, hóspede levou toalha"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/40 disabled:opacity-60"
+          />
         </div>
 
         {/* Close */}

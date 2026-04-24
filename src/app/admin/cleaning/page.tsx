@@ -747,6 +747,7 @@ function TaskRow({
         {task.num_guests != null && (
           <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
         )}
+        <CleanerNote task={task} />
         <PhotoStrip task={task} />
       </td>
       <td className="px-4 py-3 text-xs text-gray-400">{sourceLabel}</td>
@@ -1076,6 +1077,17 @@ function TaskCard({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function CleanerNote({ task }: { task: CleaningTask }) {
+  const note = (task as CleaningTask & { cleaner_notes?: string | null }).cleaner_notes;
+  if (!note || !note.trim()) return null;
+  return (
+    <div className="mt-1.5 inline-flex items-start gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200 max-w-full">
+      <span className="leading-none">📝</span>
+      <span className="whitespace-pre-wrap break-words">{note}</span>
     </div>
   );
 }
