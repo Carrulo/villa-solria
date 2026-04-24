@@ -263,9 +263,14 @@ function TaskCard({
     }
   }
 
+  const editable = !completed && !task.cleaning_paid;
+  // Auto-open the checklist while still in progress so the user doesn't have
+  // to tap to start. Closes itself once everything is ticked.
+  const initiallyOpen = !checklistDone && !completed;
+
   return (
     <div
-      className={`rounded-2xl p-4 sm:p-5 border ${
+      className={`rounded-2xl p-4 border ${
         isTurn
           ? 'bg-red-500/10 border-red-500/40'
           : overdue
@@ -273,150 +278,133 @@ function TaskCard({
           : 'bg-white/5 border-white/10'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-semibold text-white">
-            {formatLongDate(task.cleaning_date)}
+      {/* Compact header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-base font-semibold text-white truncate">
+            {formatShortDate(task.cleaning_date)}
+            {task.guest_name && <span className="text-gray-400 font-normal"> · {task.guest_name.split(' ')[0]}</span>}
           </p>
-          {task.guest_name && (
-            <p className="text-sm text-gray-400">
-              {task.guest_name}
-              {task.num_guests ? ` · ${task.num_guests} hóspede(s)` : ''}
-            </p>
-          )}
-          {task.stay_checkout_date && (
-            <p className="text-xs text-gray-500 mt-1">
-              Estadia {task.cleaning_date.slice(5)} → {task.stay_checkout_date.slice(5)}
-            </p>
-          )}
+          <p className="text-xs text-gray-500 mt-0.5">
+            {task.num_guests ? `${task.num_guests} hósp · ` : ''}
+            {task.stay_checkout_date && `${task.cleaning_date.slice(5)} → ${task.stay_checkout_date.slice(5)}`}
+          </p>
         </div>
-        <div className="flex flex-col gap-1 items-end">
-          {isTurn && (
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/30 text-red-200 uppercase">
-              Mesmo dia ⚡
-            </span>
-          )}
-          {overdue && !isTurn && (
-            <span className="px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-300">
-              atrasada
-            </span>
-          )}
-        </div>
+        {isTurn && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/30 text-red-200 uppercase whitespace-nowrap">
+            ⚡ Mesmo dia
+          </span>
+        )}
+        {overdue && !isTurn && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-500/20 text-red-300">atrasada</span>
+        )}
       </div>
-      {isTurn && (
-        <p className="mt-2 text-xs text-red-200">
-          ⚠️ Outro hóspede entra neste dia. Limpar o quanto antes após check-out.
-        </p>
-      )}
 
-      <div className="mt-4 space-y-3">
-        {/* Checklist */}
-        <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-gray-200">Checklist da limpeza</p>
-            <span className={`text-xs font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
-              {checklist.done}/{checklist.total}
+      <div className="mt-3 space-y-2">
+        {/* 1. Checklist (collapsible) */}
+        <details
+          open={initiallyOpen}
+          className="rounded-xl bg-white/5 border border-white/10 overflow-hidden group"
+        >
+          <summary className="flex items-center justify-between px-3 py-2.5 cursor-pointer select-none list-none">
+            <span className="text-sm font-medium text-gray-200 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold flex items-center justify-center">1</span>
+              Limpar
             </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <span className={`text-xs font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
+              {checklist.done}/{checklist.total} {checklistDone && '✓'}
+            </span>
+          </summary>
+          <div className="grid grid-cols-2 gap-1.5 p-3 pt-0">
             {CLEANING_SUBTASKS.map((s) => {
               const done = progress[s.key] === true;
               return (
                 <button
                   key={s.key}
-                  onClick={() => !completed && !busy && onToggleSubtask(s.key, !done)}
-                  disabled={busy || completed || task.cleaning_paid}
-                  className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-colors text-sm disabled:opacity-60 ${
+                  onClick={() => editable && !busy && onToggleSubtask(s.key, !done)}
+                  disabled={busy || !editable}
+                  className={`flex items-center gap-1.5 px-2 py-2 rounded-lg border text-left text-xs sm:text-sm disabled:opacity-60 ${
                     done
                       ? 'bg-green-500/10 border-green-500/30 text-green-200'
                       : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
                   }`}
                 >
-                  {done ? <CheckCircle2 size={16} className="shrink-0" /> : <Circle size={16} className="shrink-0 text-gray-500" />}
+                  {done ? <CheckCircle2 size={14} className="shrink-0" /> : <Circle size={14} className="shrink-0 text-gray-500" />}
                   <span className="leading-none">{s.icon}</span>
                   <span className="truncate">{s.label}</span>
                 </button>
               );
             })}
           </div>
-        </div>
+        </details>
 
-        <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Shirt size={18} className="text-blue-300" />
-            <p className="text-sm text-gray-200">Roupas levadas?</p>
+        {/* 2. Roupas */}
+        <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-gray-200 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold flex items-center justify-center">2</span>
+              Roupas
+            </span>
+            {task.laundry_taken && (
+              <span className="text-xs text-blue-300 flex items-center gap-1.5">
+                <Shirt size={13} />
+                {task.rooms_with_laundry === 0 ? 'sem' : `${task.rooms_with_laundry}q`}
+                {!task.laundry_paid && editable && (
+                  <button onClick={onUnmarkLaundry} disabled={busy} className="ml-1 text-[10px] text-gray-500 hover:text-gray-300 underline">corrigir</button>
+                )}
+              </span>
+            )}
           </div>
-
-          {task.laundry_taken ? (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-blue-300">
-                ✓ {task.rooms_with_laundry} quarto{task.rooms_with_laundry !== 1 ? 's' : ''}
-              </p>
-              {!task.laundry_paid && (
-                <button
-                  onClick={onUnmarkLaundry}
-                  disabled={busy}
-                  className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-60"
-                >
-                  corrigir
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <RoomButton disabled={busy} onClick={() => onMarkLaundry(0)} label="Sem roupa" />
+          {!task.laundry_taken && editable && (
+            <div className="mt-2 grid grid-cols-4 gap-1.5">
+              <RoomButton disabled={busy} onClick={() => onMarkLaundry(0)} label="Sem" />
               {[1, 2, 3].map((n) => (
-                <RoomButton
-                  key={n}
-                  disabled={busy}
-                  onClick={() => onMarkLaundry(n)}
-                  label={`${n} quarto${n > 1 ? 's' : ''}`}
-                />
+                <RoomButton key={n} disabled={busy} onClick={() => onMarkLaundry(n)} label={`${n}q`} />
               ))}
             </div>
           )}
         </div>
 
-        {/* Photos */}
-        <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+        {/* 3. Fotos */}
+        <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Camera size={18} className="text-amber-300" />
-              <p className="text-sm font-medium text-gray-200">Fotos de prova</p>
-            </div>
+            <span className="text-sm font-medium text-gray-200 flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold flex items-center justify-center">3</span>
+              Fotos
+            </span>
             <span className={`text-xs font-mono ${photoCount >= 3 ? 'text-green-300' : 'text-gray-400'}`}>
-              {photoCount}/3 mín
+              {photoCount}/3 {photoCount >= 3 && '✓'}
             </span>
           </div>
           {photoCount > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-2">
+            <div className="grid grid-cols-4 gap-1.5 mb-2">
               {photos.map((url) => (
-                <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-black/40">
+                <div key={url} className="relative aspect-square rounded-md overflow-hidden bg-black/40">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="prova" className="w-full h-full object-cover" />
-                  {!completed && !task.cleaning_paid && (
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  {editable && (
                     <button
                       onClick={() => removePhoto(url)}
                       disabled={removingUrl === url}
-                      className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white hover:bg-red-500/80 disabled:opacity-50"
+                      className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/70 text-white hover:bg-red-500/80 disabled:opacity-50"
                       title="Remover"
                     >
-                      <XIcon size={12} />
+                      <XIcon size={10} />
                     </button>
                   )}
                 </div>
               ))}
             </div>
           )}
-          {!completed && !task.cleaning_paid && (
+          {editable && (
             <>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-sm font-medium disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-sm font-medium disabled:opacity-50"
               >
-                <Camera size={16} />
-                {uploading ? 'A enviar…' : 'Tirar / escolher fotos'}
+                <Camera size={15} />
+                {uploading ? 'A enviar…' : photoCount === 0 ? 'Tirar fotos' : 'Adicionar mais'}
               </button>
               <input
                 ref={fileInputRef}
@@ -429,57 +417,34 @@ function TaskCard({
                   if (e.target.files && e.target.files.length > 0) uploadFiles(e.target.files);
                 }}
               />
-              <p className="text-[11px] text-gray-500 mt-1.5 text-center">
-                Tirar fotos da cozinha, casa de banho e sala depois de limpar.
-              </p>
             </>
           )}
         </div>
 
-        {/* Close cleaning */}
+        {/* Close */}
         {completed ? (
-          <div className="rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-3 text-sm text-green-200 flex items-center gap-2">
-            <CheckCircle2 size={18} />
-            Limpeza fechada{taskAny.completed_at ? ' em ' + new Date(taskAny.completed_at).toLocaleDateString('pt-PT') : ''}
+          <div className="rounded-xl bg-green-500/15 border border-green-500/30 px-3 py-2.5 text-sm text-green-200 flex items-center gap-2">
+            <CheckCircle2 size={16} />
+            Fechada{taskAny.completed_at ? ` ${new Date(taskAny.completed_at).toLocaleDateString('pt-PT')}` : ''}
           </div>
         ) : (
-          <div className="space-y-1.5">
-            <button
-              onClick={() => {
-                if (!checklistDone) {
-                  onErrorMessage('Marca todos os items da checklist primeiro.');
-                  return;
-                }
-                if (!task.laundry_taken) {
-                  onErrorMessage('Indica quantos quartos têm roupa (ou "sem roupa").');
-                  return;
-                }
-                if (photoCount < 3) {
-                  onErrorMessage(`Faltam fotos de prova (${photoCount}/3 mínimo).`);
-                  return;
-                }
-                onClose();
-              }}
-              disabled={busy || !canClose}
-              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors ${
-                canClose
-                  ? 'bg-yellow-400 hover:bg-yellow-300 text-slate-900'
-                  : 'bg-white/5 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <Lock size={16} />
-              Fechar limpeza
-            </button>
-            {!canClose && (
-              <p className="text-[11px] text-gray-500 text-center">
-                Falta: {!checklistDone && `checklist (${checklist.done}/${checklist.total})`}
-                {!checklistDone && (!task.laundry_taken || photoCount < 3) && ' · '}
-                {!task.laundry_taken && 'roupas'}
-                {!task.laundry_taken && photoCount < 3 && ' · '}
-                {photoCount < 3 && `fotos (${photoCount}/3)`}
-              </p>
-            )}
-          </div>
+          <button
+            onClick={() => {
+              if (!checklistDone) return onErrorMessage('Falta marcar a checklist.');
+              if (!task.laundry_taken) return onErrorMessage('Falta indicar as roupas.');
+              if (photoCount < 3) return onErrorMessage(`Faltam fotos (${photoCount}/3).`);
+              onClose();
+            }}
+            disabled={busy || !canClose}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors ${
+              canClose
+                ? 'bg-yellow-400 hover:bg-yellow-300 text-slate-900 shadow-lg shadow-yellow-400/20'
+                : 'bg-white/5 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Lock size={15} />
+            Fechar limpeza
+          </button>
         )}
       </div>
     </div>
@@ -514,4 +479,17 @@ function formatLongDate(iso: string): string {
     month: 'long',
     timeZone: 'UTC',
   });
+}
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d
+    .toLocaleDateString('pt-PT', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      timeZone: 'UTC',
+    })
+    .replace('.', '')
+    .replace(',', '');
 }
