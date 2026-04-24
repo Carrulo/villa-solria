@@ -33,6 +33,7 @@ interface Booking {
   checkin_date: string;
   checkout_date: string;
   language: string | null;
+  door_code: string | null;
 }
 
 function todayIso(): string {
@@ -173,7 +174,7 @@ export default async function GuidePage({
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('id, guest_name, checkin_date, checkout_date, language, status')
+    .select('id, guest_name, checkin_date, checkout_date, language, status, door_code')
     .eq('guide_token', token)
     .maybeSingle();
 
@@ -228,9 +229,10 @@ export default async function GuidePage({
     );
   }
 
+  const doorCode = b.door_code || settings['guide_door_code'] || '—';
   function resolvePlaceholders(body: string): string {
     return body
-      .replace(/\{\{door_code\}\}/g, settings['guide_door_code'] || '—')
+      .replace(/\{\{door_code\}\}/g, doorCode)
       .replace(/\{\{wifi_ssid\}\}/g, settings['guide_wifi_ssid'] || '—')
       .replace(/\{\{wifi_password\}\}/g, settings['guide_wifi_password'] || '—');
   }

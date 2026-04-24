@@ -16,6 +16,7 @@ interface BookingRow {
   status: string | null;
   source: string | null;
   guide_token: string | null;
+  door_code: string | null;
 }
 
 function addDays(iso: string, days: number): string {
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('bookings')
-    .select('id, guest_name, guest_email, checkin_date, checkout_date, language, status, source, guide_token')
+    .select('id, guest_name, guest_email, checkin_date, checkout_date, language, status, source, guide_token, door_code')
     .eq('checkin_date', target)
     .in('source', ['website', 'manual'])
     .eq('status', 'confirmed')
@@ -70,6 +71,19 @@ export async function GET(req: Request) {
     }
     if (!b.guide_token) {
       results.push({ id: b.id, email: b.guest_email, ok: false, err: 'no guide_token' });
+      continue;
+    }
+    // Safety gate: block the send if the per-booking door code wasn't set.
+    // Create a notification so the admin is pinged to fill it in, and retry
+    // on the next cron run.
+    if (!b.door_code || !b.door_code.trim()) {
+      await supabase.from('notifications').insert({
+        type: 'door_code_missing',
+        title: `Falta código da fechadura — ${b.guest_name || 'reserva'}`,
+        body: `Check-in amanhã (${b.checkin_date}). Defina o código novo antes do pre-arrival sair.`,
+        link: '/admin/pre-arrivals',
+      });
+      results.push({ id: b.id, email: b.guest_email, ok: false, err: 'door_code missing' });
       continue;
     }
     const sent = await sendPreArrivalEmail({

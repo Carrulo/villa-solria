@@ -15,6 +15,7 @@ interface Row {
   language: string | null;
   source: string | null;
   guide_token: string | null;
+  door_code: string | null;
   pre_arrival_sent_at: string | null;
   status?: string | null;
 }
@@ -51,7 +52,7 @@ export default function PreArrivalsPage() {
     const to = addDays(today, 30);
     const { data } = await supabase
       .from('bookings')
-      .select('id, guest_name, guest_email, guest_country, checkin_date, checkout_date, language, source, guide_token, pre_arrival_sent_at, status')
+      .select('id, guest_name, guest_email, guest_country, checkin_date, checkout_date, language, source, guide_token, door_code, pre_arrival_sent_at, status')
       .in('source', ['website', 'manual'])
       .eq('status', 'confirmed')
       .gte('checkin_date', from)
@@ -163,21 +164,43 @@ export default function PreArrivalsPage() {
       ) : (
         <>
           <Section title="A enviar hoje / em atraso" subtitle="Chegadas nas próximas 24h que ainda não receberam o guia." icon={<Clock size={16} className="text-amber-300" />} count={groups.dueTomorrow.length}>
-            {groups.dueTomorrow.map((r) => (
-              <RowCard key={r.id} r={r} rightSlot={
-                <button onClick={() => sendNow(r.id)} disabled={sending === r.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold disabled:opacity-50">
-                  <Send size={12} /> {sending === r.id ? 'A enviar…' : 'Enviar agora'}
-                </button>
-              } langBadge={langBadge} sendLabel={sendLabel} />
-            ))}
+            {groups.dueTomorrow.map((r) => {
+              const missingCode = !r.door_code || !r.door_code.trim();
+              return (
+                <RowCard key={r.id} r={r} rightSlot={
+                  missingCode ? (
+                    <a
+                      href={`/admin/bookings?open=${r.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold border border-amber-500/30"
+                      title="Defina o código da fechadura na reserva"
+                    >
+                      ⚠️ Falta código
+                    </a>
+                  ) : (
+                    <button onClick={() => sendNow(r.id)} disabled={sending === r.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold disabled:opacity-50">
+                      <Send size={12} /> {sending === r.id ? 'A enviar…' : 'Enviar agora'}
+                    </button>
+                  )
+                } langBadge={langBadge} sendLabel={sendLabel} />
+              );
+            })}
           </Section>
 
-          <Section title="Próximas chegadas (14 dias)" subtitle="Cron diário trata destas automaticamente." icon={<CalendarDays size={16} className="text-blue-300" />} count={groups.upcoming.length}>
-            {groups.upcoming.map((r) => (
-              <RowCard key={r.id} r={r} rightSlot={
-                <span className="text-[11px] text-gray-300 px-2 py-1 rounded bg-white/5">{sendLabel(r.checkin_date)}</span>
-              } langBadge={langBadge} sendLabel={sendLabel} showHelper={false} />
-            ))}
+          <Section title="Próximas chegadas (14 dias)" subtitle="Cron diário trata destas automaticamente. Não esqueça de definir o código da fechadura em cada uma antes do envio." icon={<CalendarDays size={16} className="text-blue-300" />} count={groups.upcoming.length}>
+            {groups.upcoming.map((r) => {
+              const missingCode = !r.door_code || !r.door_code.trim();
+              return (
+                <RowCard key={r.id} r={r} rightSlot={
+                  missingCode ? (
+                    <a href={`/admin/bookings?open=${r.id}`} className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-1 rounded">
+                      ⚠️ definir código
+                    </a>
+                  ) : (
+                    <span className="text-[11px] text-gray-300 px-2 py-1 rounded bg-white/5">{sendLabel(r.checkin_date)}</span>
+                  )
+                } langBadge={langBadge} sendLabel={sendLabel} showHelper={false} />
+              );
+            })}
           </Section>
 
           <Section title="Já enviados" subtitle="Últimos pre-arrivals disparados." icon={<Check size={16} className="text-green-300" />} count={groups.sent.length}>

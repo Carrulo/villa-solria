@@ -679,6 +679,56 @@ function RefundConfirmModal({
   );
 }
 
+function DoorCodeEditor({ booking, onSaved }: { booking: Booking; onSaved: () => void }) {
+  const current = (booking as Booking & { door_code?: string | null }).door_code || '';
+  const [code, setCode] = useState(current);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await supabase.from('bookings').update({ door_code: code.trim() || null }).eq('id', booking.id);
+    setSaving(false);
+    if (error) {
+      setMsg('Erro: ' + error.message);
+      return;
+    }
+    setMsg('Guardado');
+    setTimeout(() => setMsg(null), 1500);
+    onSaved();
+  }
+
+  const missing = !code.trim();
+  return (
+    <div className={`rounded-xl border px-3 py-3 ${missing ? 'bg-amber-500/5 border-amber-500/30' : 'bg-white/5 border-white/10'}`}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Código da fechadura</span>
+        {missing && <span className="text-[10px] text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded">por definir</span>}
+        {msg && <span className="text-xs text-green-400 ml-auto">{msg}</span>}
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="ex: 4729"
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-white"
+        />
+        <button
+          onClick={save}
+          disabled={saving || code === current}
+          className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold disabled:opacity-40"
+        >
+          {saving ? '…' : 'Guardar'}
+        </button>
+      </div>
+      <p className="text-[10px] text-gray-500 mt-1.5">
+        Único para esta reserva. O email pre-arrival só é enviado quando este campo está preenchido.
+      </p>
+    </div>
+  );
+}
+
 function BookingDetailModal({
   booking,
   onClose,
@@ -828,6 +878,10 @@ function BookingDetailModal({
               </button>
             </div>
           )}
+        </div>
+
+        <div className="mb-4">
+          <DoorCodeEditor booking={booking} onSaved={() => { /* noop, admin closes modal */ }} />
         </div>
 
         <label className="block mb-2">
