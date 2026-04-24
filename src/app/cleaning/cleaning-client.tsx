@@ -181,10 +181,11 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+      style={{ minHeight: 44 }}
+      className={`px-5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
         active
           ? 'bg-yellow-400 text-slate-900'
-          : 'bg-white/5 text-gray-300 hover:bg-white/10'
+          : 'bg-white/5 text-gray-300 hover:bg-white/10 active:bg-white/15'
       }`}
     >
       {label}
@@ -316,29 +317,31 @@ function TaskCard({
         )}
       </div>
 
-      <div className="mt-3 space-y-2">
-        {/* 1. Checklist (collapsible) */}
-        <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+      <div className="mt-4 space-y-3">
+        {/* 1. Limpar — collapsible */}
+        <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
           <button
             type="button"
             onClick={() => setChecklistOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/[0.03] transition-colors"
+            style={{ minHeight: 56 }}
+            className="w-full flex items-center justify-between px-4 hover:bg-white/[0.03] active:bg-white/[0.05] transition-colors"
           >
-            <span className="flex items-center gap-2.5 text-sm font-medium text-gray-200">
-              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold inline-flex items-center justify-center">
-                1
+            <SectionTitle n={1} label="Limpar" />
+            <span className="flex items-center gap-3">
+              <span className={`text-sm font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
+                {checklist.done}/{checklist.total}
+                {checklistDone ? ' ✓' : ''}
               </span>
-              Limpar
-            </span>
-            <span className="flex items-center gap-2">
-              <span className={`text-xs font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
-                {checklist.done}/{checklist.total}{checklistDone ? ' ✓' : ''}
+              <span
+                className={`text-gray-400 text-base transition-transform ${checklistOpen ? 'rotate-180' : ''}`}
+                aria-hidden
+              >
+                ▾
               </span>
-              <span className={`text-gray-400 text-xs transition-transform ${checklistOpen ? 'rotate-180' : ''}`}>▾</span>
             </span>
           </button>
           {checklistOpen && (
-            <div className="grid grid-cols-2 gap-1.5 px-3 pb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3 pb-3 pt-1">
               {CLEANING_SUBTASKS.map((s) => {
                 const done = progress[s.key] === true;
                 return (
@@ -346,18 +349,19 @@ function TaskCard({
                     key={s.key}
                     onClick={() => editable && !busy && onToggleSubtask(s.key, !done)}
                     disabled={busy || !editable}
-                    className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left text-sm disabled:opacity-60 ${
+                    style={{ minHeight: 48 }}
+                    className={`flex items-center gap-2.5 px-3 rounded-xl border text-left text-base disabled:opacity-60 active:scale-[0.98] transition-transform ${
                       done
-                        ? 'bg-green-500/10 border-green-500/30 text-green-200'
-                        : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                        ? 'bg-green-500/15 border-green-500/40 text-green-200'
+                        : 'bg-white/5 border-white/10 text-gray-200'
                     }`}
                   >
                     {done ? (
-                      <CheckCircle2 size={15} className="shrink-0" />
+                      <CheckCircle2 size={18} className="shrink-0" />
                     ) : (
-                      <Circle size={15} className="shrink-0 text-gray-500" />
+                      <Circle size={18} className="shrink-0 text-gray-500" />
                     )}
-                    <span className="leading-none text-base">{s.icon}</span>
+                    <span className="text-lg leading-none mr-1">{s.icon}</span>
                     <span className="truncate">{s.label}</span>
                   </button>
                 );
@@ -367,26 +371,27 @@ function TaskCard({
         </div>
 
         {/* 2. Roupas */}
-        <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2.5 text-sm font-medium text-gray-200">
-              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold inline-flex items-center justify-center">
-                2
-              </span>
-              Roupas
-            </span>
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+          <div className="flex items-center justify-between gap-2 px-1" style={{ minHeight: 32 }}>
+            <SectionTitle n={2} label="Roupas" />
             {task.laundry_taken && (
-              <span className="text-xs text-blue-300 flex items-center gap-1.5">
-                <Shirt size={13} />
+              <span className="text-sm text-blue-300 flex items-center gap-1.5">
+                <Shirt size={15} />
                 {task.rooms_with_laundry === 0 ? 'sem' : `${task.rooms_with_laundry}q`}
                 {!task.laundry_paid && editable && (
-                  <button onClick={onUnmarkLaundry} disabled={busy} className="ml-1 text-[10px] text-gray-500 hover:text-gray-300 underline">corrigir</button>
+                  <button
+                    onClick={onUnmarkLaundry}
+                    disabled={busy}
+                    className="ml-2 text-xs text-gray-400 hover:text-gray-200 underline"
+                  >
+                    corrigir
+                  </button>
                 )}
               </span>
             )}
           </div>
           {!task.laundry_taken && editable && (
-            <div className="mt-2 grid grid-cols-4 gap-1.5">
+            <div className="mt-2.5 grid grid-cols-4 gap-2">
               <RoomButton disabled={busy} onClick={() => onMarkLaundry(0)} label="Sem" />
               {[1, 2, 3].map((n) => (
                 <RoomButton key={n} disabled={busy} onClick={() => onMarkLaundry(n)} label={`${n}q`} />
@@ -396,32 +401,28 @@ function TaskCard({
         </div>
 
         {/* 3. Fotos */}
-        <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="flex items-center gap-2.5 text-sm font-medium text-gray-200">
-              <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] font-bold inline-flex items-center justify-center">
-                3
-              </span>
-              Fotos
-            </span>
-            <span className={`text-xs font-mono ${photoCount >= 3 ? 'text-green-300' : 'text-gray-400'}`}>
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+          <div className="flex items-center justify-between gap-2 px-1 mb-2.5" style={{ minHeight: 32 }}>
+            <SectionTitle n={3} label="Fotos" />
+            <span className={`text-sm font-mono ${photoCount >= 3 ? 'text-green-300' : 'text-gray-400'}`}>
               {photoCount}/3 {photoCount >= 3 && '✓'}
             </span>
           </div>
           {photoCount > 0 && (
-            <div className="grid grid-cols-4 gap-1.5 mb-2">
+            <div className="grid grid-cols-3 gap-2 mb-3">
               {photos.map((url) => (
-                <div key={url} className="relative aspect-square rounded-md overflow-hidden bg-black/40">
+                <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-black/40">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={url} alt="" className="w-full h-full object-cover" />
                   {editable && (
                     <button
                       onClick={() => removePhoto(url)}
                       disabled={removingUrl === url}
-                      className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/70 text-white hover:bg-red-500/80 disabled:opacity-50"
+                      style={{ minHeight: 28, minWidth: 28 }}
+                      className="absolute top-1 right-1 rounded-full bg-black/70 text-white hover:bg-red-500/80 disabled:opacity-50 inline-flex items-center justify-center"
                       title="Remover"
                     >
-                      <XIcon size={10} />
+                      <XIcon size={14} />
                     </button>
                   )}
                 </div>
@@ -431,11 +432,13 @@ function TaskCard({
           {editable && (
             <>
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-sm font-medium disabled:opacity-50"
+                style={{ minHeight: 52 }}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-200 text-base font-semibold disabled:opacity-50"
               >
-                <Camera size={15} />
+                <Camera size={20} />
                 {uploading ? 'A enviar…' : photoCount === 0 ? 'Tirar fotos' : 'Adicionar mais'}
               </button>
               <input
@@ -444,7 +447,7 @@ function TaskCard({
                 accept="image/*"
                 capture="environment"
                 multiple
-                className="hidden"
+                style={{ display: 'none' }}
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) uploadFiles(e.target.files);
                 }}
@@ -454,10 +457,10 @@ function TaskCard({
         </div>
 
         {/* Notas livres */}
-        <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2.5">
-          <div className="flex items-center justify-between mb-2">
+        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+          <div className="flex items-center justify-between mb-2 px-1">
             <span className="text-sm font-medium text-gray-200">Notas / avisos</span>
-            {notesSaved && <span className="text-[11px] text-green-300">guardado ✓</span>}
+            {notesSaved && <span className="text-xs text-green-300">guardado ✓</span>}
           </div>
           <textarea
             value={notes}
@@ -474,15 +477,15 @@ function TaskCard({
             }}
             disabled={!editable}
             rows={2}
-            placeholder="ex: falta detergente WC1, hóspede levou toalha"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/40 disabled:opacity-60"
+            placeholder="ex: falta detergente, hóspede partiu vidro"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/40 disabled:opacity-60"
           />
         </div>
 
         {/* Close */}
         {completed ? (
-          <div className="rounded-xl bg-green-500/15 border border-green-500/30 px-3 py-2.5 text-sm text-green-200 flex items-center gap-2">
-            <CheckCircle2 size={16} />
+          <div className="rounded-2xl bg-green-500/15 border border-green-500/30 px-4 py-3 text-base text-green-200 flex items-center gap-2">
+            <CheckCircle2 size={18} />
             Fechada{taskAny.completed_at ? ` ${new Date(taskAny.completed_at).toLocaleDateString('pt-PT')}` : ''}
           </div>
         ) : (
@@ -494,13 +497,14 @@ function TaskCard({
               onClose();
             }}
             disabled={busy || !canClose}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors ${
+            style={{ minHeight: 56 }}
+            className={`w-full flex items-center justify-center gap-2 rounded-2xl text-base font-bold transition-colors ${
               canClose
-                ? 'bg-yellow-400 hover:bg-yellow-300 text-slate-900 shadow-lg shadow-yellow-400/20'
+                ? 'bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-400/20'
                 : 'bg-white/5 text-gray-500 cursor-not-allowed'
             }`}
           >
-            <Lock size={15} />
+            <Lock size={18} />
             Fechar limpeza
           </button>
         )}
@@ -522,10 +526,25 @@ function RoomButton({
     <button
       disabled={disabled}
       onClick={onClick}
-      className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-blue-500/30 border border-white/10 hover:border-blue-500/40 text-gray-200 text-sm disabled:opacity-60"
+      style={{ minHeight: 48 }}
+      className="rounded-xl bg-white/5 hover:bg-blue-500/30 active:bg-blue-500/40 border border-white/10 hover:border-blue-500/40 text-gray-200 text-base font-medium disabled:opacity-60"
     >
       {label}
     </button>
+  );
+}
+
+function SectionTitle({ n, label }: { n: number; label: string }) {
+  return (
+    <span className="inline-flex items-center text-base font-semibold text-gray-100">
+      <span
+        className="inline-flex items-center justify-center rounded-full bg-yellow-400/20 text-yellow-200 font-bold"
+        style={{ width: 26, height: 26, fontSize: 13, marginRight: 10 }}
+      >
+        {n}
+      </span>
+      {label}
+    </span>
   );
 }
 
