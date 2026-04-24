@@ -20,6 +20,7 @@ import {
   Sparkles,
   ChevronsLeft,
   ChevronsRight,
+  Compass,
 } from 'lucide-react';
 import NotificationBell from '@/components/admin/NotificationBell';
 import '../globals.css';
@@ -51,6 +52,7 @@ const navGroups: { label: string | null; items: { href: string; label: string; i
       { href: '/admin/pricing', label: 'Épocas e Preços', icon: DollarSign },
       { href: '/admin/reviews', label: 'Avaliações publicadas', icon: Star },
       { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
+      { href: '/admin/guide', label: 'Guia do hóspede', icon: Compass },
     ],
   },
   {

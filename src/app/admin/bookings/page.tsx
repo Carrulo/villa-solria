@@ -805,6 +805,29 @@ function BookingDetailModal({
             <span className="text-gray-400">Origem</span>
             <span className="text-gray-300">{booking.source || '—'}</span>
           </div>
+          {(booking as Booking & { guide_token?: string | null }).guide_token && (
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-gray-400">Guia do hóspede</span>
+              <button
+                onClick={async () => {
+                  const bAny = booking as Booking & { guide_token?: string; language?: string };
+                  const tok = bAny.guide_token;
+                  const lang = bAny.language && ['pt', 'en', 'es', 'de'].includes(bAny.language) ? bAny.language : 'pt';
+                  const url = `${window.location.origin}/${lang}/guia/${tok}`;
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    setMsg('Link do guia copiado');
+                    setTimeout(() => setMsg(null), 1500);
+                  } catch {
+                    prompt('Copia o link:', url);
+                  }
+                }}
+                className="text-xs text-blue-300 hover:text-blue-200 underline"
+              >
+                copiar link
+              </button>
+            </div>
+          )}
         </div>
 
         <label className="block mb-2">
