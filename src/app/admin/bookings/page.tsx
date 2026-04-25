@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2, Link as LinkIcon, Unlink } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2, Link as LinkIcon, Unlink, BookOpen } from 'lucide-react';
 import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
 
 interface BlockedDateRow {
@@ -20,7 +20,13 @@ export default function AdminBookingsPage() {
   const [filter, setFilter] = useState<string>('all');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
-  const [preset, setPreset] = useState<{ checkin_date?: string; checkout_date?: string }>({});
+  const [preset, setPreset] = useState<{
+    checkin_date?: string;
+    checkout_date?: string;
+    guest_name?: string;
+    language?: 'pt' | 'en' | 'es' | 'de';
+    link_external?: { external_source: string; external_ref: string };
+  }>({});
   const [checkinDays, setCheckinDays] = useState<Set<string>>(new Set());
   const [checkoutDays, setCheckoutDays] = useState<Set<string>>(new Set());
   const [sourceByDate, setSourceByDate] = useState<Record<string, string>>({});
@@ -38,6 +44,26 @@ export default function AdminBookingsPage() {
     _linkedToExternalRef?: string | null;
     _childCount?: number;
   };
+
+  function openCreateGuideForExternal(externalBooking: Booking) {
+    const meta = externalBooking as Booking & ExternalMeta;
+    if (!meta._externalSource || !meta._externalRef) return;
+    const rawName = (externalBooking.guest_name || '').trim();
+    const isPlaceholder =
+      !rawName ||
+      /sem nome|booking\.com|airbnb/i.test(rawName) ||
+      /not available|^closed|^reserved$/i.test(rawName);
+    setPreset({
+      checkin_date: externalBooking.checkin_date,
+      checkout_date: externalBooking.checkout_date,
+      guest_name: isPlaceholder ? '' : rawName,
+      link_external: {
+        external_source: meta._externalSource,
+        external_ref: meta._externalRef,
+      },
+    });
+    setShowManualModal(true);
+  }
 
   async function linkOne(externalBooking: Booking, parent: Booking | null) {
     const meta = externalBooking as Booking & ExternalMeta;
@@ -694,6 +720,15 @@ export default function AdminBookingsPage() {
                         <Trash2 size={14} />
                       </button>
                     )}
+                    {isExternal && !isLinked && (
+                      <button
+                        onClick={() => openCreateGuideForExternal(booking)}
+                        className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                        title="Criar guia para este hóspede"
+                      >
+                        <BookOpen size={14} />
+                      </button>
+                    )}
                     {isExternal && (
                       <button
                         onClick={() => {
@@ -802,6 +837,15 @@ export default function AdminBookingsPage() {
                       <div className="flex items-center gap-2">
                         {isExternal ? (
                           <>
+                            {!isLinked && (
+                              <button
+                                onClick={() => openCreateGuideForExternal(booking)}
+                                className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                title="Criar guia para este hóspede"
+                              >
+                                <BookOpen size={16} />
+                              </button>
+                            )}
                             <button
                               onClick={() =>
                                 isLinked
@@ -1812,7 +1856,13 @@ function ManualBookingModal({
   onCreated,
   onError,
 }: {
-  preset?: { checkin_date?: string; checkout_date?: string };
+  preset?: {
+    checkin_date?: string;
+    checkout_date?: string;
+    guest_name?: string;
+    language?: 'pt' | 'en' | 'es' | 'de';
+    link_external?: { external_source: string; external_ref: string };
+  };
   blocked: BlockedDateRow[];
   checkinDays: Set<string>;
   checkoutDays: Set<string>;
@@ -1821,7 +1871,7 @@ function ManualBookingModal({
   onCreated: () => Promise<void> | void;
   onError: (msg: string) => void;
 }) {
-  const [guestName, setGuestName] = useState('');
+  const [guestName, setGuestName] = useState(() => preset?.guest_name || '');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [checkin, setCheckin] = useState(
@@ -1832,7 +1882,7 @@ function ManualBookingModal({
   const [totalPrice, setTotalPrice] = useState(0);
   const [deposit, setDeposit] = useState(0);
   const [depositDate, setDepositDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
-  const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'de'>('pt');
+  const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'de'>(() => preset?.language || 'pt');
   const [country, setCountry] = useState<string>('');
   const [languageTouched, setLanguageTouched] = useState(false);
   const [notes, setNotes] = useState('');
@@ -1930,6 +1980,7 @@ function ManualBookingModal({
           country: country || null,
           notes,
           mid_stay_dates: Array.from(midStays),
+          link_external: preset?.link_external,
         }),
       });
       const data = await res.json();

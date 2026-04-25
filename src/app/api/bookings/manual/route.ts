@@ -19,6 +19,7 @@ type Body = {
   country?: string | null;
   notes?: string;
   mid_stay_dates?: string[];
+  link_external?: { external_source?: string; external_ref?: string };
 };
 
 function daysBetween(from: string, to: string): number {
@@ -222,6 +223,24 @@ export async function POST(req: Request) {
 
   if (validMidStays.length > 0) {
     await supabase.from('cleaning_tasks').insert(validMidStays);
+  }
+
+  // Optional: link an external iCal entry to this fresh booking in the
+  // same request so the admin doesn't have to do it as a second step.
+  const linkExt = body.link_external as
+    | { external_source?: string; external_ref?: string }
+    | undefined;
+  if (
+    linkExt &&
+    (linkExt.external_source === 'airbnb_ical' || linkExt.external_source === 'booking_ical') &&
+    typeof linkExt.external_ref === 'string' &&
+    linkExt.external_ref.length > 0
+  ) {
+    await supabase
+      .from('cleaning_tasks')
+      .update({ linked_to_booking_id: bookingId })
+      .eq('external_source', linkExt.external_source)
+      .eq('external_ref', linkExt.external_ref);
   }
 
   // Send confirmation email if the guest has one. Fire-and-forget so a
