@@ -82,6 +82,7 @@ export interface CleaningTask {
   cleaning_fee_snapshot: number;
   laundry_fee_snapshot: number;
   notes: string | null;
+  linked_to_booking_id: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -104,6 +104,7 @@ export async function GET(req: Request) {
   const { data: tasksData } = await supabase
     .from('cleaning_tasks')
     .select('*')
+    .is('linked_to_booking_id', null)
     .in('cleaning_date', [today, tomorrow])
     .order('cleaning_date', { ascending: true });
 

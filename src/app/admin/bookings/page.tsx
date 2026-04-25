@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2 } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2, Link as LinkIcon, Unlink } from 'lucide-react';
 import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
 
 interface BlockedDateRow {
@@ -27,6 +27,37 @@ export default function AdminBookingsPage() {
   const [guestByDate, setGuestByDate] = useState<Record<string, string>>({});
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null);
+  const [linkTarget, setLinkTarget] = useState<Booking | null>(null);
+
+  type ExternalMeta = {
+    _external?: boolean;
+    _externalSource?: 'airbnb_ical' | 'booking_ical';
+    _externalRef?: string;
+    _linkedToBookingId?: string | null;
+  };
+
+  async function linkExternal(externalBooking: Booking, parentId: string | null) {
+    const meta = externalBooking as Booking & ExternalMeta;
+    if (!meta._externalSource || !meta._externalRef) return;
+    const res = await fetch('/api/bookings/link-external', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        external_source: meta._externalSource,
+        external_ref: meta._externalRef,
+        linked_to_booking_id: parentId,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showToast(data.error || 'Erro a ligar reserva', 'error');
+      return;
+    }
+    showToast(parentId ? 'Reservas ligadas' : 'Link removido', 'success');
+    setLinkTarget(null);
+    await fetchBookings();
+    await fetchBlockedDates();
+  }
 
   async function handleDelete(booking: Booking, confirmation: string) {
     const res = await fetch(`/api/bookings/${booking.id}`, {
@@ -72,12 +103,13 @@ export default function AdminBookingsPage() {
       supabase
         .from('cleaning_tasks')
         .select(
-          'external_source, external_ref, checkin_date, stay_checkout_date, guest_name, num_guests, created_at'
+          'external_source, external_ref, checkin_date, stay_checkout_date, guest_name, num_guests, created_at, linked_to_booking_id'
         )
         .not('external_source', 'is', null),
     ]);
 
     const ownBookings = (own || []) as Booking[];
+    const ownById = new Map(ownBookings.map((b) => [b.id, b]));
 
     const externalBookings: Booking[] = ((external || []) as Array<{
       external_source: 'airbnb_ical' | 'booking_ical';
@@ -87,6 +119,7 @@ export default function AdminBookingsPage() {
       guest_name: string | null;
       num_guests: number | null;
       created_at: string;
+      linked_to_booking_id: string | null;
     }>)
       .filter((t) => t.checkin_date && t.stay_checkout_date)
       .map((t) => {
@@ -106,11 +139,16 @@ export default function AdminBookingsPage() {
           !rawName ||
           /not available/i.test(rawName) ||
           /^closed/i.test(rawName);
-        const displayName = isPlaceholder
-          ? t.external_source === 'booking_ical'
-            ? 'Booking.com (sem nome)'
-            : 'Airbnb'
-          : rawName;
+        const linkedParent = t.linked_to_booking_id
+          ? ownById.get(t.linked_to_booking_id)
+          : null;
+        const displayName = linkedParent
+          ? linkedParent.guest_name
+          : isPlaceholder
+            ? t.external_source === 'booking_ical'
+              ? 'Booking.com (sem nome)'
+              : 'Airbnb'
+            : rawName;
         return {
           id: `ext:${t.external_source}:${t.external_ref}`,
           guest_name: displayName,
@@ -130,25 +168,19 @@ export default function AdminBookingsPage() {
           created_at: t.created_at,
           reference: `${refPrefix}-${t.external_ref.slice(-8).toUpperCase()}`,
           _external: true,
-        } as Booking & { reference: string; _external: true };
+          _externalSource: t.external_source,
+          _externalRef: t.external_ref,
+          _linkedToBookingId: t.linked_to_booking_id,
+        } as Booking & {
+          reference: string;
+          _external: true;
+          _externalSource: 'airbnb_ical' | 'booking_ical';
+          _externalRef: string;
+          _linkedToBookingId: string | null;
+        };
       });
 
-    // Auto-link: a single villa can't host two stays at once, so any
-    // external feed entry whose date range overlaps a website booking
-    // is the same guest (e.g. host took the deposit via website then
-    // closed the side nights on Booking.com). Hide the external one;
-    // the website booking spans the full stay.
-    const overlaps = (a: Booking, b: Booking) =>
-      a.checkin_date < b.checkout_date && a.checkout_date > b.checkin_date;
-    const merged: Booking[] = [
-      ...ownBookings,
-      ...externalBookings.filter(
-        (ext) =>
-          !ownBookings.some(
-            (own) => own.status !== 'cancelled' && overlaps(ext, own)
-          )
-      ),
-    ];
+    const merged: Booking[] = [...ownBookings, ...externalBookings];
 
     merged.sort((a, b) => a.checkin_date.localeCompare(b.checkin_date));
 
@@ -314,6 +346,17 @@ export default function AdminBookingsPage() {
         />
       )}
 
+      {linkTarget && (
+        <LinkExternalModal
+          external={linkTarget}
+          candidates={bookings.filter(
+            (b) => !(b as Booking & ExternalMeta)._external && b.status !== 'cancelled'
+          )}
+          onCancel={() => setLinkTarget(null)}
+          onConfirm={(parentId) => linkExternal(linkTarget, parentId)}
+        />
+      )}
+
       {showManualModal && (
         <ManualBookingModal
           preset={preset}
@@ -390,11 +433,17 @@ export default function AdminBookingsPage() {
         ) : (
           filteredBookings.map((booking) => {
             const ref = (booking as Booking & { reference?: string }).reference || '-';
-            const isExternal = (booking as Booking & { _external?: boolean })._external === true;
+            const meta = booking as Booking & ExternalMeta;
+            const isExternal = meta._external === true;
+            const isLinked = isExternal && !!meta._linkedToBookingId;
             return (
               <div
                 key={booking.id}
-                className="bg-[#16213e] border border-white/5 rounded-2xl p-4 space-y-2"
+                className={`border rounded-2xl p-4 space-y-2 ${
+                  isLinked
+                    ? 'bg-purple-900/20 border-purple-500/30'
+                    : 'bg-[#16213e] border-white/5'
+                }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -493,8 +542,25 @@ export default function AdminBookingsPage() {
                       </button>
                     )}
                     {isExternal && (
+                      <button
+                        onClick={() =>
+                          isLinked
+                            ? linkExternal(booking, null)
+                            : setLinkTarget(booking)
+                        }
+                        className={`p-1.5 rounded-lg ${
+                          isLinked
+                            ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
+                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        }`}
+                        title={isLinked ? 'Desligar' : 'Ligar a reserva website'}
+                      >
+                        {isLinked ? <Unlink size={14} /> : <LinkIcon size={14} />}
+                      </button>
+                    )}
+                    {isExternal && (
                       <span className="text-[10px] uppercase tracking-wider text-gray-500">
-                        gerir em {booking.source}
+                        {isLinked ? 'ligada' : `gerir em ${booking.source}`}
                       </span>
                     )}
                   </div>
@@ -532,9 +598,20 @@ export default function AdminBookingsPage() {
                 </tr>
               ) : (
                 filteredBookings.map((booking, i) => {
-                  const isExternal = (booking as Booking & { _external?: boolean })._external === true;
+                  const meta = booking as Booking & ExternalMeta;
+                  const isExternal = meta._external === true;
+                  const isLinked = isExternal && !!meta._linkedToBookingId;
                   return (
-                  <tr key={booking.id} className={`hover:bg-white/[0.02] ${i % 2 === 1 ? 'bg-white/[0.01]' : ''}`}>
+                  <tr
+                    key={booking.id}
+                    className={`hover:bg-white/[0.02] ${
+                      isLinked
+                        ? 'bg-purple-900/20'
+                        : i % 2 === 1
+                          ? 'bg-white/[0.01]'
+                          : ''
+                    }`}
+                  >
                     <td className="px-6 py-4">
                       <span className="text-xs font-mono font-semibold text-blue-400">
                         {(booking as Booking & { reference?: string }).reference || '-'}
@@ -564,9 +641,26 @@ export default function AdminBookingsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {isExternal ? (
-                          <span className="text-[11px] uppercase tracking-wider text-gray-500">
-                            gerir em {booking.source}
-                          </span>
+                          <>
+                            <button
+                              onClick={() =>
+                                isLinked
+                                  ? linkExternal(booking, null)
+                                  : setLinkTarget(booking)
+                              }
+                              className={`p-1.5 rounded-lg ${
+                                isLinked
+                                  ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
+                                  : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                              }`}
+                              title={isLinked ? 'Desligar' : 'Ligar a reserva website'}
+                            >
+                              {isLinked ? <Unlink size={16} /> : <LinkIcon size={16} />}
+                            </button>
+                            <span className="text-[11px] uppercase tracking-wider text-gray-500">
+                              {isLinked ? 'ligada' : `gerir em ${booking.source}`}
+                            </span>
+                          </>
                         ) : (
                           <>
                         <button
@@ -1934,5 +2028,96 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium border ${styles[status] || styles.pending}`}>
       {status}
     </span>
+  );
+}
+
+function LinkExternalModal({
+  external,
+  candidates,
+  onCancel,
+  onConfirm,
+}: {
+  external: Booking;
+  candidates: Booking[];
+  onCancel: () => void;
+  onConfirm: (parentId: string) => void | Promise<void>;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+
+  // Surface candidates that overlap or are adjacent to the external
+  // stay first — those are the most likely matches.
+  const overlap = (a: Booking, b: Booking) =>
+    a.checkin_date < b.checkout_date && a.checkout_date > b.checkin_date;
+  const sorted = [...candidates].sort((a, b) => {
+    const ao = overlap(external, a) ? 0 : 1;
+    const bo = overlap(external, b) ? 0 : 1;
+    if (ao !== bo) return ao - bo;
+    return a.checkin_date.localeCompare(b.checkin_date);
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#16213e] border border-purple-500/30 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+        <h2 className="text-lg font-semibold text-white mb-1">Ligar reserva externa</h2>
+        <p className="text-xs text-gray-400 mb-4">
+          {external.checkin_date} → {external.checkout_date} · {external.source}
+          <br />
+          Escolhe a reserva website a que esta entrada pertence. A limpeza
+          fica só na reserva website e o nome do hóspede passa a aparecer
+          aqui também.
+        </p>
+        {sorted.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            Sem reservas website disponíveis para ligar.
+          </p>
+        ) : (
+          <div className="max-h-80 overflow-y-auto space-y-1.5 mb-5">
+            {sorted.map((b) => {
+              const isOverlap = overlap(external, b);
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => setSelected(b.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
+                    selected === b.id
+                      ? 'bg-purple-500/20 border-purple-500/50'
+                      : 'bg-white/5 border-white/5 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-white truncate">
+                      {b.guest_name}
+                    </span>
+                    {isOverlap && (
+                      <span className="text-[10px] uppercase tracking-wider text-purple-300">
+                        sobrepõe
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {b.checkin_date} → {b.checkout_date} · {b.num_nights}n · {b.source}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => selected && onConfirm(selected)}
+            disabled={!selected}
+            className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Ligar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

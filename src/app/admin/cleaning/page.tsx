@@ -55,7 +55,11 @@ export default function AdminCleaningPage() {
   async function load() {
     setLoading(true);
     const [tasksRes, settingsRes] = await Promise.all([
-      supabase.from('cleaning_tasks').select('*').order('cleaning_date', { ascending: true }),
+      supabase
+        .from('cleaning_tasks')
+        .select('*')
+        .is('linked_to_booking_id', null)
+        .order('cleaning_date', { ascending: true }),
       supabase
         .from('settings')
         .select('key, value')

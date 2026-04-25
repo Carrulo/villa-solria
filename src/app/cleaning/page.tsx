@@ -26,6 +26,7 @@ async function getTasks(): Promise<CleaningTask[]> {
   const { data } = await supabase
     .from('cleaning_tasks')
     .select('*')
+    .is('linked_to_booking_id', null)
     .gte('cleaning_date', fromStr)
     .order('cleaning_date', { ascending: true });
   return (data || []) as CleaningTask[];

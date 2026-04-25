@@ -244,16 +244,17 @@ async function syncSource(
     try {
       const { data: existingRows } = await supabase
         .from('cleaning_tasks')
-        .select('external_ref, cleaning_date, cleaning_paid, laundry_paid')
+        .select('external_ref, cleaning_date, cleaning_paid, laundry_paid, linked_to_booking_id')
         .eq('external_source', source);
 
       const currentKeys = new Set(cleaningRows.map((r) => `${r.external_ref}|${r.cleaning_date}`));
       const toDelete = (existingRows || [])
         .filter(
-          (r: { external_ref: string | null; cleaning_date: string; cleaning_paid: boolean; laundry_paid: boolean }) =>
+          (r: { external_ref: string | null; cleaning_date: string; cleaning_paid: boolean; laundry_paid: boolean; linked_to_booking_id: string | null }) =>
             r.external_ref &&
             !r.cleaning_paid &&
             !r.laundry_paid &&
+            !r.linked_to_booking_id &&
             !currentKeys.has(`${r.external_ref}|${r.cleaning_date}`)
         )
         .map((r: { external_ref: string | null; cleaning_date: string }) => ({
