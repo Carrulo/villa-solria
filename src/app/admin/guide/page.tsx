@@ -517,7 +517,7 @@ function SettingsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
               label={label}
               value={values[key] || null}
               onChange={(url) => setValues((prev) => ({ ...prev, [key]: url || '' }))}
-              accept="video/*"
+              accept="video/*,.mp4,.mov,.m4v,.webm,.mkv"
               kind="video"
               placeholder="URL do vídeo ou carrega MP4 →"
             />
