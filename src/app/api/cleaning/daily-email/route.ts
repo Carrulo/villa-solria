@@ -101,15 +101,46 @@ export async function GET(req: Request) {
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = addDays(today, 1);
 
-  const { data: tasksData } = await supabase
-    .from('cleaning_tasks')
-    .select('*')
-    .is('linked_to_booking_id', null)
-    .is('linked_to_external_ref', null)
-    .in('cleaning_date', [today, tomorrow])
-    .order('cleaning_date', { ascending: true });
+  const [{ data: tasksData }, { data: linkedData }] = await Promise.all([
+    supabase
+      .from('cleaning_tasks')
+      .select('*')
+      .is('linked_to_booking_id', null)
+      .is('linked_to_external_ref', null)
+      .in('cleaning_date', [today, tomorrow])
+      .order('cleaning_date', { ascending: true }),
+    supabase
+      .from('cleaning_tasks')
+      .select('linked_to_external_source, linked_to_external_ref, checkin_date, stay_checkout_date')
+      .not('linked_to_external_ref', 'is', null),
+  ]);
+  const linked = (linkedData || []) as Array<{
+    linked_to_external_source: string | null;
+    linked_to_external_ref: string | null;
+    checkin_date: string | null;
+    stay_checkout_date: string | null;
+  }>;
+  const childrenByHead = new Map<string, typeof linked>();
+  for (const c of linked) {
+    if (!c.linked_to_external_source || !c.linked_to_external_ref) continue;
+    const key = `${c.linked_to_external_source}|${c.linked_to_external_ref}`;
+    const arr = childrenByHead.get(key) || [];
+    arr.push(c);
+    childrenByHead.set(key, arr);
+  }
 
-  const all = (tasksData || []) as CleaningTask[];
+  const all = ((tasksData || []) as CleaningTask[]).map((t) => {
+    if (!t.external_source || !t.external_ref) return t;
+    const children = childrenByHead.get(`${t.external_source}|${t.external_ref}`);
+    if (!children || children.length === 0) return t;
+    let maxCo = t.stay_checkout_date || '';
+    let minCi = t.checkin_date || '';
+    for (const c of children) {
+      if (c.stay_checkout_date && c.stay_checkout_date > maxCo) maxCo = c.stay_checkout_date;
+      if (c.checkin_date && (!minCi || c.checkin_date < minCi)) minCi = c.checkin_date;
+    }
+    return { ...t, stay_checkout_date: maxCo, checkin_date: minCi };
+  });
   const todayTasks = all.filter((t) => t.cleaning_date === today && !t.cleaning_done);
   const tomorrowTasks = all.filter((t) => t.cleaning_date === tomorrow && !t.cleaning_done);
 

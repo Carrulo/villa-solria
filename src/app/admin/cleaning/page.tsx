@@ -54,20 +54,58 @@ export default function AdminCleaningPage() {
 
   async function load() {
     setLoading(true);
-    const [tasksRes, settingsRes] = await Promise.all([
+    const [tasksRes, allLinkedRes, settingsRes] = await Promise.all([
       supabase
         .from('cleaning_tasks')
         .select('*')
         .is('linked_to_booking_id', null)
         .is('linked_to_external_ref', null)
         .order('cleaning_date', { ascending: true }),
+      // Pull just the linked children's date ranges so a head row can
+      // display the full grouped stay (Sat→Sat) instead of its own
+      // narrow Booking range.
+      supabase
+        .from('cleaning_tasks')
+        .select('external_source, external_ref, linked_to_external_source, linked_to_external_ref, stay_checkout_date, checkin_date')
+        .not('linked_to_external_ref', 'is', null),
       supabase
         .from('settings')
         .select('key, value')
         .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room']),
     ]);
 
-    const loadedTasks = (tasksRes.data || []) as CleaningTask[];
+    const rawTasks = (tasksRes.data || []) as CleaningTask[];
+    const linkedChildren = (allLinkedRes.data || []) as Array<{
+      external_source: string | null;
+      external_ref: string | null;
+      linked_to_external_source: string | null;
+      linked_to_external_ref: string | null;
+      stay_checkout_date: string | null;
+      checkin_date: string | null;
+    }>;
+
+    const childrenByHead = new Map<string, typeof linkedChildren>();
+    for (const c of linkedChildren) {
+      if (!c.linked_to_external_source || !c.linked_to_external_ref) continue;
+      const key = `${c.linked_to_external_source}|${c.linked_to_external_ref}`;
+      const arr = childrenByHead.get(key) || [];
+      arr.push(c);
+      childrenByHead.set(key, arr);
+    }
+
+    const loadedTasks = rawTasks.map((t) => {
+      if (!t.external_source || !t.external_ref) return t;
+      const key = `${t.external_source}|${t.external_ref}`;
+      const children = childrenByHead.get(key);
+      if (!children || children.length === 0) return t;
+      let maxCo = t.stay_checkout_date || '';
+      let minCi = t.checkin_date || '';
+      for (const c of children) {
+        if (c.stay_checkout_date && c.stay_checkout_date > maxCo) maxCo = c.stay_checkout_date;
+        if (c.checkin_date && (!minCi || c.checkin_date < minCi)) minCi = c.checkin_date;
+      }
+      return { ...t, stay_checkout_date: maxCo, checkin_date: minCi };
+    });
     setTasks(loadedTasks);
 
     const bookingIds = Array.from(
