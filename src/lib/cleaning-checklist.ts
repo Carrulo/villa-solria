@@ -41,3 +41,8 @@ export function checklistCount(progress: unknown): { done: number; total: number
   const done = CLEANING_SUBTASK_KEYS.reduce((acc, k) => acc + (map[k] === true ? 1 : 0), 0);
   return { done, total };
 }
+
+// Minimum proof photos required before a cleaning can be closed.
+// Tunable here — covers main areas (kitchen, 2 WCs, bedrooms, sala,
+// terrace) without fatiguing the team with one-per-room.
+export const MIN_PROOF_PHOTOS = 8;
