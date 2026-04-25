@@ -2289,7 +2289,10 @@ function LinkExternalModal({
                     : 'bg-white/5 border-white/5 hover:bg-white/10'
                 }`}
               >
-                <span className="text-sm text-white">Sem reserva website (esta entrada é a cabeça)</span>
+                <div className="text-sm text-white">Sem reserva website (esta entrada é a cabeça)</div>
+                <div className="text-xs text-gray-400">
+                  {external.checkin_date} → {external.checkout_date} · {external.num_nights}n · {external.source}
+                </div>
               </button>
               {websiteCandidates.map((b) => {
                 const isOverlap = overlap(external, b);
