@@ -27,6 +27,7 @@ async function getTasks(): Promise<CleaningTask[]> {
     .from('cleaning_tasks')
     .select('*')
     .is('linked_to_booking_id', null)
+    .is('linked_to_external_ref', null)
     .gte('cleaning_date', fromStr)
     .order('cleaning_date', { ascending: true });
   return (data || []) as CleaningTask[];

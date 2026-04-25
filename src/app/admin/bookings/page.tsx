@@ -34,26 +34,40 @@ export default function AdminBookingsPage() {
     _externalSource?: 'airbnb_ical' | 'booking_ical';
     _externalRef?: string;
     _linkedToBookingId?: string | null;
+    _linkedToExternalSource?: 'airbnb_ical' | 'booking_ical' | null;
+    _linkedToExternalRef?: string | null;
   };
 
-  async function linkExternal(externalBooking: Booking, parentId: string | null) {
+  async function linkExternal(externalBooking: Booking, parent: Booking | null) {
     const meta = externalBooking as Booking & ExternalMeta;
     if (!meta._externalSource || !meta._externalRef) return;
+    const parentMeta = parent as (Booking & ExternalMeta) | null;
+    const payload: Record<string, string | null> = {
+      external_source: meta._externalSource,
+      external_ref: meta._externalRef,
+      linked_to_booking_id: null,
+      linked_to_external_source: null,
+      linked_to_external_ref: null,
+    };
+    if (parent) {
+      if (parentMeta?._external && parentMeta._externalSource && parentMeta._externalRef) {
+        payload.linked_to_external_source = parentMeta._externalSource;
+        payload.linked_to_external_ref = parentMeta._externalRef;
+      } else {
+        payload.linked_to_booking_id = parent.id;
+      }
+    }
     const res = await fetch('/api/bookings/link-external', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        external_source: meta._externalSource,
-        external_ref: meta._externalRef,
-        linked_to_booking_id: parentId,
-      }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       showToast(data.error || 'Erro a ligar reserva', 'error');
       return;
     }
-    showToast(parentId ? 'Reservas ligadas' : 'Link removido', 'success');
+    showToast(parent ? 'Reservas ligadas' : 'Link removido', 'success');
     setLinkTarget(null);
     await fetchBookings();
     await fetchBlockedDates();
@@ -103,7 +117,7 @@ export default function AdminBookingsPage() {
       supabase
         .from('cleaning_tasks')
         .select(
-          'external_source, external_ref, checkin_date, stay_checkout_date, guest_name, num_guests, created_at, linked_to_booking_id'
+          'external_source, external_ref, checkin_date, stay_checkout_date, guest_name, num_guests, created_at, linked_to_booking_id, linked_to_external_source, linked_to_external_ref'
         )
         .not('external_source', 'is', null),
     ]);
@@ -111,7 +125,7 @@ export default function AdminBookingsPage() {
     const ownBookings = (own || []) as Booking[];
     const ownById = new Map(ownBookings.map((b) => [b.id, b]));
 
-    const externalBookings: Booking[] = ((external || []) as Array<{
+    type ExternalRow = {
       external_source: 'airbnb_ical' | 'booking_ical';
       external_ref: string;
       checkin_date: string | null;
@@ -120,65 +134,86 @@ export default function AdminBookingsPage() {
       num_guests: number | null;
       created_at: string;
       linked_to_booking_id: string | null;
-    }>)
-      .filter((t) => t.checkin_date && t.stay_checkout_date)
-      .map((t) => {
-        const ci = new Date(t.checkin_date! + 'T00:00:00Z');
-        const co = new Date(t.stay_checkout_date! + 'T00:00:00Z');
-        const nights = Math.max(
-          1,
-          Math.round((co.getTime() - ci.getTime()) / 86400000)
+      linked_to_external_source: 'airbnb_ical' | 'booking_ical' | null;
+      linked_to_external_ref: string | null;
+    };
+    const externalRows = ((external || []) as ExternalRow[]).filter(
+      (t) => t.checkin_date && t.stay_checkout_date
+    );
+    const externalByKey = new Map(
+      externalRows.map((r) => [`${r.external_source}|${r.external_ref}`, r])
+    );
+
+    function rawDisplayName(t: ExternalRow): string {
+      const rawName = (t.guest_name || '').trim();
+      const isPlaceholder =
+        !rawName ||
+        /not available/i.test(rawName) ||
+        /^closed/i.test(rawName);
+      if (!isPlaceholder) return rawName;
+      return t.external_source === 'booking_ical'
+        ? 'Booking.com (sem nome)'
+        : 'Airbnb';
+    }
+
+    function resolveDisplayName(t: ExternalRow, depth = 0): string {
+      if (depth > 5) return rawDisplayName(t);
+      if (t.linked_to_booking_id) {
+        const parent = ownById.get(t.linked_to_booking_id);
+        if (parent) return parent.guest_name;
+      }
+      if (t.linked_to_external_source && t.linked_to_external_ref) {
+        const parent = externalByKey.get(
+          `${t.linked_to_external_source}|${t.linked_to_external_ref}`
         );
-        const sourceLabel = t.external_source === 'airbnb_ical' ? 'airbnb' : 'booking';
-        const refPrefix = t.external_source === 'airbnb_ical' ? 'AIR' : 'BKG';
-        // Booking.com iCal hides guest names — every event SUMMARY is
-        // "CLOSED - Not available". Render a friendlier placeholder
-        // instead of the raw block label.
-        const rawName = (t.guest_name || '').trim();
-        const isPlaceholder =
-          !rawName ||
-          /not available/i.test(rawName) ||
-          /^closed/i.test(rawName);
-        const linkedParent = t.linked_to_booking_id
-          ? ownById.get(t.linked_to_booking_id)
-          : null;
-        const displayName = linkedParent
-          ? linkedParent.guest_name
-          : isPlaceholder
-            ? t.external_source === 'booking_ical'
-              ? 'Booking.com (sem nome)'
-              : 'Airbnb'
-            : rawName;
-        return {
-          id: `ext:${t.external_source}:${t.external_ref}`,
-          guest_name: displayName,
-          guest_email: '',
-          guest_phone: null,
-          checkin_date: t.checkin_date!,
-          checkout_date: t.stay_checkout_date!,
-          num_guests: t.num_guests ?? 0,
-          message: null,
-          num_nights: nights,
-          price_per_night: null,
-          cleaning_fee: null,
-          total_price: 0,
-          status: 'confirmed',
-          payment_status: 'paid',
-          source: sourceLabel,
-          created_at: t.created_at,
-          reference: `${refPrefix}-${t.external_ref.slice(-8).toUpperCase()}`,
-          _external: true,
-          _externalSource: t.external_source,
-          _externalRef: t.external_ref,
-          _linkedToBookingId: t.linked_to_booking_id,
-        } as Booking & {
-          reference: string;
-          _external: true;
-          _externalSource: 'airbnb_ical' | 'booking_ical';
-          _externalRef: string;
-          _linkedToBookingId: string | null;
-        };
-      });
+        if (parent) return resolveDisplayName(parent, depth + 1);
+      }
+      return rawDisplayName(t);
+    }
+
+    const externalBookings: Booking[] = externalRows.map((t) => {
+      const ci = new Date(t.checkin_date! + 'T00:00:00Z');
+      const co = new Date(t.stay_checkout_date! + 'T00:00:00Z');
+      const nights = Math.max(
+        1,
+        Math.round((co.getTime() - ci.getTime()) / 86400000)
+      );
+      const sourceLabel = t.external_source === 'airbnb_ical' ? 'airbnb' : 'booking';
+      const refPrefix = t.external_source === 'airbnb_ical' ? 'AIR' : 'BKG';
+      return {
+        id: `ext:${t.external_source}:${t.external_ref}`,
+        guest_name: resolveDisplayName(t),
+        guest_email: '',
+        guest_phone: null,
+        checkin_date: t.checkin_date!,
+        checkout_date: t.stay_checkout_date!,
+        num_guests: t.num_guests ?? 0,
+        message: null,
+        num_nights: nights,
+        price_per_night: null,
+        cleaning_fee: null,
+        total_price: 0,
+        status: 'confirmed',
+        payment_status: 'paid',
+        source: sourceLabel,
+        created_at: t.created_at,
+        reference: `${refPrefix}-${t.external_ref.slice(-8).toUpperCase()}`,
+        _external: true,
+        _externalSource: t.external_source,
+        _externalRef: t.external_ref,
+        _linkedToBookingId: t.linked_to_booking_id,
+        _linkedToExternalSource: t.linked_to_external_source,
+        _linkedToExternalRef: t.linked_to_external_ref,
+      } as Booking & {
+        reference: string;
+        _external: true;
+        _externalSource: 'airbnb_ical' | 'booking_ical';
+        _externalRef: string;
+        _linkedToBookingId: string | null;
+        _linkedToExternalSource: 'airbnb_ical' | 'booking_ical' | null;
+        _linkedToExternalRef: string | null;
+      };
+    });
 
     const merged: Booking[] = [...ownBookings, ...externalBookings];
 
@@ -349,11 +384,17 @@ export default function AdminBookingsPage() {
       {linkTarget && (
         <LinkExternalModal
           external={linkTarget}
-          candidates={bookings.filter(
-            (b) => !(b as Booking & ExternalMeta)._external && b.status !== 'cancelled'
-          )}
+          candidates={bookings.filter((b) => {
+            if (b.id === linkTarget.id) return false;
+            if (b.status === 'cancelled') return false;
+            const m = b as Booking & ExternalMeta;
+            if (m._external && (m._linkedToBookingId || m._linkedToExternalRef)) {
+              return false;
+            }
+            return true;
+          })}
           onCancel={() => setLinkTarget(null)}
-          onConfirm={(parentId) => linkExternal(linkTarget, parentId)}
+          onConfirm={(parent) => linkExternal(linkTarget, parent)}
         />
       )}
 
@@ -435,7 +476,7 @@ export default function AdminBookingsPage() {
             const ref = (booking as Booking & { reference?: string }).reference || '-';
             const meta = booking as Booking & ExternalMeta;
             const isExternal = meta._external === true;
-            const isLinked = isExternal && !!meta._linkedToBookingId;
+            const isLinked = isExternal && (!!meta._linkedToBookingId || !!meta._linkedToExternalRef);
             return (
               <div
                 key={booking.id}
@@ -600,7 +641,7 @@ export default function AdminBookingsPage() {
                 filteredBookings.map((booking, i) => {
                   const meta = booking as Booking & ExternalMeta;
                   const isExternal = meta._external === true;
-                  const isLinked = isExternal && !!meta._linkedToBookingId;
+                  const isLinked = isExternal && (!!meta._linkedToBookingId || !!meta._linkedToExternalRef);
                   return (
                   <tr
                     key={booking.id}
@@ -2040,9 +2081,9 @@ function LinkExternalModal({
   external: Booking;
   candidates: Booking[];
   onCancel: () => void;
-  onConfirm: (parentId: string) => void | Promise<void>;
+  onConfirm: (parent: Booking) => void | Promise<void>;
 }) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Booking | null>(null);
 
   // Surface candidates that overlap or are adjacent to the external
   // stay first — those are the most likely matches.
@@ -2062,13 +2103,13 @@ function LinkExternalModal({
         <p className="text-xs text-gray-400 mb-4">
           {external.checkin_date} → {external.checkout_date} · {external.source}
           <br />
-          Escolhe a reserva website a que esta entrada pertence. A limpeza
-          fica só na reserva website e o nome do hóspede passa a aparecer
-          aqui também.
+          Escolhe a reserva (website ou outra externa) a que esta
+          entrada pertence. A limpeza fica só na reserva-pai e o nome
+          do hóspede passa a aparecer aqui também.
         </p>
         {sorted.length === 0 ? (
           <p className="text-sm text-gray-500">
-            Sem reservas website disponíveis para ligar.
+            Sem reservas disponíveis para ligar.
           </p>
         ) : (
           <div className="max-h-80 overflow-y-auto space-y-1.5 mb-5">
@@ -2077,9 +2118,9 @@ function LinkExternalModal({
               return (
                 <button
                   key={b.id}
-                  onClick={() => setSelected(b.id)}
+                  onClick={() => setSelected(b)}
                   className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
-                    selected === b.id
+                    selected?.id === b.id
                       ? 'bg-purple-500/20 border-purple-500/50'
                       : 'bg-white/5 border-white/5 hover:bg-white/10'
                   }`}

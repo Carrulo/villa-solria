@@ -83,6 +83,8 @@ export interface CleaningTask {
   laundry_fee_snapshot: number;
   notes: string | null;
   linked_to_booking_id: string | null;
+  linked_to_external_source: 'airbnb_ical' | 'booking_ical' | null;
+  linked_to_external_ref: string | null;
   created_at: string;
   updated_at: string;
 }

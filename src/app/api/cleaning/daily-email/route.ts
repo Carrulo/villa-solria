@@ -105,6 +105,7 @@ export async function GET(req: Request) {
     .from('cleaning_tasks')
     .select('*')
     .is('linked_to_booking_id', null)
+    .is('linked_to_external_ref', null)
     .in('cleaning_date', [today, tomorrow])
     .order('cleaning_date', { ascending: true });
 

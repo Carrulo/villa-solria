@@ -59,6 +59,7 @@ export default function AdminCleaningPage() {
         .from('cleaning_tasks')
         .select('*')
         .is('linked_to_booking_id', null)
+        .is('linked_to_external_ref', null)
         .order('cleaning_date', { ascending: true }),
       supabase
         .from('settings')
