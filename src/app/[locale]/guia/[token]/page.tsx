@@ -182,8 +182,12 @@ export default async function GuidePage({
 
   const b = booking as Booking & { status?: string };
   const today = todayIso();
-  const opensAt = addDays(b.checkin_date, -3);
-  const closesAt = addDays(b.checkout_date, 3);
+  // Open the guide a week before so guests have time to read the
+  // arrival info, and keep it open for a month after — the checkout
+  // instructions need to be reachable on the day itself, and guests
+  // sometimes come back for a few days after the stay.
+  const opensAt = addDays(b.checkin_date, -7);
+  const closesAt = addDays(b.checkout_date, 30);
   const isBefore = today < opensAt;
   const isAfter = today > closesAt;
   const isActive = !isBefore && !isAfter;
