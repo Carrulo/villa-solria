@@ -115,50 +115,30 @@ async function syncSource(
     const text = await res.text();
     const rawEvents = parseICS(text);
 
-    // Hosts often split a single guest stay into multiple back-to-back
-    // iCal events (e.g. real Booking.com reservation in the middle, host
-    // closing the side nights to enforce a Sat→Sat policy). Merge runs
-    // of contiguous same-source events into one stay so the bookings
-    // list and cleaning page show a single entry per guest.
+    // Each VEVENT becomes its own row — the admin can manually link
+    // contiguous entries to a single parent reservation via the UI.
     type ParsedEvent = {
       start: Date;
       end: Date;
       summary: string | null;
       uid: string | null;
+      isReservation: boolean;
     };
-    const parsed: ParsedEvent[] = [];
+    const merged: ParsedEvent[] = [];
     for (const e of rawEvents) {
       if (!e.dtstart || !e.dtend) continue;
       const s = parseICalDate(e.dtstart);
       const en = parseICalDate(e.dtend);
       if (!s || !en) continue;
-      if (!isReservation(e.summary, source)) {
-        // Pure availability blocks still need to populate blocked_dates,
-        // but they don't participate in the stay-merge logic.
-        parsed.push({ start: s, end: en, summary: e.summary || null, uid: e.uid || null });
-        continue;
-      }
-      parsed.push({ start: s, end: en, summary: e.summary || null, uid: e.uid || null });
+      merged.push({
+        start: s,
+        end: en,
+        summary: e.summary || null,
+        uid: e.uid || null,
+        isReservation: isReservation(e.summary, source),
+      });
     }
-    parsed.sort((a, b) => a.start.getTime() - b.start.getTime());
-
-    type MergedStay = ParsedEvent & { isReservation: boolean };
-    const merged: MergedStay[] = [];
-    for (const ev of parsed) {
-      const isRes = isReservation(ev.summary, source);
-      const last = merged[merged.length - 1];
-      if (
-        last &&
-        last.isReservation &&
-        isRes &&
-        last.end.getTime() === ev.start.getTime()
-      ) {
-        // Extend previous stay; keep first UID as the stable ref.
-        last.end = ev.end;
-      } else {
-        merged.push({ ...ev, isReservation: isRes });
-      }
-    }
+    merged.sort((a, b) => a.start.getTime() - b.start.getTime());
 
     const blockedRows: { date: string; source: string; note: string | null }[] = [];
     let eventCount = 0;
