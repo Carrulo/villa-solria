@@ -49,16 +49,26 @@ function datesInRange(start: Date, end: Date): string[] {
 
 type VEvent = { dtstart?: string; dtend?: string; summary?: string; uid?: string };
 
-// Airbnb iCal mixes real reservations ("Reserved") with availability
-// blocks ("Not available", "Airbnb (Not available)"). Booking.com iCal
-// is the opposite: every reservation comes through as
-// "CLOSED - Not available" (the platform doesn't expose guest names via
-// iCal), so for Booking we treat every event as a reservation.
+// Booking iCal: real guest reservations and host-side availability
+// closures both surface as "CLOSED - Not available" with no guest
+// name. The platform doesn't expose a structural marker, so we use
+// duration as the proxy — vacation stays are ≤ this many nights;
+// anything longer is a calendar-window/seasonal close, not a stay.
+const BOOKING_MAX_RESERVATION_NIGHTS = 30;
+
 function isReservation(
   summary: string | null | undefined,
-  source: 'airbnb_ical' | 'booking_ical'
+  source: 'airbnb_ical' | 'booking_ical',
+  start?: Date,
+  end?: Date
 ): boolean {
-  if (source === 'booking_ical') return true;
+  if (source === 'booking_ical') {
+    if (start && end) {
+      const nights = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+      if (nights > BOOKING_MAX_RESERVATION_NIGHTS) return false;
+    }
+    return true;
+  }
   if (!summary) return false;
   const s = summary.trim().toLowerCase();
   if (s.includes('not available')) return false;
@@ -135,7 +145,7 @@ async function syncSource(
         end: en,
         summary: e.summary || null,
         uid: e.uid || null,
-        isReservation: isReservation(e.summary, source),
+        isReservation: isReservation(e.summary, source, s, en),
       });
     }
     merged.sort((a, b) => a.start.getTime() - b.start.getTime());
