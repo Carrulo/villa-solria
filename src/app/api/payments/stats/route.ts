@@ -32,15 +32,17 @@ export async function GET() {
     const avgBookingValue = paid.length > 0 ? totalRevenue / paid.length : 0;
     const avgNights = paid.length > 0 ? paid.reduce((s, b) => s + (b.num_nights || 0), 0) / paid.length : 0;
 
-    // This month
-    const thisMonthBookings = all.filter((b) => b.created_at?.startsWith(thisMonth));
+    // Revenue is recognized when the stay actually happens (checkin
+    // month), not when the booking row was created — otherwise booking
+    // a Sept stay in April would inflate April's revenue.
+    const thisMonthBookings = all.filter((b) => b.checkin_date?.startsWith(thisMonth));
     const thisMonthPaid = thisMonthBookings.filter((b) => b.payment_status === 'paid');
     const thisMonthRevenue = thisMonthPaid.reduce((s, b) => s + (b.total_price || 0), 0);
     const thisMonthPending = thisMonthBookings.filter((b) => b.payment_status === 'pending');
     const thisMonthPendingRevenue = thisMonthPending.reduce((s, b) => s + (b.total_price || 0), 0);
 
     // Last month
-    const lastMonthBookings = all.filter((b) => b.created_at?.startsWith(lastMonthStr));
+    const lastMonthBookings = all.filter((b) => b.checkin_date?.startsWith(lastMonthStr));
     const lastMonthPaid = lastMonthBookings.filter((b) => b.payment_status === 'paid');
     const lastMonthRevenue = lastMonthPaid.reduce((s, b) => s + (b.total_price || 0), 0);
 
@@ -67,7 +69,7 @@ export async function GET() {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const monthPaid = all.filter(
-        (b) => b.created_at?.startsWith(key) && b.payment_status === 'paid'
+        (b) => b.checkin_date?.startsWith(key) && b.payment_status === 'paid'
       );
       monthlyRevenue.push({
         month: key,
