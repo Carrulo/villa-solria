@@ -269,16 +269,92 @@ export default async function GuidePage({
                 {title}
               </h2>
               <div className="prose prose-sm max-w-none text-stone-700" dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }} />
-              {s.slug === 'entry' && settings['guide_lock_video_url'] && (
-                <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
-                  <video src={settings['guide_lock_video_url']} controls className="w-full h-full object-cover" />
-                </div>
-              )}
-              {s.media_url && s.slug !== 'entry' && (
-                <div className="mt-4 relative w-full h-48 rounded-xl overflow-hidden">
-                  <Image src={s.media_url} alt={title} fill className="object-cover" />
-                </div>
-              )}
+              {s.slug === 'entry' && settings['guide_lock_video_url'] && (() => {
+                const url = settings['guide_lock_video_url'];
+                // Detect YouTube (full, short, shorts) and Vimeo so we can
+                // embed via iframe instead of <video> (which only works
+                // with direct MP4 URLs).
+                const ytMatch = url.match(
+                  /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/
+                );
+                const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+                if (ytMatch) {
+                  return (
+                    <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1&playsinline=1`}
+                        title="Vídeo da fechadura"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  );
+                }
+                if (vimeoMatch) {
+                  return (
+                    <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
+                      <iframe
+                        src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+                        title="Vídeo da fechadura"
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
+                    <video src={url} controls playsInline className="w-full h-full object-cover" />
+                  </div>
+                );
+              })()}
+              {s.media_url && s.slug !== 'entry' && (() => {
+                const url = s.media_url;
+                const ytMatch = url.match(
+                  /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/
+                );
+                const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+                if (ytMatch) {
+                  return (
+                    <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1&playsinline=1`}
+                        title={title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  );
+                }
+                if (vimeoMatch) {
+                  return (
+                    <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
+                      <iframe
+                        src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+                        title={title}
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                  );
+                }
+                if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)) {
+                  return (
+                    <div className="mt-4 rounded-xl overflow-hidden bg-stone-100 aspect-video">
+                      <video src={url} controls playsInline className="w-full h-full object-cover" />
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mt-4 relative w-full h-48 rounded-xl overflow-hidden">
+                    <Image src={url} alt={title} fill className="object-cover" />
+                  </div>
+                );
+              })()}
             </section>
           );
         })}

@@ -93,13 +93,37 @@ function FileUploadField({
       </div>
       <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onPick} />
       {err && <p className="text-[11px] text-red-400">{err}</p>}
-      {value && kind === 'image' && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={value} alt="preview" className="mt-2 h-24 w-auto rounded-lg border border-white/10 object-cover" />
-      )}
-      {value && kind === 'video' && (
-        <video src={value} controls className="mt-2 max-h-32 rounded-lg border border-white/10" />
-      )}
+      {value && (() => {
+        const ytMatch = value.match(
+          /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/
+        );
+        const vimeoMatch = value.match(/vimeo\.com\/(\d+)/);
+        if (ytMatch) {
+          return (
+            <iframe
+              src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`}
+              title="preview"
+              className="mt-2 w-56 aspect-video rounded-lg border border-white/10"
+              allowFullScreen
+            />
+          );
+        }
+        if (vimeoMatch) {
+          return (
+            <iframe
+              src={`https://player.vimeo.com/video/${vimeoMatch[1]}`}
+              title="preview"
+              className="mt-2 w-56 aspect-video rounded-lg border border-white/10"
+              allowFullScreen
+            />
+          );
+        }
+        if (kind === 'image') {
+          // eslint-disable-next-line @next/next/no-img-element
+          return <img src={value} alt="preview" className="mt-2 h-24 w-auto rounded-lg border border-white/10 object-cover" />;
+        }
+        return <video src={value} controls className="mt-2 max-h-32 rounded-lg border border-white/10" />;
+      })()}
     </div>
   );
 }
@@ -293,7 +317,7 @@ function SectionsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
 
           <div className="mt-3">
             <FileUploadField
-              label="Imagem da secção (opcional)"
+              label="Imagem ou vídeo (opcional — aceita URL do YouTube/Vimeo)"
               value={s.media_url}
               onChange={(url) => update(s.id, 'media_url', url)}
               accept="image/*"
