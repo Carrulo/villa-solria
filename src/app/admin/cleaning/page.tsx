@@ -339,6 +339,12 @@ export default function AdminCleaningPage() {
     });
   }
 
+  async function updateCleaningFee(t: CleaningTask, fee: number) {
+    if (t.cleaning_paid) return;
+    const safe = Math.max(0, Number.isFinite(fee) ? fee : 0);
+    await updateTask(t.id, { cleaning_fee_snapshot: safe });
+  }
+
   async function closeCleaning(t: CleaningTask) {
     await updateTask(t.id, {
       cleaning_paid: true,
@@ -567,6 +573,7 @@ export default function AdminCleaningPage() {
               onCloseCleaning={() => closeCleaning(t)}
               onCloseLaundry={() => closeLaundry(t)}
               onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
+              onUpdateFee={(fee) => updateCleaningFee(t, fee)}
             />
           ))
         )}
@@ -609,6 +616,7 @@ export default function AdminCleaningPage() {
                     onCloseCleaning={() => closeCleaning(t)}
                     onCloseLaundry={() => closeLaundry(t)}
                     onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
+                    onUpdateFee={(fee) => updateCleaningFee(t, fee)}
                   />
                 ))
               )}
@@ -740,6 +748,7 @@ function TaskRow({
   onCloseCleaning,
   onCloseLaundry,
   onRenameGuest,
+  onUpdateFee,
 }: {
   task: CleaningTask;
   reference: string | null;
@@ -751,6 +760,7 @@ function TaskRow({
   onCloseCleaning: () => void;
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
+  onUpdateFee: (fee: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
@@ -883,7 +893,11 @@ function TaskRow({
               {task.cleaning_done ? 'feita' : 'pendente'}
             </p>
             <p className="text-gray-500">
-              {Number(task.cleaning_fee_snapshot).toFixed(2)} €
+              <EditableFee
+                value={Number(task.cleaning_fee_snapshot)}
+                disabled={task.cleaning_paid}
+                onSave={onUpdateFee}
+              />{' '}€
               {task.cleaning_paid && <span className="text-gray-500"> · paga</span>}
             </p>
           </div>
@@ -980,6 +994,7 @@ function TaskCard({
   onCloseCleaning,
   onCloseLaundry,
   onRenameGuest,
+  onUpdateFee,
 }: {
   task: CleaningTask;
   reference: string | null;
@@ -991,6 +1006,7 @@ function TaskCard({
   onCloseCleaning: () => void;
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
+  onUpdateFee: (fee: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
@@ -1114,7 +1130,11 @@ function TaskCard({
           </span>
         </button>
         <span className="text-xs text-gray-400">
-          {Number(task.cleaning_fee_snapshot).toFixed(2)} €
+          <EditableFee
+            value={Number(task.cleaning_fee_snapshot)}
+            disabled={task.cleaning_paid}
+            onSave={onUpdateFee}
+          />{' '}€
           {task.cleaning_paid && <span className="text-gray-500"> · paga</span>}
         </span>
       </div>
@@ -1236,5 +1256,63 @@ function PhotoStrip({ task }: { task: CleaningTask }) {
         </div>
       )}
     </>
+  );
+}
+
+function EditableFee({
+  value,
+  disabled,
+  onSave,
+}: {
+  value: number;
+  disabled: boolean;
+  onSave: (next: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value.toFixed(2));
+
+  if (disabled) {
+    return <span>{value.toFixed(2)}</span>;
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(value.toFixed(2));
+          setEditing(true);
+        }}
+        className="underline decoration-dotted decoration-gray-500/60 hover:text-yellow-300"
+        title="Clica para alterar o preço"
+      >
+        {value.toFixed(2)}
+      </button>
+    );
+  }
+
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      step="0.5"
+      min={0}
+      autoFocus
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        const n = Number(draft);
+        if (Number.isFinite(n) && Math.abs(n - value) > 0.001) onSave(n);
+        setEditing(false);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        if (e.key === 'Escape') {
+          setDraft(value.toFixed(2));
+          setEditing(false);
+        }
+      }}
+      className="w-16 px-1 py-0.5 rounded bg-white/10 border border-white/20 text-yellow-200 text-xs focus:outline-none focus:border-yellow-400/60"
+    />
   );
 }
