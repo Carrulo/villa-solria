@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
-import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2, Link as LinkIcon, Unlink, BookOpen } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2, Link as LinkIcon, Unlink, BookOpen, Share2 } from 'lucide-react';
 import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
 
 interface BlockedDateRow {
@@ -55,6 +55,30 @@ export default function AdminBookingsPage() {
     _linkedToExternalRef?: string | null;
     _childCount?: number;
   };
+
+  function openShareForBooking(booking: Booking) {
+    const b = booking as Booking & {
+      guide_token?: string | null;
+      door_code?: string | null;
+      reference?: string | null;
+      language?: string | null;
+    };
+    if (!b.guide_token) {
+      showToast('Esta reserva não tem guide_token', 'error');
+      return;
+    }
+    setShareTarget({
+      booking_id: booking.id,
+      reference: b.reference || '',
+      guide_token: b.guide_token,
+      language: b.language || 'pt',
+      guest_name: booking.guest_name,
+      guest_email: booking.guest_email || null,
+      guest_phone: booking.guest_phone || null,
+      checkin_date: booking.checkin_date,
+      checkout_date: booking.checkout_date,
+    });
+  }
 
   function openCreateGuideForExternal(externalBooking: Booking) {
     const meta = externalBooking as Booking & ExternalMeta;
@@ -684,6 +708,15 @@ export default function AdminBookingsPage() {
                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
                   <span className="text-[11px] text-gray-500">{booking.source || 'website'}</span>
                   <div className="flex items-center gap-1">
+                    {!isExternal && (booking as Booking & { guide_token?: string | null }).guide_token && (
+                      <button
+                        onClick={() => openShareForBooking(booking)}
+                        className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                        title="Partilhar guia (PIN, WhatsApp, email)"
+                      >
+                        <Share2 size={14} />
+                      </button>
+                    )}
                     {!isExternal && (
                       <button
                         onClick={() => setDetailBooking(booking)}
@@ -888,6 +921,15 @@ export default function AdminBookingsPage() {
                           </>
                         ) : (
                           <>
+                        {(booking as Booking & { guide_token?: string | null }).guide_token && (
+                          <button
+                            onClick={() => openShareForBooking(booking)}
+                            className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                            title="Partilhar guia (PIN, WhatsApp, email)"
+                          >
+                            <Share2 size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={() => setDetailBooking(booking)}
                           className="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10"
@@ -2469,6 +2511,40 @@ function ShareGuideModal({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinSaved, setPinSaved] = useState(false);
+  const [savingPin, setSavingPin] = useState(false);
+
+  // Hydrate the PIN field from the booking row when the modal opens.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data: row } = await supabase
+        .from('bookings')
+        .select('door_code')
+        .eq('id', data.booking_id)
+        .maybeSingle();
+      if (alive && row && typeof row.door_code === 'string') {
+        setPin(row.door_code);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [data.booking_id]);
+
+  async function savePin() {
+    setSavingPin(true);
+    const { error } = await supabase
+      .from('bookings')
+      .update({ door_code: pin.trim() || null })
+      .eq('id', data.booking_id);
+    setSavingPin(false);
+    if (error) return;
+    setPinSaved(true);
+    setTimeout(() => setPinSaved(false), 1500);
+  }
+
   if (!data.guide_token) return null;
 
   const lang = ['pt', 'en', 'es', 'de'].includes(data.language) ? data.language : 'pt';
@@ -2517,6 +2593,27 @@ function ShareGuideModal({
           <p className="text-xs text-gray-400">
             {data.guest_name} · {data.checkin_date} → {data.checkout_date} · ref {data.reference}
           </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-wider text-gray-500">Código da fechadura (PIN)</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+              placeholder="vazio = sem código snapshot"
+              className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-mono tracking-widest"
+            />
+            <button
+              onClick={savePin}
+              disabled={savingPin}
+              className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium disabled:opacity-50 whitespace-nowrap"
+            >
+              {pinSaved ? 'Guardado' : savingPin ? '...' : 'Guardar PIN'}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-1.5">
