@@ -49,6 +49,22 @@ function datesInRange(start: Date, end: Date): string[] {
 
 type VEvent = { dtstart?: string; dtend?: string; summary?: string; uid?: string };
 
+// Airbnb/Booking.com iCal feeds mix real reservations with availability
+// blocks (host-blocked dates, gaps, and the tail beyond the booking window).
+// Only real reservations should produce cleaning tasks; everything still
+// blocks the calendar.
+function isReservation(summary: string | null | undefined): boolean {
+  if (!summary) return false;
+  const s = summary.trim().toLowerCase();
+  // Block markers seen in the wild:
+  //   "Not available", "Airbnb (Not available)", "Closed - Not available",
+  //   "CLOSED - Not available", "Blocked"
+  if (s.includes('not available')) return false;
+  if (s.startsWith('closed')) return false;
+  if (s === 'blocked') return false;
+  return true;
+}
+
 function parseICS(text: string): VEvent[] {
   // Unfold folded lines (RFC 5545: lines starting with space/tab continue previous line)
   const unfolded = text.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
@@ -126,6 +142,10 @@ async function syncSource(
       for (const date of datesInRange(startDate, endDate)) {
         blockedRows.push({ date, source, note });
       }
+
+      // Skip availability blocks — they block the calendar but are not
+      // real reservations, so no cleaning task / "booking" entry.
+      if (!isReservation(event.summary)) continue;
 
       // One cleaning task per external reservation, on its DTSTART (the
       // arrival day — the cleaner preps the villa before the guest gets
