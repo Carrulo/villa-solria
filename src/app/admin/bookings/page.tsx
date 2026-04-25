@@ -36,6 +36,7 @@ export default function AdminBookingsPage() {
     _linkedToBookingId?: string | null;
     _linkedToExternalSource?: 'airbnb_ical' | 'booking_ical' | null;
     _linkedToExternalRef?: string | null;
+    _childCount?: number;
   };
 
   async function linkOne(externalBooking: Booking, parent: Booking | null) {
@@ -74,6 +75,33 @@ export default function AdminBookingsPage() {
     parent: Booking | null,
     siblings: Booking[] = []
   ) {
+    const meta = externalBooking as Booking & ExternalMeta;
+    // Desligar on a head row (no own link, but groups others) → sweep
+    // the children's links instead.
+    if (
+      !parent &&
+      siblings.length === 0 &&
+      !meta._linkedToBookingId &&
+      !meta._linkedToExternalRef &&
+      (meta._childCount ?? 0) > 0 &&
+      meta._externalSource &&
+      meta._externalRef
+    ) {
+      const children = bookings.filter((b) => {
+        const m = b as Booking & ExternalMeta;
+        return (
+          m._external &&
+          m._linkedToExternalSource === meta._externalSource &&
+          m._linkedToExternalRef === meta._externalRef
+        );
+      });
+      for (const c of children) await linkOne(c, null);
+      showToast(`${children.length} ligaç${children.length > 1 ? 'ões' : 'ão'} removidas`, 'success');
+      setLinkTarget(null);
+      await fetchBookings();
+      await fetchBlockedDates();
+      return;
+    }
     const targets = [externalBooking, ...siblings];
     const errors: string[] = [];
     for (const t of targets) {
@@ -195,9 +223,52 @@ export default function AdminBookingsPage() {
       return rawDisplayName(t);
     }
 
-    const externalBookings: Booking[] = externalRows.map((t) => {
-      const ci = new Date(t.checkin_date! + 'T00:00:00Z');
-      const co = new Date(t.stay_checkout_date! + 'T00:00:00Z');
+    // Index children by their parent so a "head" row can absorb its
+    // descendants' ranges. Children themselves are hidden from the list.
+    const childrenByParent = new Map<string, ExternalRow[]>();
+    for (const r of externalRows) {
+      if (r.linked_to_external_source && r.linked_to_external_ref) {
+        const key = `${r.linked_to_external_source}|${r.linked_to_external_ref}`;
+        const arr = childrenByParent.get(key) || [];
+        arr.push(r);
+        childrenByParent.set(key, arr);
+      }
+    }
+
+    function descendants(t: ExternalRow, seen = new Set<string>()): ExternalRow[] {
+      const key = `${t.external_source}|${t.external_ref}`;
+      if (seen.has(key)) return [];
+      seen.add(key);
+      const direct = childrenByParent.get(key) || [];
+      const out: ExternalRow[] = [];
+      for (const c of direct) {
+        out.push(c);
+        out.push(...descendants(c, seen));
+      }
+      return out;
+    }
+
+    const externalBookings: Booking[] = externalRows
+      .filter(
+        (t) =>
+          // Hide rows that are children of something — their range is
+          // absorbed by the head (external head) or by the website
+          // booking parent.
+          !t.linked_to_booking_id &&
+          !(t.linked_to_external_source && t.linked_to_external_ref)
+      )
+      .map((t) => {
+        const group = [t, ...descendants(t)];
+        const minCi = group.reduce(
+          (acc, r) => (r.checkin_date! < acc ? r.checkin_date! : acc),
+          t.checkin_date!
+        );
+        const maxCo = group.reduce(
+          (acc, r) => (r.stay_checkout_date! > acc ? r.stay_checkout_date! : acc),
+          t.stay_checkout_date!
+        );
+      const ci = new Date(minCi + 'T00:00:00Z');
+      const co = new Date(maxCo + 'T00:00:00Z');
       const nights = Math.max(
         1,
         Math.round((co.getTime() - ci.getTime()) / 86400000)
@@ -209,8 +280,8 @@ export default function AdminBookingsPage() {
         guest_name: resolveDisplayName(t),
         guest_email: '',
         guest_phone: null,
-        checkin_date: t.checkin_date!,
-        checkout_date: t.stay_checkout_date!,
+        checkin_date: minCi,
+        checkout_date: maxCo,
         num_guests: t.num_guests ?? 0,
         message: null,
         num_nights: nights,
@@ -228,6 +299,7 @@ export default function AdminBookingsPage() {
         _linkedToBookingId: t.linked_to_booking_id,
         _linkedToExternalSource: t.linked_to_external_source,
         _linkedToExternalRef: t.linked_to_external_ref,
+        _childCount: group.length - 1,
       } as Booking & {
         reference: string;
         _external: true;
@@ -236,6 +308,7 @@ export default function AdminBookingsPage() {
         _linkedToBookingId: string | null;
         _linkedToExternalSource: 'airbnb_ical' | 'booking_ical' | null;
         _linkedToExternalRef: string | null;
+        _childCount: number;
       };
     });
 
@@ -500,7 +573,7 @@ export default function AdminBookingsPage() {
             const ref = (booking as Booking & { reference?: string }).reference || '-';
             const meta = booking as Booking & ExternalMeta;
             const isExternal = meta._external === true;
-            const isLinked = isExternal && (!!meta._linkedToBookingId || !!meta._linkedToExternalRef);
+            const isLinked = isExternal && (!!meta._linkedToBookingId || !!meta._linkedToExternalRef || (meta._childCount ?? 0) > 0);
             return (
               <div
                 key={booking.id}
@@ -665,7 +738,7 @@ export default function AdminBookingsPage() {
                 filteredBookings.map((booking, i) => {
                   const meta = booking as Booking & ExternalMeta;
                   const isExternal = meta._external === true;
-                  const isLinked = isExternal && (!!meta._linkedToBookingId || !!meta._linkedToExternalRef);
+                  const isLinked = isExternal && (!!meta._linkedToBookingId || !!meta._linkedToExternalRef || (meta._childCount ?? 0) > 0);
                   return (
                   <tr
                     key={booking.id}
