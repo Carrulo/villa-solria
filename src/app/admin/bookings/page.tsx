@@ -102,20 +102,35 @@ export default function AdminBookingsPage() {
       await fetchBlockedDates();
       return;
     }
-    const targets = [externalBooking, ...siblings];
     const errors: string[] = [];
-    for (const t of targets) {
-      const err = await linkOne(t, parent);
+    if (parent) {
+      // Website parent: link source + all siblings to it.
+      const targets = [externalBooking, ...siblings];
+      for (const t of targets) {
+        const err = await linkOne(t, parent);
+        if (err) errors.push(err);
+      }
+    } else if (siblings.length > 0) {
+      // No website parent: source itself becomes the head, siblings
+      // point at it. Source's own link is cleared so it stays a root.
+      const clearErr = await linkOne(externalBooking, null);
+      if (clearErr) errors.push(clearErr);
+      for (const s of siblings) {
+        const err = await linkOne(s, externalBooking);
+        if (err) errors.push(err);
+      }
+    } else {
+      // Plain unlink of the source.
+      const err = await linkOne(externalBooking, null);
       if (err) errors.push(err);
     }
     if (errors.length) {
       showToast(errors[0], 'error');
     } else {
+      const total = parent ? siblings.length + 1 : siblings.length + 1;
       showToast(
-        parent
-          ? targets.length > 1
-            ? `${targets.length} reservas ligadas`
-            : 'Reserva ligada'
+        parent || siblings.length > 0
+          ? `${total} reservas agrupadas`
           : 'Link removido',
         'success'
       );
@@ -2178,28 +2193,26 @@ function LinkExternalModal({
   external: Booking;
   candidates: Booking[];
   onCancel: () => void;
-  onConfirm: (parent: Booking, siblings: Booking[]) => void | Promise<void>;
+  onConfirm: (parent: Booking | null, siblings: Booking[]) => void | Promise<void>;
 }) {
-  const [parent, setParent] = useState<Booking | null>(null);
+  type ExternalMetaLite = { _external?: boolean };
+  const [websiteParent, setWebsiteParent] = useState<Booking | null>(null);
   const [siblingIds, setSiblingIds] = useState<Set<string>>(new Set());
 
   const overlap = (a: Booking, b: Booking) =>
     a.checkin_date < b.checkout_date && a.checkout_date > b.checkin_date;
-  const sorted = [...candidates].sort((a, b) => {
-    const ao = overlap(external, a) ? 0 : 1;
-    const bo = overlap(external, b) ? 0 : 1;
-    if (ao !== bo) return ao - bo;
-    return a.checkin_date.localeCompare(b.checkin_date);
-  });
 
-  type ExternalMetaLite = { _external?: boolean };
-  // Other external entries (not the source, not the chosen parent) can
-  // be selected as siblings — they'll all be linked to the same parent
-  // in one go, so the admin doesn't have to reopen this modal three
-  // times for a Sat→Sat split stay.
-  const siblingCandidates = sorted.filter(
-    (b) => (b as Booking & ExternalMetaLite)._external && b.id !== parent?.id
-  );
+  const externalSiblings = candidates
+    .filter((b) => (b as Booking & ExternalMetaLite)._external)
+    .sort((a, b) => a.checkin_date.localeCompare(b.checkin_date));
+  const websiteCandidates = candidates
+    .filter((b) => !(b as Booking & ExternalMetaLite)._external)
+    .sort((a, b) => {
+      const ao = overlap(external, a) ? 0 : 1;
+      const bo = overlap(external, b) ? 0 : 1;
+      if (ao !== bo) return ao - bo;
+      return a.checkin_date.localeCompare(b.checkin_date);
+    });
 
   const toggleSibling = (id: string) => {
     setSiblingIds((prev) => {
@@ -2210,54 +2223,90 @@ function LinkExternalModal({
     });
   };
 
+  const totalCount = 1 + siblingIds.size;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-[#16213e] border border-purple-500/30 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-        <h2 className="text-lg font-semibold text-white mb-1">Ligar reserva externa</h2>
+        <h2 className="text-lg font-semibold text-white mb-1">Agrupar reservas</h2>
         <p className="text-xs text-gray-400 mb-4">
-          {external.checkin_date} → {external.checkout_date} · {external.source}
-          <br />
-          Escolhe a reserva-pai (website ou outra externa). Podes
-          também marcar outras entradas externas em baixo para ligar
-          todas ao mesmo pai numa única acção.
+          Esta estadia ({external.checkin_date} → {external.checkout_date} · {external.source})
+          {websiteParent
+            ? <> será ligada à reserva <span className="text-purple-300">{websiteParent.guest_name}</span>.</>
+            : ' fica como cabeça do grupo. A limpeza fica neste check-in.'}
+          {siblingIds.size > 0 && (
+            <> Vão também ser agrupadas mais {siblingIds.size} entrada{siblingIds.size > 1 ? 's' : ''} externa{siblingIds.size > 1 ? 's' : ''}.</>
+          )}
         </p>
-        {sorted.length === 0 ? (
-          <p className="text-sm text-gray-500 mb-5">
-            Sem reservas disponíveis para ligar.
-          </p>
-        ) : (
+
+        {externalSiblings.length > 0 && (
           <>
             <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5">
-              Reserva-pai
+              Outras entradas externas a juntar
             </p>
-            <div className="max-h-48 overflow-y-auto space-y-1.5 mb-4">
-              {sorted.map((b) => {
+            <div className="max-h-48 overflow-y-auto space-y-1 mb-4">
+              {externalSiblings.map((b) => {
+                const checked = siblingIds.has(b.id);
+                return (
+                  <label
+                    key={b.id}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                      checked
+                        ? 'bg-purple-500/15 border-purple-500/40'
+                        : 'bg-white/5 border-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleSibling(b.id)}
+                      className="accent-purple-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white truncate">{b.guest_name}</div>
+                      <div className="text-xs text-gray-400">
+                        {b.checkin_date} → {b.checkout_date} · {b.num_nights}n · {b.source}
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {websiteCandidates.length > 0 && (
+          <>
+            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5">
+              Ou ligar a uma reserva website existente
+            </p>
+            <div className="max-h-40 overflow-y-auto space-y-1 mb-5">
+              <button
+                onClick={() => setWebsiteParent(null)}
+                className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
+                  websiteParent === null
+                    ? 'bg-purple-500/15 border-purple-500/40'
+                    : 'bg-white/5 border-white/5 hover:bg-white/10'
+                }`}
+              >
+                <span className="text-sm text-white">Sem reserva website (esta entrada é a cabeça)</span>
+              </button>
+              {websiteCandidates.map((b) => {
                 const isOverlap = overlap(external, b);
                 return (
                   <button
                     key={b.id}
-                    onClick={() => {
-                      setParent(b);
-                      setSiblingIds((prev) => {
-                        const next = new Set(prev);
-                        next.delete(b.id);
-                        return next;
-                      });
-                    }}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
-                      parent?.id === b.id
+                    onClick={() => setWebsiteParent(b)}
+                    className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
+                      websiteParent?.id === b.id
                         ? 'bg-purple-500/20 border-purple-500/50'
                         : 'bg-white/5 border-white/5 hover:bg-white/10'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-white truncate">
-                        {b.guest_name}
-                      </span>
+                      <span className="text-sm font-medium text-white truncate">{b.guest_name}</span>
                       {isOverlap && (
-                        <span className="text-[10px] uppercase tracking-wider text-purple-300">
-                          sobrepõe
-                        </span>
+                        <span className="text-[10px] uppercase tracking-wider text-purple-300">sobrepõe</span>
                       )}
                     </div>
                     <div className="text-xs text-gray-400">
@@ -2267,45 +2316,13 @@ function LinkExternalModal({
                 );
               })}
             </div>
-            {parent && siblingCandidates.length > 0 && (
-              <>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5">
-                  Outras externas a ligar ao mesmo pai
-                </p>
-                <div className="max-h-40 overflow-y-auto space-y-1 mb-5">
-                  {siblingCandidates.map((b) => {
-                    const checked = siblingIds.has(b.id);
-                    return (
-                      <label
-                        key={b.id}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
-                          checked
-                            ? 'bg-purple-500/15 border-purple-500/40'
-                            : 'bg-white/5 border-white/5 hover:bg-white/10'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleSibling(b.id)}
-                          className="accent-purple-500"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm text-white truncate">
-                            {b.guest_name}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {b.checkin_date} → {b.checkout_date} · {b.num_nights}n · {b.source}
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </>
-            )}
           </>
         )}
+
+        {externalSiblings.length === 0 && websiteCandidates.length === 0 && (
+          <p className="text-sm text-gray-500 mb-5">Sem reservas disponíveis para agrupar.</p>
+        )}
+
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={onCancel}
@@ -2315,14 +2332,13 @@ function LinkExternalModal({
           </button>
           <button
             onClick={() => {
-              if (!parent) return;
-              const siblings = siblingCandidates.filter((b) => siblingIds.has(b.id));
-              onConfirm(parent, siblings);
+              const siblings = externalSiblings.filter((b) => siblingIds.has(b.id));
+              onConfirm(websiteParent, siblings);
             }}
-            disabled={!parent}
+            disabled={!websiteParent && siblingIds.size === 0}
             className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Ligar{siblingIds.size > 0 ? ` (${siblingIds.size + 1})` : ''}
+            {websiteParent ? `Ligar (${totalCount})` : `Agrupar (${totalCount})`}
           </button>
         </div>
       </div>
