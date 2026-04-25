@@ -243,7 +243,13 @@ export default function AdminBookingsPage() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  const filteredBookings = filter === 'all' ? bookings : bookings.filter((b) => b.status === filter);
+  const today = new Date().toISOString().slice(0, 10);
+  const filteredBookings = (() => {
+    if (filter === 'past') return bookings.filter((b) => b.checkout_date < today);
+    const upcoming = bookings.filter((b) => b.checkout_date >= today);
+    if (filter === 'all') return upcoming;
+    return upcoming.filter((b) => b.status === filter);
+  })();
 
   if (loading) {
     return <div className="text-gray-400">A carregar reservas...</div>;
@@ -323,8 +329,8 @@ export default function AdminBookingsPage() {
             <Plus size={14} /> Reserva manual
           </button>
           <Filter size={16} className="text-gray-400" />
-          {(['all', 'pending', 'confirmed', 'cancelled'] as const).map((f) => {
-            const labels: Record<string, string> = { all: 'Todos', pending: 'Pendente', confirmed: 'Confirmada', cancelled: 'Cancelada' };
+          {(['all', 'pending', 'confirmed', 'cancelled', 'past'] as const).map((f) => {
+            const labels: Record<string, string> = { all: 'Activas', pending: 'Pendente', confirmed: 'Confirmada', cancelled: 'Cancelada', past: 'Histórico' };
             return (
             <button
               key={f}
