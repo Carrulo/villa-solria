@@ -38,9 +38,9 @@ export default function AdminBookingsPage() {
     _linkedToExternalRef?: string | null;
   };
 
-  async function linkExternal(externalBooking: Booking, parent: Booking | null) {
+  async function linkOne(externalBooking: Booking, parent: Booking | null) {
     const meta = externalBooking as Booking & ExternalMeta;
-    if (!meta._externalSource || !meta._externalRef) return;
+    if (!meta._externalSource || !meta._externalRef) return null;
     const parentMeta = parent as (Booking & ExternalMeta) | null;
     const payload: Record<string, string | null> = {
       external_source: meta._externalSource,
@@ -64,10 +64,34 @@ export default function AdminBookingsPage() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      showToast(data.error || 'Erro a ligar reserva', 'error');
-      return;
+      return data.error || 'Erro a ligar reserva';
     }
-    showToast(parent ? 'Reservas ligadas' : 'Link removido', 'success');
+    return null;
+  }
+
+  async function linkExternal(
+    externalBooking: Booking,
+    parent: Booking | null,
+    siblings: Booking[] = []
+  ) {
+    const targets = [externalBooking, ...siblings];
+    const errors: string[] = [];
+    for (const t of targets) {
+      const err = await linkOne(t, parent);
+      if (err) errors.push(err);
+    }
+    if (errors.length) {
+      showToast(errors[0], 'error');
+    } else {
+      showToast(
+        parent
+          ? targets.length > 1
+            ? `${targets.length} reservas ligadas`
+            : 'Reserva ligada'
+          : 'Link removido',
+        'success'
+      );
+    }
     setLinkTarget(null);
     await fetchBookings();
     await fetchBlockedDates();
@@ -394,7 +418,7 @@ export default function AdminBookingsPage() {
             return true;
           })}
           onCancel={() => setLinkTarget(null)}
-          onConfirm={(parent) => linkExternal(linkTarget, parent)}
+          onConfirm={(parent, siblings) => linkExternal(linkTarget, parent, siblings)}
         />
       )}
 
@@ -2081,12 +2105,11 @@ function LinkExternalModal({
   external: Booking;
   candidates: Booking[];
   onCancel: () => void;
-  onConfirm: (parent: Booking) => void | Promise<void>;
+  onConfirm: (parent: Booking, siblings: Booking[]) => void | Promise<void>;
 }) {
-  const [selected, setSelected] = useState<Booking | null>(null);
+  const [parent, setParent] = useState<Booking | null>(null);
+  const [siblingIds, setSiblingIds] = useState<Set<string>>(new Set());
 
-  // Surface candidates that overlap or are adjacent to the external
-  // stay first — those are the most likely matches.
   const overlap = (a: Booking, b: Booking) =>
     a.checkin_date < b.checkout_date && a.checkout_date > b.checkin_date;
   const sorted = [...candidates].sort((a, b) => {
@@ -2096,6 +2119,24 @@ function LinkExternalModal({
     return a.checkin_date.localeCompare(b.checkin_date);
   });
 
+  type ExternalMetaLite = { _external?: boolean };
+  // Other external entries (not the source, not the chosen parent) can
+  // be selected as siblings — they'll all be linked to the same parent
+  // in one go, so the admin doesn't have to reopen this modal three
+  // times for a Sat→Sat split stay.
+  const siblingCandidates = sorted.filter(
+    (b) => (b as Booking & ExternalMetaLite)._external && b.id !== parent?.id
+  );
+
+  const toggleSibling = (id: string) => {
+    setSiblingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-[#16213e] border border-purple-500/30 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
@@ -2103,45 +2144,94 @@ function LinkExternalModal({
         <p className="text-xs text-gray-400 mb-4">
           {external.checkin_date} → {external.checkout_date} · {external.source}
           <br />
-          Escolhe a reserva (website ou outra externa) a que esta
-          entrada pertence. A limpeza fica só na reserva-pai e o nome
-          do hóspede passa a aparecer aqui também.
+          Escolhe a reserva-pai (website ou outra externa). Podes
+          também marcar outras entradas externas em baixo para ligar
+          todas ao mesmo pai numa única acção.
         </p>
         {sorted.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 mb-5">
             Sem reservas disponíveis para ligar.
           </p>
         ) : (
-          <div className="max-h-80 overflow-y-auto space-y-1.5 mb-5">
-            {sorted.map((b) => {
-              const isOverlap = overlap(external, b);
-              return (
-                <button
-                  key={b.id}
-                  onClick={() => setSelected(b)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
-                    selected?.id === b.id
-                      ? 'bg-purple-500/20 border-purple-500/50'
-                      : 'bg-white/5 border-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-white truncate">
-                      {b.guest_name}
-                    </span>
-                    {isOverlap && (
-                      <span className="text-[10px] uppercase tracking-wider text-purple-300">
-                        sobrepõe
+          <>
+            <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5">
+              Reserva-pai
+            </p>
+            <div className="max-h-48 overflow-y-auto space-y-1.5 mb-4">
+              {sorted.map((b) => {
+                const isOverlap = overlap(external, b);
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => {
+                      setParent(b);
+                      setSiblingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(b.id);
+                        return next;
+                      });
+                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors ${
+                      parent?.id === b.id
+                        ? 'bg-purple-500/20 border-purple-500/50'
+                        : 'bg-white/5 border-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-white truncate">
+                        {b.guest_name}
                       </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {b.checkin_date} → {b.checkout_date} · {b.num_nights}n · {b.source}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                      {isOverlap && (
+                        <span className="text-[10px] uppercase tracking-wider text-purple-300">
+                          sobrepõe
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {b.checkin_date} → {b.checkout_date} · {b.num_nights}n · {b.source}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {parent && siblingCandidates.length > 0 && (
+              <>
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5">
+                  Outras externas a ligar ao mesmo pai
+                </p>
+                <div className="max-h-40 overflow-y-auto space-y-1 mb-5">
+                  {siblingCandidates.map((b) => {
+                    const checked = siblingIds.has(b.id);
+                    return (
+                      <label
+                        key={b.id}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                          checked
+                            ? 'bg-purple-500/15 border-purple-500/40'
+                            : 'bg-white/5 border-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSibling(b.id)}
+                          className="accent-purple-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-white truncate">
+                            {b.guest_name}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {b.checkin_date} → {b.checkout_date} · {b.num_nights}n · {b.source}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </>
         )}
         <div className="flex items-center justify-end gap-2">
           <button
@@ -2151,11 +2241,15 @@ function LinkExternalModal({
             Cancelar
           </button>
           <button
-            onClick={() => selected && onConfirm(selected)}
-            disabled={!selected}
+            onClick={() => {
+              if (!parent) return;
+              const siblings = siblingCandidates.filter((b) => siblingIds.has(b.id));
+              onConfirm(parent, siblings);
+            }}
+            disabled={!parent}
             className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Ligar
+            Ligar{siblingIds.size > 0 ? ` (${siblingIds.size + 1})` : ''}
           </button>
         </div>
       </div>
