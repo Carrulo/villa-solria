@@ -67,12 +67,74 @@ export default function AdminBookingsPage() {
   }, []);
 
   async function fetchBookings() {
-    const { data } = await supabase
-      .from('bookings')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const [{ data: own }, { data: external }] = await Promise.all([
+      supabase.from('bookings').select('*'),
+      supabase
+        .from('cleaning_tasks')
+        .select(
+          'external_source, external_ref, checkin_date, stay_checkout_date, guest_name, num_guests, created_at'
+        )
+        .not('external_source', 'is', null),
+    ]);
 
-    setBookings((data || []) as Booking[]);
+    const ownBookings = (own || []) as Booking[];
+
+    const externalBookings: Booking[] = ((external || []) as Array<{
+      external_source: 'airbnb_ical' | 'booking_ical';
+      external_ref: string;
+      checkin_date: string | null;
+      stay_checkout_date: string | null;
+      guest_name: string | null;
+      num_guests: number | null;
+      created_at: string;
+    }>)
+      .filter((t) => t.checkin_date && t.stay_checkout_date)
+      .map((t) => {
+        const ci = new Date(t.checkin_date! + 'T00:00:00Z');
+        const co = new Date(t.stay_checkout_date! + 'T00:00:00Z');
+        const nights = Math.max(
+          1,
+          Math.round((co.getTime() - ci.getTime()) / 86400000)
+        );
+        const sourceLabel = t.external_source === 'airbnb_ical' ? 'airbnb' : 'booking';
+        const refPrefix = t.external_source === 'airbnb_ical' ? 'AIR' : 'BKG';
+        return {
+          id: `ext:${t.external_source}:${t.external_ref}`,
+          guest_name: t.guest_name || sourceLabel.toUpperCase(),
+          guest_email: '',
+          guest_phone: null,
+          checkin_date: t.checkin_date!,
+          checkout_date: t.stay_checkout_date!,
+          num_guests: t.num_guests ?? 0,
+          message: null,
+          num_nights: nights,
+          price_per_night: null,
+          cleaning_fee: null,
+          total_price: 0,
+          status: 'confirmed',
+          payment_status: 'paid',
+          source: sourceLabel,
+          created_at: t.created_at,
+          reference: `${refPrefix}-${t.external_ref.slice(-8).toUpperCase()}`,
+          _external: true,
+        } as Booking & { reference: string; _external: true };
+      });
+
+    // Dedupe: if a website booking somehow shares dates with an external feed
+    // entry, prefer the website one (more data, refundable).
+    const ownKeys = new Set(
+      ownBookings.map((b) => `${b.checkin_date}|${b.checkout_date}`)
+    );
+    const merged: Booking[] = [
+      ...ownBookings,
+      ...externalBookings.filter(
+        (b) => !ownKeys.has(`${b.checkin_date}|${b.checkout_date}`)
+      ),
+    ];
+
+    merged.sort((a, b) => a.checkin_date.localeCompare(b.checkin_date));
+
+    setBookings(merged);
     setLoading(false);
   }
 
@@ -304,6 +366,7 @@ export default function AdminBookingsPage() {
         ) : (
           filteredBookings.map((booking) => {
             const ref = (booking as Booking & { reference?: string }).reference || '-';
+            const isExternal = (booking as Booking & { _external?: boolean })._external === true;
             return (
               <div
                 key={booking.id}
@@ -337,25 +400,27 @@ export default function AdminBookingsPage() {
 
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-white">
-                    {booking.total_price}€
+                    {isExternal ? '—' : `${booking.total_price}€`}
                   </span>
                   <div className="flex items-center gap-1">
                     <StatusBadge status={booking.status} />
-                    <StatusBadge status={booking.payment_status} />
+                    {!isExternal && <StatusBadge status={booking.payment_status} />}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
                   <span className="text-[11px] text-gray-500">{booking.source || 'website'}</span>
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setDetailBooking(booking)}
-                      className="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10"
-                      title="Ver detalhes e notas"
-                    >
-                      <StickyNote size={14} />
-                    </button>
-                    {booking.status === 'pending' && (
+                    {!isExternal && (
+                      <button
+                        onClick={() => setDetailBooking(booking)}
+                        className="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10"
+                        title="Ver detalhes e notas"
+                      >
+                        <StickyNote size={14} />
+                      </button>
+                    )}
+                    {!isExternal && booking.status === 'pending' && (
                       <>
                         <button
                           onClick={() => updateStatus(booking.id, 'confirmed')}
@@ -373,7 +438,7 @@ export default function AdminBookingsPage() {
                         </button>
                       </>
                     )}
-                    {booking.status === 'confirmed' && (
+                    {!isExternal && booking.status === 'confirmed' && (
                       <button
                         onClick={() => updateStatus(booking.id, 'cancelled')}
                         className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
@@ -382,7 +447,7 @@ export default function AdminBookingsPage() {
                         <XCircle size={16} />
                       </button>
                     )}
-                    {booking.payment_status === 'paid' && (
+                    {!isExternal && booking.payment_status === 'paid' && (
                       <button
                         onClick={() => setRefundTarget(booking)}
                         disabled={refunding === booking.id}
@@ -391,16 +456,23 @@ export default function AdminBookingsPage() {
                         {refunding === booking.id ? '...' : 'Refund'}
                       </button>
                     )}
-                    {booking.payment_status === 'refunded' && (
+                    {!isExternal && booking.payment_status === 'refunded' && (
                       <span className="text-[11px] text-gray-500">reembolsado</span>
                     )}
-                    <button
-                      onClick={() => setDeleteTarget(booking)}
-                      className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                      title="Apagar reserva"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {!isExternal && (
+                      <button
+                        onClick={() => setDeleteTarget(booking)}
+                        className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                        title="Apagar reserva"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                    {isExternal && (
+                      <span className="text-[10px] uppercase tracking-wider text-gray-500">
+                        gerir em {booking.source}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -435,7 +507,9 @@ export default function AdminBookingsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredBookings.map((booking, i) => (
+                filteredBookings.map((booking, i) => {
+                  const isExternal = (booking as Booking & { _external?: boolean })._external === true;
+                  return (
                   <tr key={booking.id} className={`hover:bg-white/[0.02] ${i % 2 === 1 ? 'bg-white/[0.01]' : ''}`}>
                     <td className="px-6 py-4">
                       <span className="text-xs font-mono font-semibold text-blue-400">
@@ -455,16 +529,22 @@ export default function AdminBookingsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.num_nights}</td>
                     <td className="px-6 py-4 text-sm text-gray-300">{booking.num_guests}</td>
-                    <td className="px-6 py-4 text-sm text-white font-medium">{booking.total_price}EUR</td>
+                    <td className="px-6 py-4 text-sm text-white font-medium">{isExternal ? '—' : `${booking.total_price}EUR`}</td>
                     <td className="px-6 py-4">
                       <StatusBadge status={booking.status} />
                     </td>
                     <td className="px-6 py-4">
-                      <StatusBadge status={booking.payment_status} />
+                      {isExternal ? <span className="text-xs text-gray-500">—</span> : <StatusBadge status={booking.payment_status} />}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-400">{booking.source}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
+                        {isExternal ? (
+                          <span className="text-[11px] uppercase tracking-wider text-gray-500">
+                            gerir em {booking.source}
+                          </span>
+                        ) : (
+                          <>
                         <button
                           onClick={() => setDetailBooking(booking)}
                           className="p-1.5 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10"
@@ -519,10 +599,13 @@ export default function AdminBookingsPage() {
                         >
                           <Trash2 size={16} />
                         </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
