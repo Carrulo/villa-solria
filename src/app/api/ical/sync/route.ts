@@ -113,7 +113,52 @@ async function syncSource(
       return { events: 0, dates_blocked: 0, error: `HTTP ${res.status}` };
     }
     const text = await res.text();
-    const events = parseICS(text);
+    const rawEvents = parseICS(text);
+
+    // Hosts often split a single guest stay into multiple back-to-back
+    // iCal events (e.g. real Booking.com reservation in the middle, host
+    // closing the side nights to enforce a Sat→Sat policy). Merge runs
+    // of contiguous same-source events into one stay so the bookings
+    // list and cleaning page show a single entry per guest.
+    type ParsedEvent = {
+      start: Date;
+      end: Date;
+      summary: string | null;
+      uid: string | null;
+    };
+    const parsed: ParsedEvent[] = [];
+    for (const e of rawEvents) {
+      if (!e.dtstart || !e.dtend) continue;
+      const s = parseICalDate(e.dtstart);
+      const en = parseICalDate(e.dtend);
+      if (!s || !en) continue;
+      if (!isReservation(e.summary, source)) {
+        // Pure availability blocks still need to populate blocked_dates,
+        // but they don't participate in the stay-merge logic.
+        parsed.push({ start: s, end: en, summary: e.summary || null, uid: e.uid || null });
+        continue;
+      }
+      parsed.push({ start: s, end: en, summary: e.summary || null, uid: e.uid || null });
+    }
+    parsed.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    type MergedStay = ParsedEvent & { isReservation: boolean };
+    const merged: MergedStay[] = [];
+    for (const ev of parsed) {
+      const isRes = isReservation(ev.summary, source);
+      const last = merged[merged.length - 1];
+      if (
+        last &&
+        last.isReservation &&
+        isRes &&
+        last.end.getTime() === ev.start.getTime()
+      ) {
+        // Extend previous stay; keep first UID as the stable ref.
+        last.end = ev.end;
+      } else {
+        merged.push({ ...ev, isReservation: isRes });
+      }
+    }
 
     const blockedRows: { date: string; source: string; note: string | null }[] = [];
     let eventCount = 0;
@@ -133,21 +178,19 @@ async function syncSource(
     const cleaningRows: CleaningRow[] = [];
     const seenRefs = new Set<string>();
 
-    for (const event of events) {
-      if (!event.dtstart || !event.dtend) continue;
-      const startDate = parseICalDate(event.dtstart);
-      const endDate = parseICalDate(event.dtend);
-      if (!startDate || !endDate) continue;
+    for (const event of merged) {
+      const startDate = event.start;
+      const endDate = event.end;
       eventCount += 1;
 
-      const note = event.summary || null;
+      const note = event.summary;
       for (const date of datesInRange(startDate, endDate)) {
         blockedRows.push({ date, source, note });
       }
 
       // Skip availability blocks — they block the calendar but are not
       // real reservations, so no cleaning task / "booking" entry.
-      if (!isReservation(event.summary, source)) continue;
+      if (!event.isReservation) continue;
 
       // One cleaning task per external reservation, on its DTSTART (the
       // arrival day — the cleaner preps the villa before the guest gets

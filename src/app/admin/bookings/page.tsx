@@ -133,15 +133,20 @@ export default function AdminBookingsPage() {
         } as Booking & { reference: string; _external: true };
       });
 
-    // Dedupe: if a website booking somehow shares dates with an external feed
-    // entry, prefer the website one (more data, refundable).
-    const ownKeys = new Set(
-      ownBookings.map((b) => `${b.checkin_date}|${b.checkout_date}`)
-    );
+    // Auto-link: a single villa can't host two stays at once, so any
+    // external feed entry whose date range overlaps a website booking
+    // is the same guest (e.g. host took the deposit via website then
+    // closed the side nights on Booking.com). Hide the external one;
+    // the website booking spans the full stay.
+    const overlaps = (a: Booking, b: Booking) =>
+      a.checkin_date < b.checkout_date && a.checkout_date > b.checkin_date;
     const merged: Booking[] = [
       ...ownBookings,
       ...externalBookings.filter(
-        (b) => !ownKeys.has(`${b.checkin_date}|${b.checkout_date}`)
+        (ext) =>
+          !ownBookings.some(
+            (own) => own.status !== 'cancelled' && overlaps(ext, own)
+          )
       ),
     ];
 
