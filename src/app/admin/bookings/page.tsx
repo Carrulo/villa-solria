@@ -98,9 +98,22 @@ export default function AdminBookingsPage() {
         );
         const sourceLabel = t.external_source === 'airbnb_ical' ? 'airbnb' : 'booking';
         const refPrefix = t.external_source === 'airbnb_ical' ? 'AIR' : 'BKG';
+        // Booking.com iCal hides guest names — every event SUMMARY is
+        // "CLOSED - Not available". Render a friendlier placeholder
+        // instead of the raw block label.
+        const rawName = (t.guest_name || '').trim();
+        const isPlaceholder =
+          !rawName ||
+          /not available/i.test(rawName) ||
+          /^closed/i.test(rawName);
+        const displayName = isPlaceholder
+          ? t.external_source === 'booking_ical'
+            ? 'Booking.com (sem nome)'
+            : 'Airbnb'
+          : rawName;
         return {
           id: `ext:${t.external_source}:${t.external_ref}`,
-          guest_name: t.guest_name || sourceLabel.toUpperCase(),
+          guest_name: displayName,
           guest_email: '',
           guest_phone: null,
           checkin_date: t.checkin_date!,
