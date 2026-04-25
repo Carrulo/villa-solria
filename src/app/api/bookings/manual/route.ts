@@ -122,6 +122,19 @@ export async function POST(req: Request) {
     .filter(Boolean)
     .join('\n');
 
+  // Snapshot the current global door code into the booking so the
+  // guide always shows THIS guest's code, even after the lock is
+  // re-keyed for the next stay. Admin can override per-booking later.
+  const { data: doorRow } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'guide_door_code')
+    .maybeSingle();
+  const doorSnapshot =
+    typeof doorRow?.value === 'string' && doorRow.value.trim()
+      ? doorRow.value.trim()
+      : null;
+
   const { data: inserted, error: insertError } = await supabase
     .from('bookings')
     .insert({
@@ -146,6 +159,7 @@ export async function POST(req: Request) {
         : 'pt',
       message: messageBlob || null,
       reference,
+      door_code: doorSnapshot,
     })
     .select('id')
     .single();

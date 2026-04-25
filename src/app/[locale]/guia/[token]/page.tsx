@@ -111,7 +111,7 @@ interface T {
 const T: Record<Locale, T> = {
   pt: {
     inactive_title: 'Este guia ainda não está disponível',
-    inactive_before: 'O guia abre 3 dias antes do seu check-in.',
+    inactive_before: 'O guia abre uma semana antes do seu check-in.',
     inactive_after: 'Este guia expirou. Obrigado pela sua estadia!',
     hello: 'Olá',
     welcome_subtitle: 'O seu guia pessoal da Villa Solria',
@@ -123,7 +123,7 @@ const T: Record<Locale, T> = {
   },
   en: {
     inactive_title: 'This guide is not available yet',
-    inactive_before: 'The guide opens 3 days before your check-in.',
+    inactive_before: 'The guide opens a week before your check-in.',
     inactive_after: 'This guide has expired. Thank you for your stay!',
     hello: 'Hi',
     welcome_subtitle: 'Your personal Villa Solria guide',
@@ -135,7 +135,7 @@ const T: Record<Locale, T> = {
   },
   es: {
     inactive_title: 'Esta guía aún no está disponible',
-    inactive_before: 'La guía se abre 3 días antes de su check-in.',
+    inactive_before: 'La guía se abre una semana antes de su check-in.',
     inactive_after: 'Esta guía ha expirado. ¡Gracias por su estancia!',
     hello: 'Hola',
     welcome_subtitle: 'Su guía personal de Villa Solria',
@@ -147,7 +147,7 @@ const T: Record<Locale, T> = {
   },
   de: {
     inactive_title: 'Dieser Leitfaden ist noch nicht verfügbar',
-    inactive_before: 'Der Leitfaden öffnet 3 Tage vor Ihrem Check-in.',
+    inactive_before: 'Der Leitfaden öffnet eine Woche vor Ihrem Check-in.',
     inactive_after: 'Dieser Leitfaden ist abgelaufen. Danke für Ihren Aufenthalt!',
     hello: 'Hallo',
     welcome_subtitle: 'Ihr persönlicher Villa Solria Leitfaden',
@@ -161,10 +161,14 @@ const T: Record<Locale, T> = {
 
 export default async function GuidePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; token: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: rawLocale, token } = await params;
+  const sp = await searchParams;
+  const isPreview = sp?.preview === '1';
   const locale = (['pt', 'en', 'es', 'de'].includes(rawLocale) ? rawLocale : 'en') as Locale;
   const t = T[locale];
 
@@ -190,7 +194,9 @@ export default async function GuidePage({
   const closesAt = addDays(b.checkout_date, 30);
   const isBefore = today < opensAt;
   const isAfter = today > closesAt;
-  const isActive = !isBefore && !isAfter;
+  // ?preview=1 bypasses the access window so admins can sanity-check
+  // the guide before the booking goes live.
+  const isActive = isPreview ? true : !isBefore && !isAfter;
 
   // Fetch sections always (so we can show placeholders if inactive)
   const { data: sectionsData } = await supabase
@@ -233,7 +239,10 @@ export default async function GuidePage({
     );
   }
 
-  const doorCode = b.door_code || settings['guide_door_code'] || '—';
+  // Door code MUST come from the booking row, not the global setting —
+  // otherwise an old guest still inside their own active window would
+  // see the code that was rotated for the next guest.
+  const doorCode = (b.door_code && b.door_code.trim()) || 'a comunicar em breve';
   function resolvePlaceholders(body: string): string {
     return body
       .replace(/\{\{door_code\}\}/g, doorCode)
