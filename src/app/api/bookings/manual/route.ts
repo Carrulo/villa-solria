@@ -124,12 +124,18 @@ export async function POST(req: Request) {
     .filter(Boolean)
     .join('\n');
 
-  // Door code: prefer the value the admin typed in the modal; fall
-  // back to the current global setting so guides still work for
-  // bookings created without an explicit code.
+  // Door code: respect the admin's explicit choice from the modal.
+  // - String with content → snapshot it
+  // - Null or empty string → leave null on purpose (guest sees the
+  //   "a comunicar em breve" placeholder until the admin reveals it).
+  //   This is the "share guide before payment" workflow.
+  // - Field omitted entirely (legacy callers) → fall back to global.
   let doorSnapshot: string | null = null;
-  if (typeof body.door_code === 'string' && body.door_code.trim()) {
-    doorSnapshot = body.door_code.trim();
+  if ('door_code' in body) {
+    doorSnapshot =
+      typeof body.door_code === 'string' && body.door_code.trim()
+        ? body.door_code.trim()
+        : null;
   } else {
     const { data: doorRow } = await supabase
       .from('settings')

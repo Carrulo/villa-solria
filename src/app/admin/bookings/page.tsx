@@ -2221,8 +2221,11 @@ function ManualBookingModal({
               value={doorCode}
               onChange={(e) => setDoorCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
               className={fieldCls + ' font-mono tracking-widest'}
-              placeholder="Vazio = usa o código global das definições"
+              placeholder="Deixa vazio para revelar mais tarde (ex: depois do pagamento)"
             />
+            <p className="text-[11px] text-gray-500 mt-1">
+              Se ficar vazio, o guia mostra &quot;a comunicar em breve&quot; em vez do código. Podes definir/actualizar a qualquer momento via botão Partilhar.
+            </p>
           </Field>
           <Field label="Notas (opcional)" className="sm:col-span-2">
             <textarea
