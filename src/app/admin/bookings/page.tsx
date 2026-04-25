@@ -34,6 +34,17 @@ export default function AdminBookingsPage() {
   const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null);
   const [linkTarget, setLinkTarget] = useState<Booking | null>(null);
+  const [shareTarget, setShareTarget] = useState<{
+    booking_id: string;
+    reference: string;
+    guide_token: string | null;
+    language: string;
+    guest_name: string;
+    guest_email: string | null;
+    guest_phone: string | null;
+    checkin_date: string;
+    checkout_date: string;
+  } | null>(null);
 
   type ExternalMeta = {
     _external?: boolean;
@@ -519,6 +530,13 @@ export default function AdminBookingsPage() {
         />
       )}
 
+      {shareTarget && shareTarget.guide_token && (
+        <ShareGuideModal
+          data={shareTarget}
+          onClose={() => setShareTarget(null)}
+        />
+      )}
+
       {linkTarget && (
         <LinkExternalModal
           external={linkTarget}
@@ -547,12 +565,15 @@ export default function AdminBookingsPage() {
             setShowManualModal(false);
             setPreset({});
           }}
-          onCreated={async () => {
+          onCreated={async (data) => {
             setShowManualModal(false);
             setPreset({});
             await fetchBookings();
             await fetchBlockedDates();
-            showToast('Reserva manual criada', 'success');
+            showToast('Reserva criada — partilha o guia', 'success');
+            if (data?.guide_token) {
+              setShareTarget(data);
+            }
           }}
           onError={(msg) => showToast(msg, 'error')}
         />
@@ -1868,12 +1889,23 @@ function ManualBookingModal({
   checkoutDays: Set<string>;
   sourceByDate: Record<string, string>;
   onCancel: () => void;
-  onCreated: () => Promise<void> | void;
+  onCreated: (data: {
+    booking_id: string;
+    reference: string;
+    guide_token: string | null;
+    language: string;
+    guest_name: string;
+    guest_email: string | null;
+    guest_phone: string | null;
+    checkin_date: string;
+    checkout_date: string;
+  }) => Promise<void> | void;
   onError: (msg: string) => void;
 }) {
   const [guestName, setGuestName] = useState(() => preset?.guest_name || '');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [doorCode, setDoorCode] = useState('');
   const [checkin, setCheckin] = useState(
     () => preset?.checkin_date || new Date().toISOString().slice(0, 10)
   );
@@ -1981,6 +2013,7 @@ function ManualBookingModal({
           notes,
           mid_stay_dates: Array.from(midStays),
           link_external: preset?.link_external,
+          door_code: doorCode.trim() || null,
         }),
       });
       const data = await res.json();
@@ -1988,7 +2021,7 @@ function ManualBookingModal({
         onError(data.error || 'Erro ao criar reserva');
         return;
       }
-      await onCreated();
+      await onCreated(data);
     } finally {
       setSubmitting(false);
     }
@@ -2137,6 +2170,17 @@ function ManualBookingModal({
               <option value="es">Español</option>
               <option value="de">Deutsch</option>
             </select>
+          </Field>
+          <Field label="Código da fechadura (PIN)" className="sm:col-span-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={doorCode}
+              onChange={(e) => setDoorCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+              className={fieldCls + ' font-mono tracking-widest'}
+              placeholder="Vazio = usa o código global das definições"
+            />
           </Field>
           <Field label="Notas (opcional)" className="sm:col-span-2">
             <textarea
@@ -2400,6 +2444,142 @@ function LinkExternalModal({
             className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {websiteParent ? `Ligar (${totalCount})` : `Agrupar (${totalCount})`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareGuideModal({
+  data,
+  onClose,
+}: {
+  data: {
+    booking_id: string;
+    reference: string;
+    guide_token: string | null;
+    language: string;
+    guest_name: string;
+    guest_email: string | null;
+    guest_phone: string | null;
+    checkin_date: string;
+    checkout_date: string;
+  };
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  if (!data.guide_token) return null;
+
+  const lang = ['pt', 'en', 'es', 'de'].includes(data.language) ? data.language : 'pt';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const url = `${origin}/${lang}/guia/${data.guide_token}`;
+
+  const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
+  const messages: Record<string, string> = {
+    pt: `Olá ${firstName}! Aqui está o guia da Villa Solria com toda a informação para a sua estadia (${data.checkin_date} → ${data.checkout_date}): ${url}`,
+    en: `Hi ${firstName}! Here is the Villa Solria guide with all the info for your stay (${data.checkin_date} → ${data.checkout_date}): ${url}`,
+    es: `¡Hola ${firstName}! Aquí está la guía de Villa Solria con toda la información para su estancia (${data.checkin_date} → ${data.checkout_date}): ${url}`,
+    de: `Hallo ${firstName}! Hier ist der Villa Solria Leitfaden mit allen Infos zu Ihrem Aufenthalt (${data.checkin_date} → ${data.checkout_date}): ${url}`,
+  };
+  const subjects: Record<string, string> = {
+    pt: 'O seu guia da Villa Solria',
+    en: 'Your Villa Solria guide',
+    es: 'Su guía de Villa Solria',
+    de: 'Ihr Villa Solria Leitfaden',
+  };
+  const message = messages[lang] || messages.pt;
+  const subject = subjects[lang] || subjects.pt;
+
+  const phoneClean = (data.guest_phone || '').replace(/[^0-9]/g, '');
+  const waUrl = phoneClean
+    ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const mailUrl = data.guest_email
+    ? `mailto:${data.guest_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
+    : `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      prompt('Copia o link:', url);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-[#16213e] border border-emerald-500/30 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5">
+        <div>
+          <h2 className="text-lg font-semibold text-white mb-1">Reserva criada — partilhar guia</h2>
+          <p className="text-xs text-gray-400">
+            {data.guest_name} · {data.checkin_date} → {data.checkout_date} · ref {data.reference}
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-wider text-gray-500">Link do guia</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={url}
+              onFocus={(e) => e.target.select()}
+              className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-xs font-mono"
+            />
+            <button
+              onClick={copyLink}
+              className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-medium whitespace-nowrap"
+            >
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-wider text-gray-500">Mensagem pré-pronta</label>
+          <textarea
+            readOnly
+            value={message}
+            rows={3}
+            onFocus={(e) => e.target.select()}
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-200 text-xs resize-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold"
+          >
+            WhatsApp
+          </a>
+          <a
+            href={mailUrl}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold"
+          >
+            Email
+          </a>
+        </div>
+
+        {(!phoneClean || !data.guest_email) && (
+          <p className="text-[11px] text-amber-300/80">
+            {!phoneClean && 'Sem telefone preenchido — o WhatsApp abre sem destinatário. '}
+            {!data.guest_email && !phoneClean && '/ '}
+            {!data.guest_email && 'Sem email — escolhe o destinatário no cliente de mail.'}
+          </p>
+        )}
+
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium"
+          >
+            Fechar
           </button>
         </div>
       </div>

@@ -20,6 +20,7 @@ type Body = {
   notes?: string;
   mid_stay_dates?: string[];
   link_external?: { external_source?: string; external_ref?: string };
+  door_code?: string | null;
 };
 
 function daysBetween(from: string, to: string): number {
@@ -123,18 +124,23 @@ export async function POST(req: Request) {
     .filter(Boolean)
     .join('\n');
 
-  // Snapshot the current global door code into the booking so the
-  // guide always shows THIS guest's code, even after the lock is
-  // re-keyed for the next stay. Admin can override per-booking later.
-  const { data: doorRow } = await supabase
-    .from('settings')
-    .select('value')
-    .eq('key', 'guide_door_code')
-    .maybeSingle();
-  const doorSnapshot =
-    typeof doorRow?.value === 'string' && doorRow.value.trim()
-      ? doorRow.value.trim()
-      : null;
+  // Door code: prefer the value the admin typed in the modal; fall
+  // back to the current global setting so guides still work for
+  // bookings created without an explicit code.
+  let doorSnapshot: string | null = null;
+  if (typeof body.door_code === 'string' && body.door_code.trim()) {
+    doorSnapshot = body.door_code.trim();
+  } else {
+    const { data: doorRow } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'guide_door_code')
+      .maybeSingle();
+    doorSnapshot =
+      typeof doorRow?.value === 'string' && doorRow.value.trim()
+        ? doorRow.value.trim()
+        : null;
+  }
 
   const { data: inserted, error: insertError } = await supabase
     .from('bookings')
@@ -162,7 +168,7 @@ export async function POST(req: Request) {
       reference,
       door_code: doorSnapshot,
     })
-    .select('id')
+    .select('id, guide_token, language')
     .single();
 
   if (insertError || !inserted) {
@@ -267,5 +273,12 @@ export async function POST(req: Request) {
     booking_id: bookingId,
     reference,
     mid_stays_created: validMidStays.length,
+    guide_token: (inserted as { guide_token?: string | null }).guide_token || null,
+    language: (inserted as { language?: string | null }).language || 'pt',
+    guest_name,
+    guest_email: guest_email || null,
+    guest_phone: guest_phone || null,
+    checkin_date,
+    checkout_date,
   });
 }
