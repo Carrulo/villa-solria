@@ -696,11 +696,18 @@ export default function AdminBookingsPage() {
                     )}
                     {isExternal && (
                       <button
-                        onClick={() =>
-                          isLinked
-                            ? linkExternal(booking, null)
-                            : setLinkTarget(booking)
-                        }
+                        onClick={() => {
+                          if (isLinked) {
+                            const childCount = meta._childCount ?? 0;
+                            const msg = childCount > 0
+                              ? `Desligar este agrupamento? As ${childCount} entrada${childCount > 1 ? 's' : ''} agrupada${childCount > 1 ? 's' : ''} voltam a aparecer separadas.`
+                              : 'Remover esta ligação?';
+                            if (!confirm(msg)) return;
+                            linkExternal(booking, null);
+                          } else {
+                            setLinkTarget(booking);
+                          }
+                        }}
                         className={`p-1.5 rounded-lg ${
                           isLinked
                             ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
