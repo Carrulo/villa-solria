@@ -255,19 +255,56 @@ function SectionsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
 
   if (loading) return <div className="text-gray-400">A carregar…</div>;
 
+  async function previewGuide() {
+    // Pick the next upcoming booking with a guide_token so the admin
+    // can see the live guide as a real guest would.
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('guide_token, language, guest_name, checkin_date')
+      .not('guide_token', 'is', null)
+      .neq('status', 'cancelled')
+      .gte('checkout_date', today)
+      .order('checkin_date', { ascending: true })
+      .limit(1);
+    if (error) {
+      alert('Erro a procurar reserva: ' + error.message);
+      return;
+    }
+    const b = (data && data[0]) as
+      | { guide_token: string; language?: string | null; guest_name?: string | null; checkin_date?: string | null }
+      | undefined;
+    if (!b) {
+      alert('Sem reservas activas com guide_token. Cria uma reserva manual primeiro.');
+      return;
+    }
+    const lang = b.language && ['pt', 'en', 'es', 'de'].includes(b.language) ? b.language : locale;
+    const url = `${window.location.origin}/${lang}/guia/${b.guide_token}?preview=1`;
+    window.open(url, '_blank', 'noopener');
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 bg-[#16213e] border border-white/5 rounded-xl p-2 w-fit">
-        <span className="text-xs text-gray-400 px-2">Idioma em edição:</span>
-        {LOCALES.map((l) => (
-          <button
-            key={l}
-            onClick={() => setLocale(l)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase ${locale === l ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}
-          >
-            {l}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 bg-[#16213e] border border-white/5 rounded-xl p-2 w-fit">
+          <span className="text-xs text-gray-400 px-2">Idioma em edição:</span>
+          {LOCALES.map((l) => (
+            <button
+              key={l}
+              onClick={() => setLocale(l)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase ${locale === l ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={previewGuide}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 text-sm font-medium"
+          title="Abre o guia tal como o hóspede vê (usa a próxima reserva activa)"
+        >
+          Pré-visualizar guia
+        </button>
       </div>
 
       {sections.map((s) => (
