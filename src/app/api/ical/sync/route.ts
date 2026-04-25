@@ -283,15 +283,20 @@ async function syncSource(
             ignoreDuplicates: true,
           });
 
-        // Backfill stay_checkout_date on existing rows that predate the column.
+        // Always sync stay_checkout_date and checkin_date — when host
+        // adds/removes contiguous side-blocks on the source platform,
+        // the merged stay range expands or shrinks and the existing
+        // row (kept by ignoreDuplicates) must follow.
         for (const row of cleaningRows) {
           await supabase
             .from('cleaning_tasks')
-            .update({ stay_checkout_date: row.stay_checkout_date })
+            .update({
+              stay_checkout_date: row.stay_checkout_date,
+              checkin_date: row.checkin_date,
+            })
             .eq('external_source', row.external_source)
             .eq('external_ref', row.external_ref)
-            .eq('cleaning_date', row.cleaning_date)
-            .is('stay_checkout_date', null);
+            .eq('cleaning_date', row.cleaning_date);
         }
       }
     } catch (err) {
