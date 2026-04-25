@@ -63,7 +63,12 @@ function renderMarkdown(md: string): string {
     s
       .replace(/`([^`]+)`/g, '<code class="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      // Markdown links: [text](https://...) — open external in new tab.
+      .replace(
+        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline hover:text-blue-900">$1</a>'
+      );
 
   for (const raw of lines) {
     const l = raw.trimEnd();
