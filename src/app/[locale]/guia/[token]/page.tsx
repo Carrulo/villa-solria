@@ -177,19 +177,32 @@ export default async function GuidePage({
   const locale = (['pt', 'en', 'es', 'de'].includes(rawLocale) ? rawLocale : 'en') as Locale;
   const t = T[locale];
 
-  if (!token || token.length < 8) notFound();
+  const isPreviewToken = token === 'preview';
+  if (!isPreviewToken && (!token || token.length < 8)) notFound();
 
   const supabase = createServerClient();
 
-  const { data: booking } = await supabase
-    .from('bookings')
-    .select('id, guest_name, checkin_date, checkout_date, language, status, door_code')
-    .eq('guide_token', token)
-    .maybeSingle();
+  let b: Booking & { status?: string };
+  if (isPreviewToken) {
+    const today = todayIso();
+    b = {
+      id: 'preview',
+      guest_name: null,
+      checkin_date: today,
+      checkout_date: addDays(today, 7),
+      language: locale,
+      door_code: null,
+    };
+  } else {
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('id, guest_name, checkin_date, checkout_date, language, status, door_code')
+      .eq('guide_token', token)
+      .maybeSingle();
 
-  if (!booking || booking.status === 'cancelled') notFound();
-
-  const b = booking as Booking & { status?: string };
+    if (!booking || booking.status === 'cancelled') notFound();
+    b = booking as Booking & { status?: string };
+  }
   const today = todayIso();
   // Open the guide a week before so guests have time to read the
   // arrival info, and keep it open for a month after — the checkout
