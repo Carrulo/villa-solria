@@ -137,6 +137,7 @@ export default function CleaningClient({
                 task={t}
                 token={token}
                 isTurn={turnIds.has(t.id)}
+                isToday={t.cleaning_date <= todayStr}
                 busy={busyId === t.id}
                 onToggleSubtask={(key, done) =>
                   update({ id: t.id, subtask_toggle: { key, done } })
@@ -197,6 +198,7 @@ function TaskCard({
   task,
   token,
   isTurn,
+  isToday,
   busy,
   onToggleSubtask,
   onMarkLaundry,
@@ -209,6 +211,7 @@ function TaskCard({
   task: CleaningTask;
   token: string;
   isTurn: boolean;
+  isToday: boolean;
   busy: boolean;
   onToggleSubtask: (key: string, done: boolean) => void;
   onMarkLaundry: (rooms: number) => void;
@@ -225,8 +228,17 @@ function TaskCard({
     completed_at?: string | null;
     photo_urls?: string[];
   };
-  const progress = taskAny.subtask_progress || {};
+  const rawProgress = taskAny.subtask_progress || {};
   const completed = !!taskAny.completed_at;
+  // Skipped rooms (rooms_to_prepare excluded) count as done so they
+  // don't block checklist completion or the close-cleaning button.
+  const roomsToPrepareForProgress = (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare;
+  const progress: Record<string, boolean> = { ...rawProgress } as Record<string, boolean>;
+  if (Array.isArray(roomsToPrepareForProgress) && roomsToPrepareForProgress.length > 0) {
+    for (const n of [1, 2, 3]) {
+      if (!roomsToPrepareForProgress.includes(n)) progress[`quarto_${n}`] = true;
+    }
+  }
   const checklist = checklistCount(progress);
   const checklistDone = isChecklistComplete(progress);
   const photos = Array.isArray(taskAny.photo_urls) ? taskAny.photo_urls : [];
@@ -239,9 +251,21 @@ function TaskCard({
   const [notes, setNotes] = useState(initialNotes);
   const [notesSaved, setNotesSaved] = useState(false);
   const notesDirty = notes.trim() !== initialNotes.trim();
-  // Collapsible checklist — open while incomplete, closed once all 14 ticked
-  // (auto sync) and overridable by user click.
-  const [checklistOpen, setChecklistOpen] = useState(!checklistDone && !completed);
+  const ownerNotes = ((task as CleaningTask & { owner_notes?: string | null }).owner_notes || '').trim();
+  const roomsToPrepareRaw = (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare;
+  // null/empty = prepare every room (default behaviour).
+  const roomsToPrepare =
+    Array.isArray(roomsToPrepareRaw) && roomsToPrepareRaw.length > 0 ? roomsToPrepareRaw : null;
+  function isRoomSkipped(subtaskKey: string): boolean {
+    if (!roomsToPrepare) return false;
+    const m = subtaskKey.match(/^quarto_(\d+)$/);
+    if (!m) return false;
+    return !roomsToPrepare.includes(Number(m[1]));
+  }
+  // Collapsible checklist — auto-open only for today's tasks while
+  // incomplete; future cards start collapsed so the cleaner doesn't
+  // wade through 12 identical lists.
+  const [checklistOpen, setChecklistOpen] = useState(isToday && !checklistDone && !completed);
 
   async function uploadFiles(files: FileList) {
     setUploading(true);
@@ -305,6 +329,11 @@ function TaskCard({
           <p className="text-xs text-gray-500 mt-0.5">
             {task.num_guests ? `${task.num_guests} hósp · ` : ''}
             {task.stay_checkout_date && `${task.cleaning_date.slice(5)} → ${task.stay_checkout_date.slice(5)}`}
+            {roomsToPrepare && (
+              <span className="ml-1 text-amber-300">
+                · só Q{roomsToPrepare.join(', Q')}
+              </span>
+            )}
           </p>
         </div>
         {isTurn && (
@@ -318,6 +347,14 @@ function TaskCard({
       </div>
 
       <div className="mt-4 space-y-3">
+        {/* Owner note — message from Bruno to the cleaning team */}
+        {ownerNotes && (
+          <div className="rounded-2xl bg-amber-400/15 border border-amber-400/40 px-3 py-2.5 text-sm text-amber-100 whitespace-pre-wrap">
+            <span className="mr-1">📝</span>
+            {ownerNotes}
+          </div>
+        )}
+
         {/* 1. Limpar — collapsible */}
         <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
           <button
@@ -344,14 +381,18 @@ function TaskCard({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3 pb-3 pt-1">
               {CLEANING_SUBTASKS.map((s) => {
                 const done = progress[s.key] === true;
+                const skipped = isRoomSkipped(s.key);
                 return (
                   <button
                     key={s.key}
-                    onClick={() => editable && !busy && onToggleSubtask(s.key, !done)}
-                    disabled={busy || !editable}
+                    onClick={() => editable && !busy && !skipped && onToggleSubtask(s.key, !done)}
+                    disabled={busy || !editable || skipped}
                     style={{ minHeight: 48 }}
+                    title={skipped ? 'Quarto não usado — só cobertor' : undefined}
                     className={`flex items-center gap-2.5 px-3 rounded-xl border text-left text-base disabled:opacity-60 active:scale-[0.98] transition-transform ${
-                      done
+                      skipped
+                        ? 'bg-white/[0.02] border-white/5 text-gray-500 line-through'
+                        : done
                         ? 'bg-green-500/15 border-green-500/40 text-green-200'
                         : 'bg-white/5 border-white/10 text-gray-200'
                     }`}
@@ -362,7 +403,10 @@ function TaskCard({
                       <Circle size={18} className="shrink-0 text-gray-500" />
                     )}
                     <span className="text-lg leading-none mr-1">{s.icon}</span>
-                    <span className="truncate">{s.label}</span>
+                    <span className="truncate">
+                      {s.label}
+                      {skipped && <span className="ml-1 text-[10px] no-underline">(só cobertor)</span>}
+                    </span>
                   </button>
                 );
               })}

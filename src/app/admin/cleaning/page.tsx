@@ -574,6 +574,7 @@ export default function AdminCleaningPage() {
               onCloseLaundry={() => closeLaundry(t)}
               onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
               onUpdateFee={(fee) => updateCleaningFee(t, fee)}
+              onSaveOwnerInstructions={(patch) => updateTask(t.id, patch)}
             />
           ))
         )}
@@ -617,6 +618,7 @@ export default function AdminCleaningPage() {
                     onCloseLaundry={() => closeLaundry(t)}
                     onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
                     onUpdateFee={(fee) => updateCleaningFee(t, fee)}
+                    onSaveOwnerInstructions={(patch) => updateTask(t.id, patch)}
                   />
                 ))
               )}
@@ -749,6 +751,7 @@ function TaskRow({
   onCloseLaundry,
   onRenameGuest,
   onUpdateFee,
+  onSaveOwnerInstructions,
 }: {
   task: CleaningTask;
   reference: string | null;
@@ -761,6 +764,7 @@ function TaskRow({
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
+  onSaveOwnerInstructions: (patch: { owner_notes: string | null; rooms_to_prepare: number[] | null }) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
@@ -868,6 +872,7 @@ function TaskRow({
         {task.num_guests != null && (
           <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
         )}
+        <OwnerInstructions task={task} villaRooms={roomOptions.length} onSave={onSaveOwnerInstructions} />
         <CleanerNote task={task} />
         <PhotoStrip task={task} />
       </td>
@@ -995,6 +1000,7 @@ function TaskCard({
   onCloseLaundry,
   onRenameGuest,
   onUpdateFee,
+  onSaveOwnerInstructions,
 }: {
   task: CleaningTask;
   reference: string | null;
@@ -1007,6 +1013,7 @@ function TaskCard({
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
+  onSaveOwnerInstructions: (patch: { owner_notes: string | null; rooms_to_prepare: number[] | null }) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
@@ -1113,6 +1120,8 @@ function TaskCard({
           </p>
         </div>
       </div>
+
+      <OwnerInstructions task={task} villaRooms={roomOptions.length} onSave={onSaveOwnerInstructions} />
 
       <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
         <button
@@ -1314,5 +1323,161 @@ function EditableFee({
       }}
       className="w-16 px-1 py-0.5 rounded bg-white/10 border border-white/20 text-yellow-200 text-xs focus:outline-none focus:border-yellow-400/60"
     />
+  );
+}
+
+function OwnerInstructions({
+  task,
+  villaRooms,
+  onSave,
+}: {
+  task: CleaningTask;
+  villaRooms: number;
+  onSave: (patch: { owner_notes: string | null; rooms_to_prepare: number[] | null }) => void;
+}) {
+  const t = task as CleaningTask & {
+    owner_notes?: string | null;
+    rooms_to_prepare?: number[] | null;
+  };
+  const initialNotes = (t.owner_notes || '').trim();
+  // null/empty = "prepare every room" (default).
+  const initialRooms = Array.isArray(t.rooms_to_prepare) ? [...t.rooms_to_prepare].sort() : null;
+
+  const [open, setOpen] = useState(false);
+  const [notes, setNotes] = useState(initialNotes);
+  const [rooms, setRooms] = useState<number[] | null>(initialRooms);
+
+  const allOptions = Array.from({ length: villaRooms }, (_, i) => i + 1);
+  const isAll = rooms === null || rooms.length === 0 || rooms.length === villaRooms;
+  const hasInstructions = initialNotes.length > 0 || (initialRooms && initialRooms.length > 0 && initialRooms.length < villaRooms);
+
+  function toggleRoom(n: number) {
+    const current = rooms === null ? allOptions : rooms;
+    const next = current.includes(n) ? current.filter((x) => x !== n) : [...current, n].sort();
+    // If user picks "all rooms", store null (default behaviour).
+    setRooms(next.length === villaRooms ? null : next);
+  }
+
+  function save() {
+    const trimmed = notes.trim();
+    onSave({
+      owner_notes: trimmed.length > 0 ? trimmed : null,
+      rooms_to_prepare: isAll ? null : rooms,
+    });
+    setOpen(false);
+  }
+
+  function reset() {
+    setNotes('');
+    setRooms(null);
+    onSave({ owner_notes: null, rooms_to_prepare: null });
+    setOpen(false);
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setNotes(initialNotes);
+          setRooms(initialRooms);
+          setOpen(true);
+        }}
+        className={`mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition-colors ${
+          hasInstructions
+            ? 'bg-amber-400/10 border-amber-400/40 text-amber-200 hover:bg-amber-400/20'
+            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+        }`}
+        title="Instruções para a equipa de limpeza"
+      >
+        📝 {hasInstructions ? 'Instruções' : 'Adicionar nota'}
+        {initialRooms && initialRooms.length > 0 && initialRooms.length < villaRooms && (
+          <span className="font-mono">· Q{initialRooms.join(',Q')}</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white mb-1">Instruções p/ limpeza</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              {task.cleaning_date}
+              {task.guest_name ? ` · ${task.guest_name}` : ''}
+            </p>
+
+            <label className="block mb-4">
+              <span className="block text-xs text-gray-400 mb-1">Quartos a preparar</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setRooms(null)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                    isAll
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  Todos ({villaRooms})
+                </button>
+                {allOptions.map((n) => {
+                  const active = !isAll && (rooms || []).includes(n);
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => toggleRoom(n)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                        active
+                          ? 'bg-amber-500/30 text-amber-100 border border-amber-400/50'
+                          : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                      }`}
+                    >
+                      Q{n}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Quartos não escolhidos aparecem à equipa como &quot;só cobertor&quot;.
+              </p>
+            </label>
+
+            <label className="block mb-4">
+              <span className="block text-xs text-gray-400 mb-1">Nota (opcional)</span>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                placeholder="ex: Casal apenas — deixar Q2/Q3 com cobertor. Levar toalhas extra para o Q1."
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none"
+              />
+            </label>
+
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={reset}
+                className="text-xs text-gray-500 hover:text-gray-300 underline"
+              >
+                Limpar instruções
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={save}
+                  className="px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 text-sm font-semibold"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
