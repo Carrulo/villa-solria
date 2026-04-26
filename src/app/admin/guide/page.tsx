@@ -256,8 +256,11 @@ function SectionsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
   if (loading) return <div className="text-gray-400">A carregar…</div>;
 
   async function previewGuide() {
-    // Pick the next upcoming booking with a guide_token so the admin
-    // can see the live guide as a real guest would.
+    // Open the popup window SYNCHRONOUSLY inside the click handler —
+    // mobile Safari blocks window.open if it happens after an await.
+    // We then point it at the real URL once the lookup finishes.
+    const win = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+
     const today = new Date().toISOString().slice(0, 10);
     const { data, error } = await supabase
       .from('bookings')
@@ -268,6 +271,7 @@ function SectionsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
       .order('checkin_date', { ascending: true })
       .limit(1);
     if (error) {
+      win?.close();
       alert('Erro a procurar reserva: ' + error.message);
       return;
     }
@@ -275,12 +279,18 @@ function SectionsTab({ showToast }: { showToast: (msg: string, type: 'ok' | 'err
       | { guide_token: string; language?: string | null; guest_name?: string | null; checkin_date?: string | null }
       | undefined;
     if (!b) {
+      win?.close();
       alert('Sem reservas activas com guide_token. Cria uma reserva manual primeiro.');
       return;
     }
     const lang = b.language && ['pt', 'en', 'es', 'de'].includes(b.language) ? b.language : locale;
     const url = `${window.location.origin}/${lang}/guia/${b.guide_token}?preview=1`;
-    window.open(url, '_blank', 'noopener');
+    if (win) {
+      win.location.href = url;
+    } else {
+      // Popup blocked — navigate the current tab as a fallback.
+      window.location.href = url;
+    }
   }
 
   return (
