@@ -261,11 +261,41 @@ export default async function GuidePage({
   }, {});
   const typeOrder = ['beach', 'restaurant', 'shop', 'activity', 'transport'];
 
+  const previewQuery = isPreview ? '?preview=1' : '';
+  const localeBar: Array<{ code: Locale; label: string; flag: string }> = [
+    { code: 'pt', label: 'PT', flag: '🇵🇹' },
+    { code: 'en', label: 'EN', flag: '🇬🇧' },
+    { code: 'es', label: 'ES', flag: '🇪🇸' },
+    { code: 'de', label: 'DE', flag: '🇩🇪' },
+  ];
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <header className="bg-gradient-to-br from-amber-50 via-rose-50 to-stone-50 border-b border-stone-200">
         <div className="max-w-2xl mx-auto px-5 py-8 sm:py-12">
-          <p className="text-xs uppercase tracking-widest text-stone-500 mb-2">Villa Solria</p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs uppercase tracking-widest text-stone-500">Villa Solria</p>
+            <div className="flex items-center gap-1 bg-white/70 backdrop-blur-sm border border-stone-200 rounded-full px-1 py-1 shadow-sm">
+              {localeBar.map((opt) => {
+                const active = opt.code === locale;
+                return (
+                  <a
+                    key={opt.code}
+                    href={`/${opt.code}/guia/${token}${previewQuery}`}
+                    className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
+                      active
+                        ? 'bg-stone-900 text-white'
+                        : 'text-stone-600 hover:bg-stone-100'
+                    }`}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    <span aria-hidden>{opt.flag}</span>
+                    <span>{opt.label}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-stone-900">
             {t.hello}{firstName ? `, ${firstName}` : ''} 👋
           </h1>
