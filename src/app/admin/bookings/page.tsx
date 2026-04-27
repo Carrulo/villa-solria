@@ -663,11 +663,23 @@ export default function AdminBookingsPage() {
             return (
               <div
                 key={booking.id}
+                onDoubleClick={() => {
+                  // Double-click on an external row → open the
+                  // pre-filled "create guide for this guest" modal so
+                  // the host can enrich the iCal placeholder with
+                  // name/email/phone/door code in one go. Bookings that
+                  // already have a guide just open the share modal.
+                  if (isExternal && !isLinked) {
+                    openCreateGuideForExternal(booking);
+                  } else if (!isExternal && (booking as Booking & { guide_token?: string | null }).guide_token) {
+                    openShareForBooking(booking);
+                  }
+                }}
                 className={`border rounded-2xl p-4 space-y-2 ${
                   isLinked
                     ? 'bg-purple-900/20 border-purple-500/30'
                     : 'bg-[#16213e] border-white/5'
-                }`}
+                } ${isExternal && !isLinked ? 'cursor-pointer hover:border-emerald-500/40' : ''}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -853,13 +865,20 @@ export default function AdminBookingsPage() {
                   return (
                   <tr
                     key={booking.id}
+                    onDoubleClick={() => {
+                      if (isExternal && !isLinked) {
+                        openCreateGuideForExternal(booking);
+                      } else if (!isExternal && (booking as Booking & { guide_token?: string | null }).guide_token) {
+                        openShareForBooking(booking);
+                      }
+                    }}
                     className={`hover:bg-white/[0.02] ${
                       isLinked
                         ? 'bg-purple-900/20'
                         : i % 2 === 1
                           ? 'bg-white/[0.01]'
                           : ''
-                    }`}
+                    } ${isExternal && !isLinked ? 'cursor-pointer hover:!bg-emerald-500/[0.05]' : ''}`}
                   >
                     <td className="px-6 py-4">
                       <span className="text-xs font-mono font-semibold text-blue-400">
