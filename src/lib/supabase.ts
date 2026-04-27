@@ -107,7 +107,7 @@ export interface Photo {
 }
 
 export const PHOTO_CATEGORIES = [
-  'hero', 'bedroom', 'living', 'kitchen', 'bathroom', 'outdoor', 'view', 'general',
+  'hero', 'bedroom', 'living', 'dining', 'kitchen', 'bathroom', 'outdoor', 'view', 'general',
 ] as const;
 
 export type PhotoCategory = typeof PHOTO_CATEGORIES[number];
@@ -115,7 +115,8 @@ export type PhotoCategory = typeof PHOTO_CATEGORIES[number];
 export const PHOTO_CATEGORY_LABELS: Record<PhotoCategory, string> = {
   hero: 'Capa Principal',
   bedroom: 'Quartos',
-  living: 'Sala / Refeições',
+  living: 'Sala de estar',
+  dining: 'Sala de jantar',
   kitchen: 'Cozinha',
   bathroom: 'Casa de Banho',
   outdoor: 'Exterior / Terraço',
