@@ -92,17 +92,27 @@ export async function POST(req: Request) {
   const supabase = createServerClient();
 
   // Check for overlap with existing confirmed bookings.
+  // Exception: when link_external is set we're enriching an iCal-imported
+  // booking that already blocks these exact dates — skip the conflict
+  // check so the host can attach a real booking row to it.
   const occupied = datesInRange(checkin_date, checkout_date);
-  const { data: conflict } = await supabase
-    .from('blocked_dates')
-    .select('date, source')
-    .in('date', occupied)
-    .limit(1);
-  if (conflict && conflict.length > 0) {
-    return NextResponse.json(
-      { error: `Datas já bloqueadas (${conflict[0].date} · ${conflict[0].source})` },
-      { status: 409 }
-    );
+  const isEnrichingExternal =
+    body.link_external &&
+    (body.link_external.external_source === 'airbnb_ical' ||
+      body.link_external.external_source === 'booking_ical') &&
+    !!body.link_external.external_ref;
+  if (!isEnrichingExternal) {
+    const { data: conflict } = await supabase
+      .from('blocked_dates')
+      .select('date, source')
+      .in('date', occupied)
+      .limit(1);
+    if (conflict && conflict.length > 0) {
+      return NextResponse.json(
+        { error: `Datas já bloqueadas (${conflict[0].date} · ${conflict[0].source})` },
+        { status: 409 }
+      );
+    }
   }
 
   // Compose the booking row.
@@ -186,14 +196,18 @@ export async function POST(req: Request) {
 
   const bookingId = inserted.id as string;
 
-  // Block dates for the stay.
-  const blockedRows = occupied.map((date) => ({
-    date,
-    source: 'website',
-    note: `Reserva manual: ${guest_name}`,
-  }));
-  if (blockedRows.length > 0) {
-    await supabase.from('blocked_dates').insert(blockedRows);
+  // Block dates for the stay. Skipped when enriching an external
+  // booking — the iCal sync already inserted those rows and we'd just
+  // duplicate them (or fail a unique constraint).
+  if (!isEnrichingExternal) {
+    const blockedRows = occupied.map((date) => ({
+      date,
+      source: 'website',
+      note: `Reserva manual: ${guest_name}`,
+    }));
+    if (blockedRows.length > 0) {
+      await supabase.from('blocked_dates').insert(blockedRows);
+    }
   }
 
   // Fetch base cleaning fee for snapshots.
