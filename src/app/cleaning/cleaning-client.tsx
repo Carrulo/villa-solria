@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { CleaningTask } from '@/lib/supabase';
 import { CheckCircle2, Circle, Sparkles, Shirt, Lock, Camera, X as XIcon } from 'lucide-react';
 import { CLEANING_SUBTASKS, checklistCount, isChecklistComplete } from '@/lib/cleaning-checklist';
+import { effectiveRoomsToPrepare } from '@/lib/cleaning-rooms';
 
 type Tab = 'today' | 'upcoming' | 'done';
 
@@ -230,13 +231,20 @@ function TaskCard({
   };
   const rawProgress = taskAny.subtask_progress || {};
   const completed = !!taskAny.completed_at;
-  // Skipped rooms (rooms_to_prepare excluded) count as done so they
-  // don't block checklist completion or the close-cleaning button.
-  const roomsToPrepareForProgress = (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare;
+  // Skipped rooms (effective rooms_to_prepare excluded) count as done so
+  // they don't block checklist completion or the close-cleaning button.
+  // Use the same explicit/inferred resolver as the badge so the two stay
+  // in sync.
+  const effectiveForProgress = effectiveRoomsToPrepare(
+    (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare,
+    task.num_guests,
+    3
+  );
   const progress: Record<string, boolean> = { ...rawProgress } as Record<string, boolean>;
-  if (Array.isArray(roomsToPrepareForProgress) && roomsToPrepareForProgress.length > 0) {
+  if (effectiveForProgress.rooms) {
+    const allowed = effectiveForProgress.rooms;
     for (const n of [1, 2, 3]) {
-      if (!roomsToPrepareForProgress.includes(n)) progress[`quarto_${n}`] = true;
+      if (!allowed.includes(n)) progress[`quarto_${n}`] = true;
     }
   }
   const checklist = checklistCount(progress);
@@ -253,9 +261,12 @@ function TaskCard({
   const notesDirty = notes.trim() !== initialNotes.trim();
   const ownerNotes = ((task as CleaningTask & { owner_notes?: string | null }).owner_notes || '').trim();
   const roomsToPrepareRaw = (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare;
-  // null/empty = prepare every room (default behaviour).
-  const roomsToPrepare =
-    Array.isArray(roomsToPrepareRaw) && roomsToPrepareRaw.length > 0 ? roomsToPrepareRaw : null;
+  // Effective rooms: explicit override > inferred from num_guests > all.
+  // This way a 2-person booking does not get a full 3-bedroom prep by
+  // default — the cleaner only makes Q1 unless the host says otherwise.
+  const effective = effectiveRoomsToPrepare(roomsToPrepareRaw, task.num_guests, 3);
+  const roomsToPrepare = effective.rooms;
+  const roomsSource = effective.source;
   function isRoomSkipped(subtaskKey: string): boolean {
     if (!roomsToPrepare) return false;
     const m = subtaskKey.match(/^quarto_(\d+)$/);
@@ -332,6 +343,9 @@ function TaskCard({
             {roomsToPrepare && (
               <span className="ml-1 text-amber-300">
                 · só Q{roomsToPrepare.join(', Q')}
+                {roomsSource === 'inferred' && (
+                  <span className="ml-1 text-[10px] text-amber-400/70">(auto)</span>
+                )}
               </span>
             )}
           </p>
