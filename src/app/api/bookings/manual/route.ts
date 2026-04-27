@@ -158,10 +158,19 @@ export async function POST(req: Request) {
         : null;
   }
 
+  // Generate the guide_token here (no DB default exists) so the host
+  // can share the personal guide URL immediately after creation.
+  const guide_token = (() => {
+    const arr = new Uint8Array(12);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+  })();
+
   const { data: inserted, error: insertError } = await supabase
     .from('bookings')
     .insert({
       guest_name,
+      guide_token,
       guest_email: guest_email || '',
       guest_phone: guest_phone || null,
       guest_country: typeof body.country === 'string' && body.country.trim()
@@ -176,7 +185,13 @@ export async function POST(req: Request) {
       total_price,
       status: 'confirmed',
       payment_status: 'paid',
-      source: 'manual',
+      // Preserve the iCal origin when this row is enriching an external
+      // booking — the calendar in admin shows "booking" / "airbnb"
+      // instead of "manual", which matches reality (Booking.com still
+      // owns the payment, channel, and cancellation flow).
+      source: isEnrichingExternal
+        ? (body.link_external!.external_source as string)
+        : 'manual',
       language: ['pt', 'en', 'es', 'de'].includes((body.language || '').toLowerCase())
         ? (body.language || '').toLowerCase()
         : 'pt',
