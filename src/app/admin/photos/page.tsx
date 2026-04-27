@@ -211,10 +211,6 @@ export default function AdminPhotosPage() {
   // category, sort_order, hero/visibility state, or DB id. Useful when
   // re-shooting the same room and you don't want to redo the metadata.
   async function handleReplace(photo: Photo, file: File) {
-    if (photo.source !== 'storage') {
-      showToast('Esta foto não pode ser trocada (fonte externa).', 'error');
-      return;
-    }
     setUploading(true);
     setUploadProgress(50);
     try {
@@ -227,19 +223,23 @@ export default function AdminPhotosPage() {
         showToast(`Erro ao carregar: ${upErr.message}`, 'error');
         return;
       }
-      const oldPath = photo.storage_path;
+      // Always switch the row to source='storage'. Local-source photos
+      // (the seed list under /public) stay on disk — only the DB row is
+      // repointed at the new uploaded asset, so the live site picks it up.
       const { error: dbErr } = await supabase
         .from('photos')
-        .update({ storage_path: newPath, filename: file.name })
+        .update({ storage_path: newPath, filename: file.name, source: 'storage' })
         .eq('id', photo.id);
       if (dbErr) {
-        // Roll back the storage upload so we don't leak orphan files.
         await supabase.storage.from('property-photos').remove([newPath]);
         showToast(`Erro BD: ${dbErr.message}`, 'error');
         return;
       }
-      // Best-effort cleanup of the old object — failure here is non-fatal.
-      await supabase.storage.from('property-photos').remove([oldPath]);
+      // Only the previous *storage* object is safe to clean up — local
+      // assets live in the repo and might still be referenced elsewhere.
+      if (photo.source === 'storage' && photo.storage_path) {
+        await supabase.storage.from('property-photos').remove([photo.storage_path]);
+      }
       showToast('Foto trocada', 'success');
       fetchPhotos();
     } finally {
