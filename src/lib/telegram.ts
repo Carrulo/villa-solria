@@ -108,3 +108,33 @@ export function buildRefundMessage(booking: {
     '🔓 Datas libertadas no calendário.',
   ].join('\n');
 }
+
+export function buildGuestSuggestionMessage(s: {
+  guest_name: string | null;
+  rating: number | null;
+  message: string;
+  reference?: string | null;
+  checkin_date?: string | null;
+  checkout_date?: string | null;
+}): string {
+  const stars = s.rating ? '⭐'.repeat(s.rating) : '';
+  const stay =
+    s.checkin_date && s.checkout_date
+      ? `${s.checkin_date} → ${s.checkout_date}`
+      : '';
+  // Telegram Markdown does not love asterisks/underscores in user content,
+  // so we keep the body plain.
+  const body = s.message.length > 800 ? s.message.slice(0, 800) + '…' : s.message;
+  return [
+    '💬 *Nova sugestão de hóspede*',
+    '',
+    `👤 ${s.guest_name || 'Sem nome'}`,
+    s.reference ? `🏷 ${s.reference}` : '',
+    stay ? `📅 ${stay}` : '',
+    stars ? `${stars} (${s.rating}/5)` : '',
+    '',
+    body,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}

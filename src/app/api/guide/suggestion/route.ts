@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import { sendTelegramNotification, buildGuestSuggestionMessage } from '@/lib/telegram';
 
 // Guest → host suggestion box. Public endpoint authenticated only by the
 // booking's guide_token (same secret used to access the guide page). No
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerClient();
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
-    .select('id, guest_name, status')
+    .select('id, guest_name, status, reference, checkin_date, checkout_date')
     .eq('guide_token', token)
     .maybeSingle();
   if (bErr) return NextResponse.json({ error: 'lookup_failed' }, { status: 500 });
@@ -53,6 +54,27 @@ export async function POST(req: NextRequest) {
     message,
   });
   if (insErr) return NextResponse.json({ error: 'insert_failed' }, { status: 500 });
+
+  // Fire-and-forget Telegram ping so Bruno does not have to refresh
+  // /admin/suggestions to find out something arrived. Failure here is
+  // non-blocking — the suggestion is already persisted.
+  const b = booking as {
+    id: string;
+    guest_name: string | null;
+    reference?: string | null;
+    checkin_date?: string | null;
+    checkout_date?: string | null;
+  };
+  void sendTelegramNotification(
+    buildGuestSuggestionMessage({
+      guest_name: b.guest_name,
+      rating,
+      message,
+      reference: b.reference,
+      checkin_date: b.checkin_date,
+      checkout_date: b.checkout_date,
+    })
+  );
 
   return NextResponse.json({ ok: true });
 }
