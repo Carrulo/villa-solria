@@ -594,7 +594,10 @@ export default function AdminBookingsPage() {
             setPreset({});
             await fetchBookings();
             await fetchBlockedDates();
-            showToast('Reserva criada — partilha o guia', 'success');
+            showToast(
+              preset?.link_external ? 'Guia criado — pronto a partilhar' : 'Reserva criada — partilha o guia',
+              'success'
+            );
             if (data?.guide_token) {
               setShareTarget(data);
             }
@@ -2092,7 +2095,9 @@ function ManualBookingModal({
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-lg p-6 shadow-2xl my-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Reserva manual</h2>
+          <h2 className="text-lg font-semibold text-white">
+            {preset?.link_external ? 'Gerar guia para reserva externa' : 'Reserva manual'}
+          </h2>
           <button onClick={onCancel} className="text-gray-400 hover:text-white">
             <XIcon size={18} />
           </button>
@@ -2301,7 +2306,9 @@ function ManualBookingModal({
             disabled={submitting || !guestName.trim() || numNights <= 0}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium disabled:opacity-50"
           >
-            {submitting ? 'A criar...' : 'Criar reserva'}
+            {submitting
+              ? (preset?.link_external ? 'A gerar guia...' : 'A criar...')
+              : (preset?.link_external ? 'Gerar guia' : 'Criar reserva')}
           </button>
         </div>
       </div>
