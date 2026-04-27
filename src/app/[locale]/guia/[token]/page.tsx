@@ -412,7 +412,22 @@ export default async function GuidePage({
                   </div>
                 );
               })()}
-              {s.media_url && s.slug !== 'entry' && (() => {
+              {/* Contacts gets a circular host avatar instead of the
+                  generic full-width banner used for other sections. */}
+              {s.slug === 'contacts' && s.media_url && (
+                <div className="mt-2 mb-4 flex items-center gap-3">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-amber-200 shadow-sm flex-shrink-0">
+                    <Image src={s.media_url} alt={title} fill className="object-cover" />
+                  </div>
+                  <p className="text-xs text-stone-500 leading-snug">
+                    {locale === 'pt' && 'O vosso anfitrião'}
+                    {locale === 'en' && 'Your host'}
+                    {locale === 'es' && 'Su anfitrión'}
+                    {locale === 'de' && 'Ihr Gastgeber'}
+                  </p>
+                </div>
+              )}
+              {s.media_url && s.slug !== 'entry' && s.slug !== 'contacts' && (() => {
                 const url = s.media_url;
                 const ytMatch = url.match(
                   /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/
