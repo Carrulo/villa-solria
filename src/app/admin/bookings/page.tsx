@@ -2540,6 +2540,7 @@ function ShareGuideModal({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [messageCopied, setMessageCopied] = useState(false);
   const [pin, setPin] = useState('');
   const [pinSaved, setPinSaved] = useState(false);
   const [savingPin, setSavingPin] = useState(false);
@@ -2581,11 +2582,19 @@ function ShareGuideModal({
   const url = `${origin}/${lang}/guia/${data.guide_token}`;
 
   const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
+  const doorLine = pin
+    ? {
+        pt: `\n\n🔑 Código da fechadura: ${pin}`,
+        en: `\n\n🔑 Door code: ${pin}`,
+        es: `\n\n🔑 Código de la cerradura: ${pin}`,
+        de: `\n\n🔑 Türschloss-Code: ${pin}`,
+      }
+    : { pt: '', en: '', es: '', de: '' };
   const messages: Record<string, string> = {
-    pt: `Olá ${firstName}! Aqui está o guia da Villa Solria com toda a informação para a sua estadia (${data.checkin_date} → ${data.checkout_date}): ${url}`,
-    en: `Hi ${firstName}! Here is the Villa Solria guide with all the info for your stay (${data.checkin_date} → ${data.checkout_date}): ${url}`,
-    es: `¡Hola ${firstName}! Aquí está la guía de Villa Solria con toda la información para su estancia (${data.checkin_date} → ${data.checkout_date}): ${url}`,
-    de: `Hallo ${firstName}! Hier ist der Villa Solria Leitfaden mit allen Infos zu Ihrem Aufenthalt (${data.checkin_date} → ${data.checkout_date}): ${url}`,
+    pt: `Olá ${firstName}! 👋\n\nBem-vindo(a) à Villa Solria. Aqui está o seu guia com tudo o que precisa para a estadia (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.pt}\n\nQualquer coisa que precise antes ou durante a estadia, é só dizer.\n\nAté breve!\nBruno`,
+    en: `Hi ${firstName}! 👋\n\nWelcome to Villa Solria. Here is your guide with everything you need for your stay (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.en}\n\nAnything you need before or during your stay, just message me.\n\nSee you soon!\nBruno`,
+    es: `¡Hola ${firstName}! 👋\n\nBienvenido(a) a Villa Solria. Aquí está su guía con todo lo que necesita para su estancia (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.es}\n\nCualquier cosa que necesite antes o durante la estancia, escríbame.\n\n¡Hasta pronto!\nBruno`,
+    de: `Hallo ${firstName}! 👋\n\nWillkommen in der Villa Solria. Hier ist Ihr Leitfaden mit allen Infos zu Ihrem Aufenthalt (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.de}\n\nWenn Sie vor oder während des Aufenthalts etwas brauchen, schreiben Sie mir einfach.\n\nBis bald!\nBruno`,
   };
   const subjects: Record<string, string> = {
     pt: 'O seu guia da Villa Solria',
@@ -2611,6 +2620,15 @@ function ShareGuideModal({
       setTimeout(() => setCopied(false), 1500);
     } catch {
       prompt('Copia o link:', url);
+    }
+  }
+  async function copyMessage() {
+    try {
+      await navigator.clipboard.writeText(message);
+      setMessageCopied(true);
+      setTimeout(() => setMessageCopied(false), 1500);
+    } catch {
+      prompt('Copia a mensagem:', message);
     }
   }
 
@@ -2665,14 +2683,27 @@ function ShareGuideModal({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-[10px] uppercase tracking-wider text-gray-500">Mensagem pré-pronta</label>
+          <div className="flex items-center justify-between">
+            <label className="block text-[10px] uppercase tracking-wider text-gray-500">
+              Mensagem pré-pronta (link + código)
+            </label>
+            <button
+              onClick={copyMessage}
+              className="px-3 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-medium"
+            >
+              {messageCopied ? 'Copiado ✓' : 'Copiar tudo'}
+            </button>
+          </div>
           <textarea
             readOnly
             value={message}
-            rows={3}
+            rows={9}
             onFocus={(e) => e.target.select()}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-200 text-xs resize-none"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-200 text-xs resize-none whitespace-pre-wrap"
           />
+          <p className="text-[10px] text-gray-500">
+            Pronto a colar no chat do Booking.com / Airbnb.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
