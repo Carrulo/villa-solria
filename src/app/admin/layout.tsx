@@ -44,6 +44,7 @@ const navGroups: { label: string | null; items: { href: string; label: string; i
     label: 'Comunicação',
     items: [
       { href: '/admin/inbox', label: 'Mensagens', icon: Inbox },
+      { href: '/admin/suggestions', label: 'Sugestões', icon: Sparkles },
       { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
     ],
   },

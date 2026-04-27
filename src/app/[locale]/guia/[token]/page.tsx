@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase-server';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import SuggestionBox from './SuggestionBox';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +112,14 @@ interface T {
   types: Record<string, string>;
   distance: string;
   emergency_note: string;
+  suggestions_title: string;
+  suggestions_subtitle: string;
+  suggestions_placeholder: string;
+  suggestions_rating_label: string;
+  suggestions_send: string;
+  suggestions_sending: string;
+  suggestions_thanks: string;
+  suggestions_error: string;
 }
 
 const T: Record<Locale, T> = {
@@ -125,6 +134,14 @@ const T: Record<Locale, T> = {
     types: { beach: 'Praias', restaurant: 'Restaurantes', shop: 'Lojas e supermercados', activity: 'Actividades', transport: 'Transportes' },
     distance: 'km',
     emergency_note: 'Qualquer dúvida, estamos a uma mensagem de distância.',
+    suggestions_title: 'Sugestões e feedback',
+    suggestions_subtitle: 'Ajude-nos a melhorar a sua experiência. Algo que faltou? Algo que adorou?',
+    suggestions_placeholder: 'Conte-nos o que achou ou o que podemos melhorar…',
+    suggestions_rating_label: 'Como avalia a estadia?',
+    suggestions_send: 'Enviar sugestão',
+    suggestions_sending: 'A enviar…',
+    suggestions_thanks: 'Obrigado! A sua mensagem foi recebida.',
+    suggestions_error: 'Não foi possível enviar. Tente novamente.',
   },
   en: {
     inactive_title: 'This guide is not available yet',
@@ -137,6 +154,14 @@ const T: Record<Locale, T> = {
     types: { beach: 'Beaches', restaurant: 'Restaurants', shop: 'Shops & supermarkets', activity: 'Activities', transport: 'Transport' },
     distance: 'km',
     emergency_note: 'Any question, we are one message away.',
+    suggestions_title: 'Suggestions & feedback',
+    suggestions_subtitle: 'Help us improve your experience. Anything missing? Anything you loved?',
+    suggestions_placeholder: 'Tell us what you think or what we can improve…',
+    suggestions_rating_label: 'How would you rate your stay?',
+    suggestions_send: 'Send suggestion',
+    suggestions_sending: 'Sending…',
+    suggestions_thanks: 'Thank you! Your message has been received.',
+    suggestions_error: 'Could not send. Please try again.',
   },
   es: {
     inactive_title: 'Esta guía aún no está disponible',
@@ -149,6 +174,14 @@ const T: Record<Locale, T> = {
     types: { beach: 'Playas', restaurant: 'Restaurantes', shop: 'Tiendas y supermercados', activity: 'Actividades', transport: 'Transportes' },
     distance: 'km',
     emergency_note: 'Cualquier duda, estamos a un mensaje.',
+    suggestions_title: 'Sugerencias y comentarios',
+    suggestions_subtitle: 'Ayúdenos a mejorar su experiencia. ¿Algo faltó? ¿Algo le encantó?',
+    suggestions_placeholder: 'Cuéntenos qué le pareció o qué podemos mejorar…',
+    suggestions_rating_label: '¿Cómo calificaría su estancia?',
+    suggestions_send: 'Enviar sugerencia',
+    suggestions_sending: 'Enviando…',
+    suggestions_thanks: '¡Gracias! Hemos recibido su mensaje.',
+    suggestions_error: 'No se pudo enviar. Inténtelo de nuevo.',
   },
   de: {
     inactive_title: 'Dieser Leitfaden ist noch nicht verfügbar',
@@ -161,6 +194,14 @@ const T: Record<Locale, T> = {
     types: { beach: 'Strände', restaurant: 'Restaurants', shop: 'Geschäfte', activity: 'Aktivitäten', transport: 'Transport' },
     distance: 'km',
     emergency_note: 'Bei Fragen sind wir nur eine Nachricht entfernt.',
+    suggestions_title: 'Vorschläge & Feedback',
+    suggestions_subtitle: 'Helfen Sie uns, Ihren Aufenthalt zu verbessern. Hat etwas gefehlt? Was hat gefallen?',
+    suggestions_placeholder: 'Erzählen Sie uns, was Sie denken oder was wir verbessern können…',
+    suggestions_rating_label: 'Wie bewerten Sie Ihren Aufenthalt?',
+    suggestions_send: 'Vorschlag senden',
+    suggestions_sending: 'Wird gesendet…',
+    suggestions_thanks: 'Danke! Ihre Nachricht ist angekommen.',
+    suggestions_error: 'Senden fehlgeschlagen. Bitte erneut versuchen.',
   },
 };
 
@@ -469,6 +510,22 @@ export default async function GuidePage({
             ))}
           </div>
         </section>
+
+        {/* Suggestion box — guest → host feedback */}
+        <SuggestionBox
+          token={token}
+          locale={locale}
+          strings={{
+            title: t.suggestions_title,
+            subtitle: t.suggestions_subtitle,
+            placeholder: t.suggestions_placeholder,
+            rating_label: t.suggestions_rating_label,
+            send: t.suggestions_send,
+            sending: t.suggestions_sending,
+            thanks: t.suggestions_thanks,
+            error: t.suggestions_error,
+          }}
+        />
 
         <p className="text-xs text-center text-stone-500 pt-4 pb-2">{t.emergency_note}</p>
       </main>
