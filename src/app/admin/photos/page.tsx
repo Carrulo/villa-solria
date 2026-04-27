@@ -7,7 +7,7 @@ import { PHOTO_CATEGORIES, PHOTO_CATEGORY_LABELS, getPhotoUrl } from '@/lib/supa
 import {
   Upload, Trash2, Eye, EyeOff, Star, StarOff, Check, X,
   ImageIcon, Download, ChevronDown, Loader2, AlertCircle,
-  CheckSquare, Square,
+  CheckSquare, Square, RefreshCw,
 } from 'lucide-react';
 
 // Known local photos with sensible defaults
@@ -205,6 +205,47 @@ export default function AdminPhotosPage() {
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, alt_text: altText } : p)));
     setEditingAlt(null);
     showToast('Texto alternativo atualizado', 'success');
+  }
+
+  // Replace the file behind an existing photo without losing its
+  // category, sort_order, hero/visibility state, or DB id. Useful when
+  // re-shooting the same room and you don't want to redo the metadata.
+  async function handleReplace(photo: Photo, file: File) {
+    if (photo.source !== 'storage') {
+      showToast('Esta foto não pode ser trocada (fonte externa).', 'error');
+      return;
+    }
+    setUploading(true);
+    setUploadProgress(50);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+      const newPath = `${Date.now()}-${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from('property-photos')
+        .upload(newPath, file, { contentType: file.type });
+      if (upErr) {
+        showToast(`Erro ao carregar: ${upErr.message}`, 'error');
+        return;
+      }
+      const oldPath = photo.storage_path;
+      const { error: dbErr } = await supabase
+        .from('photos')
+        .update({ storage_path: newPath, filename: file.name })
+        .eq('id', photo.id);
+      if (dbErr) {
+        // Roll back the storage upload so we don't leak orphan files.
+        await supabase.storage.from('property-photos').remove([newPath]);
+        showToast(`Erro BD: ${dbErr.message}`, 'error');
+        return;
+      }
+      // Best-effort cleanup of the old object — failure here is non-fatal.
+      await supabase.storage.from('property-photos').remove([oldPath]);
+      showToast('Foto trocada', 'success');
+      fetchPhotos();
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
   }
 
   // Delete photo
@@ -476,6 +517,7 @@ export default function AdminPhotosPage() {
                 onCancelAlt={() => setEditingAlt(null)}
                 onAltChange={setAltText}
                 onDelete={() => handleDelete(photo)}
+                onReplace={(file) => handleReplace(photo, file)}
               />
             ))}
           </div>
@@ -514,6 +556,7 @@ function PhotoCard({
   onCancelAlt,
   onAltChange,
   onDelete,
+  onReplace,
 }: {
   photo: Photo;
   isSelected: boolean;
@@ -529,8 +572,10 @@ function PhotoCard({
   onCancelAlt: () => void;
   onAltChange: (val: string) => void;
   onDelete: () => void;
+  onReplace: (file: File) => void;
 }) {
   const url = getPhotoUrl(photo);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div
@@ -565,6 +610,24 @@ function PhotoCard({
           >
             {photo.is_visible ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
+          <button
+            onClick={() => replaceInputRef.current?.click()}
+            className="w-9 h-9 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center"
+            title="Trocar foto (mantém categoria e ordem)"
+          >
+            <RefreshCw size={16} />
+          </button>
+          <input
+            ref={replaceInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onReplace(f);
+              if (replaceInputRef.current) replaceInputRef.current.value = '';
+            }}
+          />
           <button
             onClick={onDelete}
             className="w-9 h-9 rounded-lg bg-red-500/80 text-white hover:bg-red-600 flex items-center justify-center"
