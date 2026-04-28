@@ -158,17 +158,14 @@ export default function GalleryPage() {
           </button>
 
           <div
-            className="relative max-w-5xl w-full aspect-[16/10] rounded-2xl overflow-hidden"
+            className="relative w-full h-full max-w-6xl max-h-[88vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={filteredPhotos[lightbox].src}
               alt={getLabel(filteredPhotos[lightbox])}
-              fill
-              className="object-contain"
-              sizes="90vw"
-              priority
-              unoptimized={filteredPhotos[lightbox].src.startsWith('http')}
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-2xl"
             />
           </div>
           <p className="absolute bottom-8 text-white/70 text-sm font-medium">
