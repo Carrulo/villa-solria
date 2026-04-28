@@ -2660,6 +2660,31 @@ function ShareGuideModal({
           </p>
         </div>
 
+        {/* Manual bookings don't propagate to Vrbo automatically (Vrbo
+            still rejects our iCal feed — open ticket with their support).
+            Until that is solved, the host has to block the dates by hand
+            on Vrbo to avoid double-booking. */}
+        <div className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3.5 py-3 text-amber-100 text-xs leading-relaxed">
+          <div className="flex items-start gap-2">
+            <span className="text-base leading-none">⚠️</span>
+            <div className="flex-1 space-y-1.5">
+              <p>
+                <span className="font-semibold">Bloqueia estas datas no Vrbo manualmente.</span>{' '}
+                Vrbo ainda não está a aceitar o nosso iCal — esta reserva
+                não é replicada para lá automaticamente.
+              </p>
+              <a
+                href="https://www.vrbo.com/pt-pt/p/calendar/616.12119985.7164530"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-amber-200 hover:text-amber-100 underline font-medium"
+              >
+                Abrir calendário Vrbo →
+              </a>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-1.5">
           <label className="block text-[10px] uppercase tracking-wider text-gray-500">Código da fechadura (PIN)</label>
           <div className="flex gap-2">
