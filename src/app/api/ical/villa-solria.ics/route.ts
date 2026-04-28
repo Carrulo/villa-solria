@@ -45,24 +45,25 @@ export async function GET() {
     const bookings: BookingRow[] = (data || []) as BookingRow[];
     const dtstamp = formatDtStamp(new Date());
 
+    // Minimal payload that mirrors Airbnb's iCal export — VRBO/HomeAway
+    // rejects feeds with extra headers (METHOD, X-WR-CALNAME, STATUS,
+    // TRANSP) with a generic "something went wrong" error. Only PRODID,
+    // VERSION, CALSCALE plus VEVENT(UID, DTSTAMP, DTSTART, DTEND,
+    // SUMMARY) are kept.
     const lines: string[] = [];
     lines.push('BEGIN:VCALENDAR');
+    lines.push('PRODID:-//Villa Solria//Hosting Calendar 1.0//EN');
     lines.push('VERSION:2.0');
-    lines.push('PRODID:-//Villa Solria//EN');
     lines.push('CALSCALE:GREGORIAN');
-    lines.push('METHOD:PUBLISH');
-    lines.push('X-WR-CALNAME:Villa Solria Bookings');
 
     for (const b of bookings) {
       if (!b.checkin_date || !b.checkout_date) continue;
       lines.push('BEGIN:VEVENT');
-      lines.push(`UID:booking-${b.id}@villasolria.com`);
       lines.push(`DTSTAMP:${dtstamp}`);
+      lines.push(`UID:${b.id}@villasolria.com`);
       lines.push(`DTSTART;VALUE=DATE:${toICalDate(b.checkin_date)}`);
       lines.push(`DTEND;VALUE=DATE:${toICalDate(b.checkout_date)}`);
-      lines.push('SUMMARY:Booked');
-      lines.push('STATUS:CONFIRMED');
-      lines.push('TRANSP:OPAQUE');
+      lines.push('SUMMARY:Reserved');
       lines.push('END:VEVENT');
     }
 
