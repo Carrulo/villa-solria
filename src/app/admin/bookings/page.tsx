@@ -48,10 +48,10 @@ export default function AdminBookingsPage() {
 
   type ExternalMeta = {
     _external?: boolean;
-    _externalSource?: 'airbnb_ical' | 'booking_ical';
+    _externalSource?: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical';
     _externalRef?: string;
     _linkedToBookingId?: string | null;
-    _linkedToExternalSource?: 'airbnb_ical' | 'booking_ical' | null;
+    _linkedToExternalSource?: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
     _linkedToExternalRef?: string | null;
     _childCount?: number;
   };
@@ -254,7 +254,7 @@ export default function AdminBookingsPage() {
     const ownById = new Map(ownBookings.map((b) => [b.id, b]));
 
     type ExternalRow = {
-      external_source: 'airbnb_ical' | 'booking_ical';
+      external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical';
       external_ref: string;
       checkin_date: string | null;
       stay_checkout_date: string | null;
@@ -262,7 +262,7 @@ export default function AdminBookingsPage() {
       num_guests: number | null;
       created_at: string;
       linked_to_booking_id: string | null;
-      linked_to_external_source: 'airbnb_ical' | 'booking_ical' | null;
+      linked_to_external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
       linked_to_external_ref: string | null;
     };
     const externalRows = ((external || []) as ExternalRow[]).filter(
@@ -281,6 +281,8 @@ export default function AdminBookingsPage() {
       if (!isPlaceholder) return rawName;
       return t.external_source === 'booking_ical'
         ? 'Booking.com (sem nome)'
+        : t.external_source === 'vrbo_ical'
+        ? 'VRBO (sem nome)'
         : 'Airbnb';
     }
 
@@ -349,8 +351,18 @@ export default function AdminBookingsPage() {
         1,
         Math.round((co.getTime() - ci.getTime()) / 86400000)
       );
-      const sourceLabel = t.external_source === 'airbnb_ical' ? 'airbnb' : 'booking';
-      const refPrefix = t.external_source === 'airbnb_ical' ? 'AIR' : 'BKG';
+      const sourceLabel =
+        t.external_source === 'airbnb_ical'
+          ? 'airbnb'
+          : t.external_source === 'vrbo_ical'
+          ? 'vrbo'
+          : 'booking';
+      const refPrefix =
+        t.external_source === 'airbnb_ical'
+          ? 'AIR'
+          : t.external_source === 'vrbo_ical'
+          ? 'VRB'
+          : 'BKG';
       return {
         id: `ext:${t.external_source}:${t.external_ref}`,
         guest_name: resolveDisplayName(t),
@@ -379,10 +391,10 @@ export default function AdminBookingsPage() {
       } as Booking & {
         reference: string;
         _external: true;
-        _externalSource: 'airbnb_ical' | 'booking_ical';
+        _externalSource: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical';
         _externalRef: string;
         _linkedToBookingId: string | null;
-        _linkedToExternalSource: 'airbnb_ical' | 'booking_ical' | null;
+        _linkedToExternalSource: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
         _linkedToExternalRef: string | null;
         _childCount: number;
       };
@@ -1489,6 +1501,8 @@ function MiniRangeCalendar({
         return 'rgba(236,72,153,0.85)';
       case 'booking_ical':
         return 'rgba(59,130,246,0.85)';
+      case 'vrbo_ical':
+        return 'rgba(245,158,11,0.85)';
       case 'website':
       case 'manual':
         return 'rgba(16,185,129,0.85)';
@@ -1669,6 +1683,8 @@ function AvailabilityCalendar({
         return 'rgba(236,72,153,0.85)'; // pink-500
       case 'booking_ical':
         return 'rgba(59,130,246,0.85)'; // blue-500
+      case 'vrbo_ical':
+        return 'rgba(245,158,11,0.85)'; // amber-500
       case 'website':
       case 'manual':
         return 'rgba(16,185,129,0.85)'; // emerald-500
@@ -1683,6 +1699,8 @@ function AvailabilityCalendar({
         return 'A';
       case 'booking_ical':
         return 'B';
+      case 'vrbo_ical':
+        return 'V';
       case 'website':
       case 'manual':
         return 'S';

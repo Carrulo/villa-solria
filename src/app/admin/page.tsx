@@ -95,15 +95,18 @@ export default function AdminDashboard() {
       directRevenue += rev;
     }
 
-    // iCal blocks that fall in this month (Airbnb + Booking)
+    // iCal blocks that fall in this month (Airbnb + Booking + VRBO)
     const airbnbBlocked = blocked.filter(
       (b) => b.source === 'airbnb_ical' && b.date >= monthStart && b.date < monthEndExclusive,
     ).length;
     const bookingBlocked = blocked.filter(
       (b) => b.source === 'booking_ical' && b.date >= monthStart && b.date < monthEndExclusive,
     ).length;
+    const vrboBlocked = blocked.filter(
+      (b) => b.source === 'vrbo_ical' && b.date >= monthStart && b.date < monthEndExclusive,
+    ).length;
 
-    const occupiedNights = Math.min(daysInMonth, directNights + airbnbBlocked + bookingBlocked);
+    const occupiedNights = Math.min(daysInMonth, directNights + airbnbBlocked + bookingBlocked + vrboBlocked);
     const occupancy = Math.round((occupiedNights / daysInMonth) * 100);
 
     const upcoming7d = active.filter(

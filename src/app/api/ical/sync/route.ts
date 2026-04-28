@@ -58,7 +58,7 @@ const BOOKING_MAX_RESERVATION_NIGHTS = 30;
 
 function isReservation(
   summary: string | null | undefined,
-  source: 'airbnb_ical' | 'booking_ical',
+  source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical',
   start?: Date,
   end?: Date
 ): boolean {
@@ -111,7 +111,7 @@ function parseICS(text: string): VEvent[] {
 async function syncSource(
   supabase: ReturnType<typeof createServerClient>,
   url: string,
-  source: 'airbnb_ical' | 'booking_ical',
+  source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical',
   baseCleaningFee: number
 ): Promise<SyncResult> {
   try {
@@ -154,7 +154,7 @@ async function syncSource(
     let eventCount = 0;
 
     type CleaningRow = {
-      external_source: 'airbnb_ical' | 'booking_ical';
+      external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical';
       external_ref: string;
       cleaning_date: string;
       checkin_date: string;
@@ -307,7 +307,7 @@ export async function GET() {
     const { data: settingsRows, error: settingsError } = await supabase
       .from('settings')
       .select('key, value')
-      .in('key', ['ical_airbnb', 'ical_booking', 'cleaning_base_fee']);
+      .in('key', ['ical_airbnb', 'ical_booking', 'ical_vrbo', 'cleaning_base_fee']);
 
     if (settingsError) {
       return NextResponse.json({ error: 'Failed to read settings', details: settingsError.message }, { status: 500 });
@@ -320,9 +320,10 @@ export async function GET() {
 
     const baseCleaningFee = Number(settings.cleaning_base_fee ?? 50) || 50;
 
-    const result: { airbnb: SyncResult; booking: SyncResult } = {
+    const result: { airbnb: SyncResult; booking: SyncResult; vrbo: SyncResult } = {
       airbnb: { events: 0, dates_blocked: 0 },
       booking: { events: 0, dates_blocked: 0 },
+      vrbo: { events: 0, dates_blocked: 0 },
     };
 
     const airbnbUrl = (settings.ical_airbnb || '').trim();
@@ -333,6 +334,11 @@ export async function GET() {
     const bookingUrl = (settings.ical_booking || '').trim();
     if (bookingUrl) {
       result.booking = await syncSource(supabase, bookingUrl, 'booking_ical', baseCleaningFee);
+    }
+
+    const vrboUrl = (settings.ical_vrbo || '').trim();
+    if (vrboUrl) {
+      result.vrbo = await syncSource(supabase, vrboUrl, 'vrbo_ical', baseCleaningFee);
     }
 
     return NextResponse.json(

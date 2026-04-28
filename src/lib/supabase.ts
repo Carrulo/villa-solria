@@ -63,7 +63,7 @@ export interface Setting {
 export interface CleaningTask {
   id: string;
   booking_id: string | null;
-  external_source: 'airbnb_ical' | 'booking_ical' | null;
+  external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
   external_ref: string | null;
   cleaning_date: string;
   checkin_date: string | null;
@@ -85,7 +85,7 @@ export interface CleaningTask {
   owner_notes: string | null;
   rooms_to_prepare: number[] | null;
   linked_to_booking_id: string | null;
-  linked_to_external_source: 'airbnb_ical' | 'booking_ical' | null;
+  linked_to_external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
   linked_to_external_ref: string | null;
   created_at: string;
   updated_at: string;

@@ -797,6 +797,8 @@ function TaskRow({
     ? 'Airbnb'
     : task.external_source === 'booking_ical'
     ? 'Booking'
+    : task.external_source === 'vrbo_ical'
+    ? 'VRBO'
     : '-';
 
   return (
@@ -1044,6 +1046,8 @@ function TaskCard({
     ? 'Airbnb'
     : task.external_source === 'booking_ical'
     ? 'Booking'
+    : task.external_source === 'vrbo_ical'
+    ? 'VRBO'
     : '-';
 
   return (

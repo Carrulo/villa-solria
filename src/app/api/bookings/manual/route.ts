@@ -99,7 +99,8 @@ export async function POST(req: Request) {
   const isEnrichingExternal =
     body.link_external &&
     (body.link_external.external_source === 'airbnb_ical' ||
-      body.link_external.external_source === 'booking_ical') &&
+      body.link_external.external_source === 'booking_ical' ||
+      body.link_external.external_source === 'vrbo_ical') &&
     !!body.link_external.external_ref;
   if (!isEnrichingExternal) {
     const { data: conflict } = await supabase
@@ -273,7 +274,9 @@ export async function POST(req: Request) {
     | undefined;
   if (
     linkExt &&
-    (linkExt.external_source === 'airbnb_ical' || linkExt.external_source === 'booking_ical') &&
+    (linkExt.external_source === 'airbnb_ical' ||
+      linkExt.external_source === 'booking_ical' ||
+      linkExt.external_source === 'vrbo_ical') &&
     typeof linkExt.external_ref === 'string' &&
     linkExt.external_ref.length > 0
   ) {

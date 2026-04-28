@@ -27,7 +27,8 @@ export async function POST(req: Request) {
   } = body;
   if (
     external_source !== 'airbnb_ical' &&
-    external_source !== 'booking_ical'
+    external_source !== 'booking_ical' &&
+    external_source !== 'vrbo_ical'
   ) {
     return NextResponse.json({ error: 'Invalid external_source' }, { status: 400 });
   }
