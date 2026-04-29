@@ -266,6 +266,29 @@ export default async function PricingPage({ params }: Props) {
             <Info size={14} className="text-accent shrink-0 mt-0.5" />
             <p className="text-xs text-gray-500">{t('availabilityNote')}</p>
           </div>
+
+          {longStayDiscounts.length > 0 && (
+            <div className="mt-4 bg-gray-50 rounded-xl p-5">
+              <h3 className="font-semibold text-gray-900 text-sm mb-3">{t('discountsTitle')}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {longStayDiscounts.map((d) => (
+                  <div key={d.nights} className="flex items-center gap-3">
+                    <span className="text-xl font-bold text-accent">-{d.percent}%</span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{d.label}</p>
+                      <p className="text-xs text-gray-500">{d.desc}</p>
+                      {d.cleaning && (
+                        <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
+                          <Check size={10} /> {t('cleaningIncluded')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-3">{t('longStayHint')}</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -331,27 +354,6 @@ export default async function PricingPage({ params }: Props) {
             })}
           </div>
 
-          {/* Long-stay discounts - compact inline */}
-          <div className="mt-8 bg-gray-50 rounded-xl p-5">
-            <h3 className="font-semibold text-gray-900 text-sm mb-3">{t('discountsTitle')}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {longStayDiscounts.map((d) => (
-                <div key={d.nights} className="flex items-center gap-3">
-                  <span className="text-xl font-bold text-accent">-{d.percent}%</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{d.label}</p>
-                    <p className="text-xs text-gray-500">{d.desc}</p>
-                    {d.cleaning && (
-                      <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
-                        <Check size={10} /> {t('cleaningIncluded')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-3">{t('longStayHint')}</p>
-          </div>
         </div>
       </section>
 
