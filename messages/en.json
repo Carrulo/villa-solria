@@ -216,7 +216,15 @@
     "weekly": "7+ nights",
     "biweekly": "14+ nights",
     "monthly": "28+ nights",
-    "off": "off"
+    "off": "off",
+    "eyebrow": "Long stays",
+    "subtitle": "The longer you stay, the less you pay per night.",
+    "saveLabel": "Save {amount}€",
+    "saveHint": "{nights} nights at {price}€/night",
+    "cta": "Check availability",
+    "footnote": "Discounts based on the current season rate. Applied automatically.",
+    "addNightsNudge": "Add {count} more night(s) to unlock −{percent}% — save an extra {amount}€.",
+    "cleaningIncluded": "Mid-stay cleaning included"
   },
   "midStayCleaning": {
     "label": "Weekly mid-stay cleaning",

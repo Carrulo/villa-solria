@@ -216,7 +216,15 @@
     "weekly": "7+ Nächte",
     "biweekly": "14+ Nächte",
     "monthly": "28+ Nächte",
-    "off": "Rabatt"
+    "off": "Rabatt",
+    "eyebrow": "Langzeitaufenthalte",
+    "subtitle": "Je länger du bleibst, desto weniger zahlst du pro Nacht.",
+    "saveLabel": "Spare {amount}€",
+    "saveHint": "{nights} Nächte zu {price}€/Nacht",
+    "cta": "Verfügbarkeit prüfen",
+    "footnote": "Rabatte basieren auf dem aktuellen Saisonpreis. Werden automatisch angewendet.",
+    "addNightsNudge": "Füge {count} weitere Nacht(e) hinzu und schalte −{percent}% frei — spare zusätzlich {amount}€.",
+    "cleaningIncluded": "Zwischenreinigung inklusive"
   },
   "midStayCleaning": {
     "label": "Wöchentliche Zwischenreinigung",
