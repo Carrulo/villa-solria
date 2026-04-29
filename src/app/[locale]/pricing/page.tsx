@@ -190,11 +190,31 @@ export default async function PricingPage({ params }: Props) {
     high: { dot: 'bg-red-400', text: 'text-red-700', bg: 'bg-red-50' },
   };
 
+  // Long-stay discounts read from the active season (fallback to first season, then to 10/15/25)
+  const discountSource = activeSeason ?? rawSeasons[0];
   const longStayDiscounts = [
-    { nights: '7+', percent: 10, label: t('discount7Title'), desc: t('discount7Desc'), cleaning: false },
-    { nights: '14+', percent: 15, label: t('discount14Title'), desc: t('discount14Desc'), cleaning: true },
-    { nights: '28+', percent: 25, label: t('discount28Title'), desc: t('discount28Desc'), cleaning: true },
-  ];
+    {
+      nights: '7+',
+      percent: discountSource?.weekly_discount ?? 10,
+      label: t('discount7Title'),
+      desc: t('discount7Desc'),
+      cleaning: false,
+    },
+    {
+      nights: '14+',
+      percent: discountSource?.biweekly_discount ?? 15,
+      label: t('discount14Title'),
+      desc: t('discount14Desc'),
+      cleaning: true,
+    },
+    {
+      nights: '28+',
+      percent: discountSource?.monthly_discount ?? 25,
+      label: t('discount28Title'),
+      desc: t('discount28Desc'),
+      cleaning: true,
+    },
+  ].filter((d) => d.percent > 0);
 
   return (
     <div className="pb-24 lg:pb-12">

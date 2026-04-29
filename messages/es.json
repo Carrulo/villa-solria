@@ -216,7 +216,15 @@
     "weekly": "7+ noches",
     "biweekly": "14+ noches",
     "monthly": "28+ noches",
-    "off": "de descuento"
+    "off": "de descuento",
+    "eyebrow": "Estancias largas",
+    "subtitle": "Cuanto más tiempo te quedes, menos pagas por noche.",
+    "saveLabel": "Ahorra {amount}€",
+    "saveHint": "{nights} noches a {price}€/noche",
+    "cta": "Ver disponibilidad",
+    "footnote": "Descuentos calculados sobre el precio de la temporada actual. Se aplican automáticamente.",
+    "addNightsNudge": "Añade {count} noche(s) más y desbloquea −{percent}% — ahorra {amount}€ extra.",
+    "cleaningIncluded": "Limpieza intermedia incluida"
   },
   "midStayCleaning": {
     "label": "Limpieza intermedia semanal",

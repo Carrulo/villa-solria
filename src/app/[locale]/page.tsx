@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, User, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
+import LongStayDiscountsCard from '@/components/LongStayDiscountsCard';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
 import { getPhotoUrl } from '@/lib/supabase';
@@ -296,6 +297,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
       </section>
+
+      {/* Long-stay discounts */}
+      <LongStayDiscountsCard locale={locale} />
 
       {/* Features */}
       <section className="py-16 lg:py-24">

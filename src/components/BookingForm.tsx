@@ -55,6 +55,7 @@ export default function BookingForm() {
   const t = useTranslations('form');
   const tp = useTranslations('priceBreakdown');
   const tc = useTranslations('calendar');
+  const td = useTranslations('discounts');
   const locale = useLocale();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -106,6 +107,25 @@ export default function BookingForm() {
   }, [nights, weeklyDiscount, biweeklyDiscount, monthlyDiscount]);
 
   const discountAmount = Math.round(subTotal * (discountPercent / 100));
+
+  // Next-tier nudge: if the guest is within 4 nights of unlocking a bigger discount,
+  // suggest extending the stay. Shows only the nearest reachable upgrade.
+  const nudge = useMemo(() => {
+    if (nights <= 0 || pricePerNight <= 0) return null;
+    const candidates: { tierNights: number; tierPct: number }[] = [];
+    if (nights < 7 && weeklyDiscount > 0) candidates.push({ tierNights: 7, tierPct: weeklyDiscount });
+    if (nights < 14 && biweeklyDiscount > discountPercent)
+      candidates.push({ tierNights: 14, tierPct: biweeklyDiscount });
+    if (nights < 28 && monthlyDiscount > discountPercent)
+      candidates.push({ tierNights: 28, tierPct: monthlyDiscount });
+    const next = candidates.find((c) => c.tierNights - nights <= 4 && c.tierNights - nights > 0);
+    if (!next) return null;
+    const extra = next.tierNights - nights;
+    const newDiscount = Math.round(pricePerNight * next.tierNights * (next.tierPct / 100));
+    const delta = newDiscount - discountAmount;
+    if (delta <= 0) return null;
+    return { extra, percent: next.tierPct, savings: delta };
+  }, [nights, pricePerNight, weeklyDiscount, biweeklyDiscount, monthlyDiscount, discountPercent, discountAmount]);
 
   // Mid-stay cleaning logic
   const midStayCount = Math.floor(nights / 7);
@@ -280,6 +300,17 @@ export default function BookingForm() {
               <div className="flex justify-between text-green-600">
                 <span>{tp('discount', { percent: discountPercent })}</span>
                 <span>-{discountAmount.toFixed(0)}&euro;</span>
+              </div>
+            )}
+            {nudge && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 my-1">
+                <p className="text-amber-800 text-xs">
+                  {td('addNightsNudge', {
+                    count: nudge.extra,
+                    percent: nudge.percent,
+                    amount: nudge.savings,
+                  })}
+                </p>
               </div>
             )}
             <div className="flex justify-between text-gray-600">
