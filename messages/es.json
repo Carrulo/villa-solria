@@ -209,7 +209,8 @@
     "trustRating": "9.8/10 · 5+ Opiniones",
     "trustSecure": "Pago Seguro",
     "trustInstant": "Confirmación Inmediata",
-    "trustSupport": "Soporte 24h"
+    "trustSupport": "Soporte 24h",
+    "heroLongStayHint": "Ahorra hasta {percent}% en estancias largas"
   },
   "discounts": {
     "title": "Descuentos por estancia larga",

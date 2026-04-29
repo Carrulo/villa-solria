@@ -7,6 +7,7 @@ import {
   Shield,
   Clock,
   Check,
+  BadgePercent,
   MapPin,
   Users,
   BedDouble,
@@ -216,6 +217,11 @@ export default async function PricingPage({ params }: Props) {
     },
   ].filter((d) => d.percent > 0);
 
+  const maxDiscountPercent = longStayDiscounts.reduce(
+    (max, d) => (d.percent > max ? d.percent : max),
+    0,
+  );
+
   return (
     <div className="pb-24 lg:pb-12">
       {/* ---- SECTION 1: COMPACT HERO ---- */}
@@ -231,6 +237,15 @@ export default async function PricingPage({ params }: Props) {
               {t('perNight')}
             </span>
           </h1>
+          {maxDiscountPercent > 0 && (
+            <a
+              href="#booking-form-section"
+              className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
+            >
+              <BadgePercent size={14} />
+              {t('heroLongStayHint', { percent: maxDiscountPercent })}
+            </a>
+          )}
           <div className="flex items-center justify-center gap-3 mt-3 text-sm text-gray-500">
             <span className="inline-flex items-center gap-1">
               <Star size={14} className="fill-amber-400 text-amber-400" />
@@ -267,28 +282,6 @@ export default async function PricingPage({ params }: Props) {
             <p className="text-xs text-gray-500">{t('availabilityNote')}</p>
           </div>
 
-          {longStayDiscounts.length > 0 && (
-            <div className="mt-4 bg-gray-50 rounded-xl p-5">
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">{t('discountsTitle')}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {longStayDiscounts.map((d) => (
-                  <div key={d.nights} className="flex items-center gap-3">
-                    <span className="text-xl font-bold text-accent">-{d.percent}%</span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{d.label}</p>
-                      <p className="text-xs text-gray-500">{d.desc}</p>
-                      {d.cleaning && (
-                        <p className="text-xs text-emerald-600 flex items-center gap-1 mt-0.5">
-                          <Check size={10} /> {t('cleaningIncluded')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 mt-3">{t('longStayHint')}</p>
-            </div>
-          )}
         </div>
       </section>
 

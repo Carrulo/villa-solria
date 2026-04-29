@@ -87,6 +87,23 @@ export default function BookingForm() {
     return findSeasonForDate(seasons, range.checkIn);
   }, [range.checkIn, seasons]);
 
+  // Season used to power the discount pills shown ABOVE the calendar — uses
+  // either the date the guest picked or today's date as fallback.
+  const displaySeason = useMemo(() => {
+    if (activeSeason) return activeSeason;
+    const today = new Date().toISOString().slice(0, 10);
+    return findSeasonForDate(seasons, today);
+  }, [activeSeason, seasons]);
+
+  const discountPills = useMemo(() => {
+    if (!displaySeason) return [];
+    return [
+      { nights: 7, percent: displaySeason.weekly_discount || 0 },
+      { nights: 14, percent: displaySeason.biweekly_discount || 0 },
+      { nights: 28, percent: displaySeason.monthly_discount || 0 },
+    ].filter((p) => p.percent > 0);
+  }, [displaySeason]);
+
   const pricePerNight = activeSeason?.price_per_night ?? 0;
   const cleaningFee = activeSeason?.cleaning_fee ?? 0;
   const minNights = activeSeason?.min_nights ?? 3;
@@ -252,6 +269,29 @@ export default function BookingForm() {
 
   return (
     <div className="space-y-6">
+      {/* Long-stay discount pills — surfaced above the calendar so guests see
+          the savings while picking dates. */}
+      {discountPills.length > 0 && (
+        <div className="rounded-xl border border-accent/20 bg-gradient-to-r from-accent/5 to-emerald-50 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
+            <span className="font-semibold text-accent inline-flex items-center gap-1.5">
+              <span aria-hidden>💸</span>
+              {td('eyebrow')}
+            </span>
+            {discountPills.map((p) => (
+              <span
+                key={p.nights}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full border border-accent/20 text-gray-700 font-medium shadow-sm"
+              >
+                <span className="font-bold text-accent">−{p.percent}%</span>
+                <span className="text-gray-500">·</span>
+                <span>{p.nights}+ {tc('nights')}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Availability calendar */}
       <AvailabilityCalendar value={range} onChange={setRange} minNights={minNights} />
 
