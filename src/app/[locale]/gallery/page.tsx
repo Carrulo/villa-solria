@@ -17,7 +17,6 @@ const fallbackPhotos: { src: string; key: string; fallbackLabel: string; categor
   { src: '/images/property/bedroom-twin.jpg', key: 'thirdBedroom', fallbackLabel: 'Quarto Twin', category: 'bedroom' },
   { src: '/images/property/bathroom.jpg', key: 'bathroom', fallbackLabel: 'Casa de Banho', category: 'bathroom' },
   { src: '/images/property/terrace-view.jpg', key: 'terrace', fallbackLabel: 'Terraco', category: 'outdoor' },
-  { src: '/images/property/rooftop.jpg', key: 'rooftop', fallbackLabel: 'Rooftop', category: 'outdoor' },
   { src: '/images/property/garden.jpg', key: 'garden', fallbackLabel: 'Jardim', category: 'outdoor' },
   { src: '/images/property/exterior.jpg', key: 'exterior', fallbackLabel: 'Exterior', category: 'outdoor' },
   { src: '/images/property/balcony.jpg', key: 'balcony', fallbackLabel: 'Varanda', category: 'outdoor' },

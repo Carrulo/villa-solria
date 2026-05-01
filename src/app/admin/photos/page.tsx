@@ -21,7 +21,6 @@ const LOCAL_PHOTOS: { filename: string; category: PhotoCategory; alt: string }[]
   { filename: 'bedroom-twin.jpg', category: 'bedroom', alt: 'Twin bedroom' },
   { filename: 'bathroom.jpg', category: 'bathroom', alt: 'Bathroom' },
   { filename: 'terrace-view.jpg', category: 'outdoor', alt: 'Terrace view' },
-  { filename: 'rooftop.jpg', category: 'outdoor', alt: 'Rooftop terrace' },
   { filename: 'garden.jpg', category: 'outdoor', alt: 'Garden' },
   { filename: 'exterior.jpg', category: 'outdoor', alt: 'Exterior' },
   { filename: 'balcony.jpg', category: 'outdoor', alt: 'Balcony' },

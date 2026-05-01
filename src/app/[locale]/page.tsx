@@ -212,7 +212,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { src: '/images/property/kitchen.jpg', alt: 'Kitchen' },
           { src: '/images/property/bathroom.jpg', alt: 'Bathroom' },
           { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
-          { src: '/images/property/rooftop.jpg', alt: 'Rooftop' },
           { src: '/images/property/garden.jpg', alt: 'Garden' },
         ];
 

@@ -151,8 +151,8 @@ export default function VillaPage() {
             </div>
             <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
               <Image
-                src="/images/property/rooftop.jpg"
-                alt="Rooftop terrace"
+                src="/images/property/garden.jpg"
+                alt="Garden"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 33vw"
@@ -160,8 +160,8 @@ export default function VillaPage() {
             </div>
             <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
               <Image
-                src="/images/property/garden.jpg"
-                alt="Garden"
+                src="/images/property/balcony.jpg"
+                alt="Master bedroom balcony"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 33vw"

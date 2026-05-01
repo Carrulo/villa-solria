@@ -2,12 +2,19 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-04-25 21:30)
+## 📍 Current State (updated 2026-05-01 22:00)
 - **Active branch**: main (clean)
 - **Open PRs**: none
 - **In-flight work**: none
 - **Blockers**: none
 - **Last deploy**: ed8372d → Production (Vercel) on 2026-04-25
+- **Live FB Ads (Bruno Carrulo `act_2080974932079132`)**:
+  - PT (live): campaign `120253240193200586` / adset `120253240193170586` / ad `120253240193150586` — €5/d × 7d, PT video, targets PT 30+, video ID `2576195622801046`
+  - EN (live 2026-05-01): campaign `120253316714670586` / adset `120253316714660586` / ad `120253316714680586` — €5/d × 7d, `villa-solria-en.mp4`, targets UK+DE+NL 30+, interests Vacation rental + Beaches, CTA Book now → villasolria.com
+- **Orphan MCP campaign** (PAUSED, sem ad): `120253316804090586` / adset `120253316811480586` — pode apagar
+
+## ✅ Recently resolved (May 2026)
+- **FB Ads EN campaign launched** (May 1): Duplicado do PT via Ads Manager, vídeo EN uploaded manualmente, copy EN, targeting UK+DE+NL. Limitação confirmada: meta-ads MCP em `development_access` tier — não cria creatives live (error_subcode 1885183). Workflow híbrido (browser + MCP read) é o único viável até App Review.
 
 ## ✅ Recently resolved (Apr 2026)
 - **Booking grouping** (Apr 25): Manual link of split iCal events into a single grouped stay. Migration 002 (`linked_to_booking_id`) + 003 (`linked_to_external_*`). Multi-select "Agrupar reservas" modal in `/admin/bookings`. Cleaning views (admin, public, daily email) extend the head's range to span the whole group. Confirm dialog on Desligar.
