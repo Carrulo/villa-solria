@@ -13,11 +13,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient();
 
-    // Check for overlapping non-cancelled bookings
+    // Check for overlapping bookings that legitimately hold dates.
+    // Only confirmed bookings and Multibanco vouchers in pending_payment
+    // block the calendar — plain 'pending' means the form was submitted
+    // but the Stripe checkout never completed (abandoned attempts), and
+    // those should not prevent a new customer from booking.
     const { data: conflicts } = await supabase
       .from('bookings')
       .select('id')
-      .neq('status', 'cancelled')
+      .in('status', ['confirmed', 'pending_payment'])
       .lt('checkin_date', checkOut)
       .gt('checkout_date', checkIn);
 
