@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 
@@ -257,8 +258,23 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin') || 'https://villasolria.com';
 
     // Create Checkout Session
+    // Note: 'multibanco' is async — Stripe fires checkout.session.completed
+    // immediately with payment_status='unpaid' (voucher generated), then
+    // checkout.session.async_payment_succeeded when the customer pays at ATM.
+    // The webhook handler distinguishes these states.
+    //
+    // expires_at affects the Checkout Session itself; for Multibanco the
+    // VOUCHER expiry is set via payment_method_options.multibanco.expires_after_days
+    // (defaults to 7, range 1-7). We use 3 days to limit how long a booking
+    // can hold dates pending payment.
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'mb_way'],
+      payment_method_types: ['card', 'mb_way', 'multibanco'],
+      // Note: `expires_after_days` is in the Stripe API but not yet typed in
+      // @stripe/stripe-node v22 (range 1-7, default 7). Cast bypasses the
+      // outdated TS type while still sending the param to Stripe.
+      payment_method_options: {
+        multibanco: { expires_after_days: 3 },
+      } as Stripe.Checkout.SessionCreateParams['payment_method_options'],
       mode: 'payment',
       line_items: lineItems,
       ...(discounts.length > 0 ? { discounts } : {}),
