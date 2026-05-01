@@ -158,7 +158,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} className="h-full antialiased">
       <head>
-        {/* Google Consent Mode v2 — default denied until user accepts */}
+        {/* Google Consent Mode v2 — analytics granted by default (legitimate interest, no PII).
+            Ad storage stays denied until user accepts (no banner = no ads consent). */}
         {ga4Id && (
           <>
             <script
@@ -167,7 +168,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('consent', 'default', {
-                    'analytics_storage': 'denied',
+                    'analytics_storage': 'granted',
                     'ad_storage': 'denied',
                     'ad_user_data': 'denied',
                     'ad_personalization': 'denied',
