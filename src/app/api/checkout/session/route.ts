@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 
@@ -269,12 +268,10 @@ export async function POST(request: NextRequest) {
     // can hold dates pending payment.
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'mb_way', 'multibanco'],
-      // Note: `expires_after_days` is in the Stripe API but not yet typed in
-      // @stripe/stripe-node v22 (range 1-7, default 7). Cast bypasses the
-      // outdated TS type while still sending the param to Stripe.
-      payment_method_options: {
-        multibanco: { expires_after_days: 3 },
-      } as Stripe.Checkout.SessionCreateParams['payment_method_options'],
+      // Note: Multibanco voucher uses Stripe default expiry (7 days). The
+      // `expires_after_days` param is rejected by current Stripe API version
+      // 2026-03-25.dahlia (parameter_unknown). Track:
+      // https://docs.stripe.com/payments/multibanco
       mode: 'payment',
       line_items: lineItems,
       ...(discounts.length > 0 ? { discounts } : {}),
