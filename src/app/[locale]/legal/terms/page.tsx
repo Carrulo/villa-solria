@@ -80,7 +80,7 @@ function PtTerms() {
         <li><strong>Menos de 7 dias antes:</strong> Sem reembolso.</li>
         <li><strong>Não comparência (no-show):</strong> Sem reembolso.</li>
       </ul>
-      <p>Os reembolsos são processados via Stripe para o método de pagamento original em 5 a 10 dias úteis. Recomendamos a contratação de um seguro de viagem que cubra cancelamentos.</p>
+      <p>Os reembolsos são processados via Stripe para o método de pagamento original em 5 a 10 dias úteis. Os encargos de processamento de pagamento (taxa Stripe, ~1,5% + €0,25) não são reembolsáveis, sendo deduzidos do valor a devolver. Recomendamos a contratação de um seguro de viagem que cubra cancelamentos.</p>
 
       <h2>4. Check-in e Check-out</h2>
       <ul>
@@ -170,7 +170,7 @@ function EnTerms() {
         <li><strong>Less than 7 days before:</strong> No refund.</li>
         <li><strong>No-show:</strong> No refund.</li>
       </ul>
-      <p>Refunds are processed via Stripe to the original payment method within 5 to 10 business days. We recommend purchasing travel insurance that covers cancellations.</p>
+      <p>Refunds are processed via Stripe to the original payment method within 5 to 10 business days. Payment processing fees (Stripe fee, ~1.5% + €0.25) are non-refundable and will be deducted from the refund amount. We recommend purchasing travel insurance that covers cancellations.</p>
 
       <h2>4. Check-in and Check-out</h2>
       <ul>
@@ -245,7 +245,7 @@ function EsTerms() {
         <li><strong>Menos de 7 días antes:</strong> Sin reembolso.</li>
         <li><strong>No-show:</strong> Sin reembolso.</li>
       </ul>
-      <p>Los reembolsos se procesan vía Stripe al método de pago original en 5 a 10 días laborables.</p>
+      <p>Los reembolsos se procesan vía Stripe al método de pago original en 5 a 10 días laborables. Los gastos de procesamiento de pago (tasa Stripe, ~1,5% + €0,25) no son reembolsables y se deducen del importe a devolver.</p>
 
       <h2>4. Normas de la Casa</h2>
       <ul>
@@ -295,7 +295,7 @@ function DeTerms() {
         <li><strong>Weniger als 7 Tage:</strong> Keine Rückerstattung.</li>
         <li><strong>Nichterscheinen (No-show):</strong> Keine Rückerstattung.</li>
       </ul>
-      <p>Rückerstattungen werden über Stripe auf die ursprüngliche Zahlungsmethode innerhalb von 5 bis 10 Werktagen veranlasst.</p>
+      <p>Rückerstattungen werden über Stripe auf die ursprüngliche Zahlungsmethode innerhalb von 5 bis 10 Werktagen veranlasst. Die Zahlungsabwicklungsgebühren (Stripe-Gebühr, ca. 1,5% + €0,25) sind nicht erstattungsfähig und werden vom Rückerstattungsbetrag abgezogen.</p>
 
       <h2>4. Hausregeln</h2>
       <ul>
