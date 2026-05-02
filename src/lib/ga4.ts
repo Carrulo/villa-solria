@@ -19,6 +19,7 @@ export function getGa4Client(): BetaAnalyticsDataClient | null {
   if (!raw) return null;
   try {
     const credentials = JSON.parse(raw);
+    console.log('GA4 client init: project=', credentials.project_id, 'email=', credentials.client_email, 'key_chars=', credentials.private_key?.length);
     // When the JSON is stored as a raw env var with embedded `\n` in
     // private_key, the literal backslash-n needs to be turned back into
     // an actual newline before Google's auth library will accept the PEM.
@@ -154,7 +155,13 @@ export async function fetchGa4Snapshot(days: number = 7): Promise<Ga4Snapshot> {
 
     return { totals, topPages, topCountries, topSources, devices, ratePerDay };
   } catch (err) {
-    console.error('GA4 fetch failed:', err);
+    const e = err as { message?: string; code?: number; details?: string; stack?: string };
+    console.error('GA4 fetch failed:', JSON.stringify({
+      message: e.message,
+      code: e.code,
+      details: e.details,
+      stack: e.stack?.split('\n').slice(0, 3),
+    }));
     return empty;
   }
 }
