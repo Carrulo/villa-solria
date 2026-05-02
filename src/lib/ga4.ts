@@ -7,20 +7,27 @@ const PROPERTY_ID = process.env.GA4_PROPERTY_ID || '534083614';
  * Returns null if creds aren't configured (admin page renders empty state).
  */
 export function getGa4Client(): BetaAnalyticsDataClient | null {
-  const raw = process.env.GA4_SERVICE_ACCOUNT_JSON;
+  // Prefer base64 to avoid quote-escaping issues on Vercel env vars.
+  // Falls back to raw JSON if the base64 var isn't set.
+  const b64 = process.env.GA4_SERVICE_ACCOUNT_B64;
+  const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON;
+  let raw: string | undefined;
+  if (b64) {
+    try { raw = Buffer.from(b64, 'base64').toString('utf-8'); } catch { /* fall through */ }
+  }
+  if (!raw && rawJson) raw = rawJson;
   if (!raw) return null;
   try {
     const credentials = JSON.parse(raw);
-    // When the JSON is stored as a single env var on platforms like Vercel,
-    // the `\n` inside private_key is often stored as the two literal chars
-    // (backslash + n) instead of a real newline, which makes Google's auth
-    // library reject the key. Fix it on read.
+    // When the JSON is stored as a raw env var with embedded `\n` in
+    // private_key, the literal backslash-n needs to be turned back into
+    // an actual newline before Google's auth library will accept the PEM.
     if (credentials.private_key && typeof credentials.private_key === 'string') {
       credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
     }
     return new BetaAnalyticsDataClient({ credentials });
   } catch (err) {
-    console.error('Invalid GA4_SERVICE_ACCOUNT_JSON:', err);
+    console.error('Invalid GA4 service account env var:', err);
     return null;
   }
 }
