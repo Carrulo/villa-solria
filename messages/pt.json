@@ -165,7 +165,7 @@
     "highSeason": "Época Alta",
     "highSeasonPeriod": "Jul - Set",
     "perNight": "/noite",
-    "minimumStay": "Estadia mínima: 3 noites (7 noites em época alta)",
+    "minimumStay": "Estadia mínima: 1 noite (7 noites em época alta)",
     "cleaningFee": "Taxa de limpeza: incluída",
     "inquiryTitle": "Solicitar Reserva",
     "inquirySubtitle": "Preencha o formulário e responderemos em menos de 24 horas",
@@ -288,7 +288,7 @@
     "q9": "Há supermercados perto?",
     "a9": "Sim, há minimercados em Cabanas de Tavira a 5 minutos a pé. Para compras maiores, há supermercados em Tavira (3.5 km).",
     "q10": "Disponibilizam roupa de cama e toalhas?",
-    "a10": "Sim, toda a roupa de cama e toalhas estão incluídas. Também fornecemos toalhas de praia."
+    "a10": "Sim, fornecemos roupa de cama e toalhas de banho. Toalhas de praia não estão incluídas — recomendamos trazê-las."
   },
   "reviews": {
     "title": "Avaliações",

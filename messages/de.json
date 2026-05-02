@@ -165,7 +165,7 @@
     "highSeason": "Hochsaison",
     "highSeasonPeriod": "Jul - Sep",
     "perNight": "/Nacht",
-    "minimumStay": "Mindestaufenthalt: 3 Nächte (7 Nächte in der Hochsaison)",
+    "minimumStay": "Mindestaufenthalt: 1 Nacht (7 Nächte in der Hochsaison)",
     "cleaningFee": "Reinigungsgebühr: inklusive",
     "inquiryTitle": "Buchungsanfrage",
     "inquirySubtitle": "Füllen Sie das Formular aus und wir antworten innerhalb von 24 Stunden",
@@ -288,7 +288,7 @@
     "q9": "Gibt es Supermärkte in der Nähe?",
     "a9": "Ja, es gibt Minimärkte in Cabanas de Tavira, 5 Minuten zu Fuß. Für größere Einkäufe gibt es Supermärkte in Tavira (3,5 km).",
     "q10": "Stellen Sie Bettwäsche und Handtücher zur Verfügung?",
-    "a10": "Ja, alle Bettwäsche und Handtücher sind inklusive. Wir stellen auch Strandtücher zur Verfügung."
+    "a10": "Ja, wir stellen Bettwäsche und Badetücher zur Verfügung. Strandtücher sind nicht inklusive — wir empfehlen, eigene mitzubringen."
   },
   "reviews": {
     "title": "Bewertungen",

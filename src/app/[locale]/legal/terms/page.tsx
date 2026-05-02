@@ -110,15 +110,15 @@ function PtTerms() {
 
       <h2>7. Estadia Mínima</h2>
       <ul>
-        <li>Época baixa (Nov-Mar): mínimo 3 noites</li>
-        <li>Época média (Abr-Jun, Out): mínimo 3 noites</li>
+        <li>Época baixa (Nov-Mar): mínimo 1 noite</li>
+        <li>Época média (Abr-Jun, Out): mínimo 1 noite</li>
         <li>Época alta (Jul-Set): mínimo 7 noites</li>
       </ul>
 
       <h2>8. Serviços Incluídos</h2>
       <p>O preço da reserva inclui:</p>
       <ul>
-        <li>Roupa de cama e toalhas (incluindo toalhas de praia)</li>
+        <li>Roupa de cama e toalhas de banho (não inclui toalhas de praia)</li>
         <li>Produtos básicos de higiene</li>
         <li>Wi-Fi gratuito</li>
         <li>Estacionamento gratuito</li>
@@ -200,13 +200,13 @@ function EnTerms() {
 
       <h2>7. Minimum Stay</h2>
       <ul>
-        <li>Low season (Nov-Mar): minimum 3 nights</li>
-        <li>Mid season (Apr-Jun, Oct): minimum 3 nights</li>
+        <li>Low season (Nov-Mar): minimum 1 night</li>
+        <li>Mid season (Apr-Jun, Oct): minimum 1 night</li>
         <li>High season (Jul-Sep): minimum 7 nights</li>
       </ul>
 
       <h2>8. Included Services</h2>
-      <p>The booking price includes bed linen, towels (including beach towels), basic toiletries, free Wi-Fi, free parking, final cleaning, and utility consumption.</p>
+      <p>The booking price includes bed linen, bath towels (beach towels not provided), basic toiletries, free Wi-Fi, free parking, final cleaning, and utility consumption.</p>
 
       <h2>9. Applicable Law</h2>
       <p>These terms are governed by Portuguese law. The courts of Tavira shall have exclusive jurisdiction.</p>
