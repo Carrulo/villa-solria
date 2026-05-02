@@ -70,7 +70,7 @@ function PtTerms() {
         <li>A reserva é confirmada após pagamento integral do valor total no momento da reserva, processado de forma segura via Stripe.</li>
         <li>São aceites pagamentos com cartão (Visa, Mastercard, American Express), MB Way, Apple Pay e Google Pay.</li>
         <li>Os preços incluem IVA à taxa legal em vigor.</li>
-        <li>A taxa de limpeza está incluída no preço.</li>
+        <li>A taxa de limpeza é cobrada à parte e adicionada ao total da reserva.</li>
       </ul>
 
       <h2>3. Política de Cancelamento</h2>
@@ -160,7 +160,7 @@ function EnTerms() {
         <li>The booking is confirmed once the full amount is paid at the time of booking, processed securely via Stripe.</li>
         <li>We accept card payments (Visa, Mastercard, American Express), MB Way, Apple Pay and Google Pay.</li>
         <li>Prices include VAT at the applicable legal rate.</li>
-        <li>Cleaning fee is included in the price.</li>
+        <li>The cleaning fee is charged separately and added to the booking total.</li>
       </ul>
 
       <h2>3. Cancellation Policy</h2>
@@ -235,7 +235,7 @@ function EsTerms() {
       <ul>
         <li>La reserva se confirma con el pago íntegro en el momento de la reserva, procesado de forma segura mediante Stripe.</li>
         <li>Se aceptan pagos con tarjeta (Visa, Mastercard, American Express), MB Way, Apple Pay y Google Pay.</li>
-        <li>Los precios incluyen IVA. La tasa de limpieza está incluida.</li>
+        <li>Los precios incluyen IVA. La tasa de limpieza se cobra aparte y se suma al total de la reserva.</li>
       </ul>
 
       <h2>3. Política de Cancelación</h2>
@@ -285,7 +285,7 @@ function DeTerms() {
       <ul>
         <li>Die Buchung ist nach vollständiger Zahlung des Gesamtbetrags zum Zeitpunkt der Buchung bestätigt, sicher abgewickelt über Stripe.</li>
         <li>Wir akzeptieren Kartenzahlung (Visa, Mastercard, American Express), MB Way, Apple Pay und Google Pay.</li>
-        <li>Alle Preise verstehen sich inklusive Mehrwertsteuer. Die Reinigungsgebühr ist im Preis enthalten.</li>
+        <li>Alle Preise verstehen sich inklusive Mehrwertsteuer. Die Reinigungsgebühr wird separat berechnet und zur Buchungssumme hinzugefügt.</li>
       </ul>
 
       <h2>3. Stornierungsbedingungen</h2>
