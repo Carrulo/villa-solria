@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
-import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, User, Clock, MessageCircle } from 'lucide-react';
+import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
 import LongStayDiscountsCard from '@/components/LongStayDiscountsCard';
@@ -360,8 +360,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-gray-100">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               <div className="flex-shrink-0">
-                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User size={40} className="text-primary" />
+                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-primary/10">
+                  <Image
+                    src="/images/owner/bruno.png"
+                    alt="Bruno Carrulo"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
               <div className="flex-1 text-center sm:text-left">
