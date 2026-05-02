@@ -4,7 +4,7 @@ import { Star } from 'lucide-react';
 interface PlatformBadge {
   name: string;
   rating?: string;
-  reviews?: string;
+  scale: number;
   show: boolean;
 }
 
@@ -46,10 +46,13 @@ export default async function TrustBadges({ variant = 'hero' }: { variant?: 'her
     } catch { /* settings optional */ }
   }
 
+  // Each platform uses its own native rating scale — Booking is 0-10,
+  // Airbnb and Vrbo are 0-5. Showing the denominator avoids the
+  // "4.96 Airbnb vs 9.8 Booking" optical illusion.
   const platforms: PlatformBadge[] = [
-    { name: 'Booking.com', rating: bookingRating, show: !!bookingRating },
-    { name: 'Airbnb', rating: airbnbRating, show: !!airbnbRating },
-    { name: 'Vrbo', rating: vrboRating, show: !!vrboRating },
+    { name: 'Booking.com', rating: bookingRating, scale: 10, show: !!bookingRating },
+    { name: 'Airbnb', rating: airbnbRating, scale: 5, show: !!airbnbRating },
+    { name: 'Vrbo', rating: vrboRating, scale: 5, show: !!vrboRating },
   ];
 
   const visible = platforms.filter((p) => p.show);
@@ -64,7 +67,10 @@ export default async function TrustBadges({ variant = 'hero' }: { variant?: 'her
             className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs"
           >
             <Star size={11} className="text-accent fill-accent" />
-            <span className="font-semibold">{p.rating}</span>
+            <span className="font-semibold">
+              {p.rating}
+              <span className="text-gray-400 font-normal">/{p.scale}</span>
+            </span>
             <span className="text-gray-500">{p.name}</span>
           </span>
         ))}
@@ -81,7 +87,10 @@ export default async function TrustBadges({ variant = 'hero' }: { variant?: 'her
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full"
         >
           <Star size={12} className="text-sand fill-sand" />
-          <span className="text-white text-xs font-semibold">{p.rating}</span>
+          <span className="text-white text-xs font-semibold">
+            {p.rating}
+            <span className="text-white/60 font-normal">/{p.scale}</span>
+          </span>
           <span className="text-white/70 text-xs">{p.name}</span>
         </div>
       ))}
