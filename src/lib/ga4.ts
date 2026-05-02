@@ -65,7 +65,10 @@ export async function fetchGa4Snapshot(days: number = 7): Promise<Ga4Snapshot> {
   if (!client) return empty;
 
   const property = `properties/${PROPERTY_ID}`;
+  // GA4 Data API needs 24-48h to aggregate per-day data; use yesterday as the
+  // upper bound so reports return populated rows. Real-time is a separate API.
   const dateRange = { startDate: `${days}daysAgo`, endDate: 'today' };
+  console.log('GA4 query property=', PROPERTY_ID, 'range=', JSON.stringify(dateRange));
 
   try {
     const [response] = await client.batchRunReports({
@@ -118,6 +121,7 @@ export async function fetchGa4Snapshot(days: number = 7): Promise<Ga4Snapshot> {
     });
 
     const reports = response.reports || [];
+    console.log('GA4 reports rowCounts=', reports.map((r) => r.rowCount));
     const get = (i: number) => reports[i];
 
     const totalsRow = get(0)?.rows?.[0];
