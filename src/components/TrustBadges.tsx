@@ -35,7 +35,9 @@ export default async function TrustBadges({ variant = 'hero' }: { variant?: 'her
 
       if (data) {
         for (const row of data) {
-          const v = (row.value as string) || '';
+          // settings.value is jsonb — can be number or string in the row
+          const raw = row.value;
+          const v = raw === null || raw === undefined ? '' : String(raw);
           if (row.key === 'booking_rating' && v) bookingRating = v;
           if (row.key === 'airbnb_rating') airbnbRating = v;
           if (row.key === 'vrbo_rating') vrboRating = v;
