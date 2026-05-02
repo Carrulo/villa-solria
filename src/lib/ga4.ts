@@ -11,6 +11,13 @@ export function getGa4Client(): BetaAnalyticsDataClient | null {
   if (!raw) return null;
   try {
     const credentials = JSON.parse(raw);
+    // When the JSON is stored as a single env var on platforms like Vercel,
+    // the `\n` inside private_key is often stored as the two literal chars
+    // (backslash + n) instead of a real newline, which makes Google's auth
+    // library reject the key. Fix it on read.
+    if (credentials.private_key && typeof credentials.private_key === 'string') {
+      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+    }
     return new BetaAnalyticsDataClient({ credentials });
   } catch (err) {
     console.error('Invalid GA4_SERVICE_ACCOUNT_JSON:', err);
