@@ -21,6 +21,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Compass,
+  BarChart3,
 } from 'lucide-react';
 import NotificationBell from '@/components/admin/NotificationBell';
 import '../globals.css';
@@ -56,6 +57,10 @@ const navGroups: { label: string | null; items: { href: string; label: string; i
       { href: '/admin/photos', label: 'Fotos', icon: ImageIcon },
       { href: '/admin/guide', label: 'Guia do hóspede', icon: Compass },
     ],
+  },
+  {
+    label: 'Análise',
+    items: [{ href: '/admin/analytics', label: 'Analytics', icon: BarChart3 }],
   },
   {
     label: 'Sistema',
