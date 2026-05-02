@@ -67,21 +67,20 @@ function PtTerms() {
 
       <h2>2. Condições de Reserva</h2>
       <ul>
-        <li>A reserva só é considerada confirmada após confirmação escrita por parte do proprietário e pagamento do sinal correspondente.</li>
-        <li>O pagamento do sinal (30% do valor total) deve ser efetuado no prazo de 48 horas após a confirmação.</li>
-        <li>O valor remanescente deve ser pago até 14 dias antes da data de check-in.</li>
+        <li>A reserva é confirmada após pagamento integral do valor total no momento da reserva, processado de forma segura via Stripe.</li>
+        <li>São aceites pagamentos com cartão (Visa, Mastercard, American Express), MB Way, Apple Pay e Google Pay.</li>
         <li>Os preços incluem IVA à taxa legal em vigor.</li>
         <li>A taxa de limpeza está incluída no preço.</li>
       </ul>
 
       <h2>3. Política de Cancelamento</h2>
       <ul>
-        <li><strong>Até 14 dias antes do check-in:</strong> Cancelamento gratuito com reembolso total do sinal.</li>
-        <li><strong>Entre 14 e 7 dias antes:</strong> Reembolso de 50% do sinal.</li>
-        <li><strong>Menos de 7 dias antes:</strong> Sem reembolso do sinal.</li>
-        <li><strong>Não comparência (no-show):</strong> Sem reembolso de qualquer valor pago.</li>
+        <li><strong>Até 14 dias antes do check-in:</strong> Cancelamento gratuito com reembolso total.</li>
+        <li><strong>Entre 14 e 7 dias antes:</strong> Reembolso de 50% do valor pago.</li>
+        <li><strong>Menos de 7 dias antes:</strong> Sem reembolso.</li>
+        <li><strong>Não comparência (no-show):</strong> Sem reembolso.</li>
       </ul>
-      <p>Recomendamos a contratação de um seguro de viagem que cubra cancelamentos.</p>
+      <p>Os reembolsos são processados via Stripe para o método de pagamento original em 5 a 10 dias úteis. Recomendamos a contratação de um seguro de viagem que cubra cancelamentos.</p>
 
       <h2>4. Check-in e Check-out</h2>
       <ul>
@@ -158,21 +157,20 @@ function EnTerms() {
 
       <h2>2. Booking Conditions</h2>
       <ul>
-        <li>A booking is only confirmed after written confirmation and payment of the deposit.</li>
-        <li>A deposit of 30% of the total amount must be paid within 48 hours of confirmation.</li>
-        <li>The remaining balance must be paid at least 14 days before check-in.</li>
+        <li>The booking is confirmed once the full amount is paid at the time of booking, processed securely via Stripe.</li>
+        <li>We accept card payments (Visa, Mastercard, American Express), MB Way, Apple Pay and Google Pay.</li>
         <li>Prices include VAT at the applicable legal rate.</li>
         <li>Cleaning fee is included in the price.</li>
       </ul>
 
       <h2>3. Cancellation Policy</h2>
       <ul>
-        <li><strong>Up to 14 days before check-in:</strong> Free cancellation with full deposit refund.</li>
-        <li><strong>Between 14 and 7 days before:</strong> 50% deposit refund.</li>
-        <li><strong>Less than 7 days before:</strong> No deposit refund.</li>
-        <li><strong>No-show:</strong> No refund of any amount paid.</li>
+        <li><strong>Up to 14 days before check-in:</strong> Free cancellation with full refund.</li>
+        <li><strong>Between 14 and 7 days before:</strong> 50% refund of the amount paid.</li>
+        <li><strong>Less than 7 days before:</strong> No refund.</li>
+        <li><strong>No-show:</strong> No refund.</li>
       </ul>
-      <p>We recommend purchasing travel insurance that covers cancellations.</p>
+      <p>Refunds are processed via Stripe to the original payment method within 5 to 10 business days. We recommend purchasing travel insurance that covers cancellations.</p>
 
       <h2>4. Check-in and Check-out</h2>
       <ul>
@@ -235,17 +233,19 @@ function EsTerms() {
 
       <h2>2. Condiciones de Reserva</h2>
       <ul>
-        <li>La reserva solo se confirma tras confirmacion escrita y pago de la senal (30%).</li>
-        <li>El pago restante debe realizarse al menos 14 dias antes del check-in.</li>
-        <li>Los precios incluyen IVA.</li>
+        <li>La reserva se confirma con el pago íntegro en el momento de la reserva, procesado de forma segura mediante Stripe.</li>
+        <li>Se aceptan pagos con tarjeta (Visa, Mastercard, American Express), MB Way, Apple Pay y Google Pay.</li>
+        <li>Los precios incluyen IVA. La tasa de limpieza está incluida.</li>
       </ul>
 
-      <h2>3. Politica de Cancelacion</h2>
+      <h2>3. Política de Cancelación</h2>
       <ul>
-        <li><strong>Hasta 14 dias antes:</strong> Cancelacion gratuita con reembolso total.</li>
-        <li><strong>Entre 14 y 7 dias:</strong> Reembolso del 50%.</li>
-        <li><strong>Menos de 7 dias:</strong> Sin reembolso.</li>
+        <li><strong>Hasta 14 días antes:</strong> Cancelación gratuita con reembolso total.</li>
+        <li><strong>Entre 14 y 7 días antes:</strong> Reembolso del 50%.</li>
+        <li><strong>Menos de 7 días antes:</strong> Sin reembolso.</li>
+        <li><strong>No-show:</strong> Sin reembolso.</li>
       </ul>
+      <p>Los reembolsos se procesan vía Stripe al método de pago original en 5 a 10 días laborables.</p>
 
       <h2>4. Normas de la Casa</h2>
       <ul>
@@ -283,17 +283,19 @@ function DeTerms() {
 
       <h2>2. Buchungsbedingungen</h2>
       <ul>
-        <li>Eine Buchung gilt erst nach schriftlicher Bestatigung und Anzahlung (30%) als bestratigt.</li>
-        <li>Der Restbetrag ist mindestens 14 Tage vor dem Check-in fallig.</li>
-        <li>Alle Preise verstehen sich inklusive Mehrwertsteuer.</li>
+        <li>Die Buchung ist nach vollständiger Zahlung des Gesamtbetrags zum Zeitpunkt der Buchung bestätigt, sicher abgewickelt über Stripe.</li>
+        <li>Wir akzeptieren Kartenzahlung (Visa, Mastercard, American Express), MB Way, Apple Pay und Google Pay.</li>
+        <li>Alle Preise verstehen sich inklusive Mehrwertsteuer. Die Reinigungsgebühr ist im Preis enthalten.</li>
       </ul>
 
       <h2>3. Stornierungsbedingungen</h2>
       <ul>
-        <li><strong>Bis 14 Tage vorher:</strong> Kostenlose Stornierung mit voller Ruckerstattung.</li>
-        <li><strong>14 bis 7 Tage vorher:</strong> 50% Ruckerstattung.</li>
-        <li><strong>Weniger als 7 Tage:</strong> Keine Ruckerstattung.</li>
+        <li><strong>Bis 14 Tage vor Check-in:</strong> Kostenlose Stornierung mit voller Rückerstattung.</li>
+        <li><strong>14 bis 7 Tage vorher:</strong> 50% Rückerstattung.</li>
+        <li><strong>Weniger als 7 Tage:</strong> Keine Rückerstattung.</li>
+        <li><strong>Nichterscheinen (No-show):</strong> Keine Rückerstattung.</li>
       </ul>
+      <p>Rückerstattungen werden über Stripe auf die ursprüngliche Zahlungsmethode innerhalb von 5 bis 10 Werktagen veranlasst.</p>
 
       <h2>4. Hausregeln</h2>
       <ul>
