@@ -29,7 +29,7 @@ export function getGa4Client(): BetaAnalyticsDataClient | null {
     // Vercel serverless functions have flaky gRPC/HTTP2 connectivity to
     // Google's Analytics Data API. Force REST/HTTP1 transport — works
     // reliably in serverless and produces identical results.
-    return new BetaAnalyticsDataClient({ credentials, fallback: 'rest' });
+    return new BetaAnalyticsDataClient({ credentials, fallback: true });
   } catch (err) {
     console.error('Invalid GA4 service account env var:', err);
     return null;
