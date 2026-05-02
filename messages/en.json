@@ -408,5 +408,11 @@
     "cancelTitle": "Payment Cancelled",
     "cancelDesc": "The payment was not completed. Your booking has not been confirmed. You can try again at any time.",
     "tryAgain": "Try Again"
+  },
+  "trust": {
+    "stripe": "Secure Stripe payment",
+    "license": "License AL 120108/AL",
+    "owner": "Bruno, owner",
+    "refund": "Refund up to 7 days before"
   }
 }

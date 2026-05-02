@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
 import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
 import { trackGA4Event, trackMetaEvent } from './Analytics';
+import TrustStrip from './TrustStrip';
 
 type Season = {
   id: string;
@@ -559,6 +560,8 @@ export default function BookingForm() {
             </span>
           </label>
         </div>
+
+        <TrustStrip />
 
         <button
           type="submit"

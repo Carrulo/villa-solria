@@ -5,6 +5,7 @@ import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, User
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
 import LongStayDiscountsCard from '@/components/LongStayDiscountsCard';
+import TrustBadges from '@/components/TrustBadges';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
 import { getPhotoUrl } from '@/lib/supabase';
@@ -233,10 +234,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6">
-            <Star size={14} className="text-sand fill-sand" />
-            <span className="text-white/80 text-sm font-medium">9.8/10 Booking.com</span>
-          </div>
+          <TrustBadges variant="hero" />
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Villa Solria

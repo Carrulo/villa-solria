@@ -408,5 +408,11 @@
     "cancelTitle": "Pago Cancelado",
     "cancelDesc": "El pago no se ha completado. Su reserva no ha sido confirmada. Puede intentarlo de nuevo en cualquier momento.",
     "tryAgain": "Intentar de Nuevo"
+  },
+  "trust": {
+    "stripe": "Pago seguro con Stripe",
+    "license": "Licencia AL 120108/AL",
+    "owner": "Bruno, propietario",
+    "refund": "Reembolso hasta 7 días antes"
   }
 }

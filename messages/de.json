@@ -408,5 +408,11 @@
     "cancelTitle": "Zahlung Abgebrochen",
     "cancelDesc": "Die Zahlung wurde nicht abgeschlossen. Ihre Buchung wurde nicht bestätigt. Sie können es jederzeit erneut versuchen.",
     "tryAgain": "Erneut Versuchen"
+  },
+  "trust": {
+    "stripe": "Sichere Stripe-Zahlung",
+    "license": "Lizenz AL 120108/AL",
+    "owner": "Bruno, Eigentümer",
+    "refund": "Erstattung bis 7 Tage vorher"
   }
 }
