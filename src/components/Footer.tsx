@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { MapPin, Mail, Phone } from 'lucide-react';
+import { MapPin, Mail, Phone, Facebook } from 'lucide-react';
 
 export interface FooterSettings {
   email: string;
@@ -150,10 +150,21 @@ export default function Footer({ settings: overrides }: FooterProps) {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-10 pt-8 text-center">
-          <p className="text-white/40 text-sm">
+        <div className="border-t border-white/10 mt-10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-white/40 text-sm order-2 sm:order-1">
             &copy; {new Date().getFullYear()} Villa Solria. {t('rights')}.
           </p>
+          <div className="flex items-center gap-3 order-1 sm:order-2">
+            <a
+              href="https://www.facebook.com/VillaSolria/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook Villa Solria"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <Facebook size={16} className="text-white" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
