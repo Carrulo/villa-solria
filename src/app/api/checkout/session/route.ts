@@ -19,32 +19,32 @@ const t: Record<SupportedLocale, {
   depositNote: (pct: number) => string;
 }> = {
   pt: {
-    accommodation: 'Villa Solria \u2014 Estadia',
+    accommodation: 'Villa Solria — Estadia',
     nights: (n) => `${n} noite${n > 1 ? 's' : ''}`,
     cleaningFee: 'Taxa de limpeza',
     longStayDiscount: (pct) => `Desconto estadia longa (${pct}%)`,
-    depositNote: (pct) => `(${pct}% dep\u00f3sito \u2014 restante na chegada)`,
+    depositNote: (pct) => `(${pct}% depósito — restante na chegada)`,
   },
   en: {
-    accommodation: 'Villa Solria \u2014 Accommodation',
+    accommodation: 'Villa Solria — Accommodation',
     nights: (n) => `${n} night${n > 1 ? 's' : ''}`,
     cleaningFee: 'Cleaning fee',
     longStayDiscount: (pct) => `Long stay discount (${pct}%)`,
-    depositNote: (pct) => `(${pct}% deposit \u2014 remainder due on arrival)`,
+    depositNote: (pct) => `(${pct}% deposit — remainder due on arrival)`,
   },
   es: {
-    accommodation: 'Villa Solria \u2014 Estancia',
+    accommodation: 'Villa Solria — Estancia',
     nights: (n) => `${n} noche${n > 1 ? 's' : ''}`,
     cleaningFee: 'Tasa de limpieza',
     longStayDiscount: (pct) => `Descuento estancia larga (${pct}%)`,
-    depositNote: (pct) => `(${pct}% dep\u00f3sito \u2014 resto a la llegada)`,
+    depositNote: (pct) => `(${pct}% depósito — resto a la llegada)`,
   },
   de: {
-    accommodation: 'Villa Solria \u2014 Unterkunft',
-    nights: (n) => `${n} ${n > 1 ? 'N\u00e4chte' : 'Nacht'}`,
-    cleaningFee: 'Reinigungsgeb\u00fchr',
+    accommodation: 'Villa Solria — Unterkunft',
+    nights: (n) => `${n} ${n > 1 ? 'Nächte' : 'Nacht'}`,
+    cleaningFee: 'Reinigungsgebühr',
     longStayDiscount: (pct) => `Langzeitrabatt (${pct}%)`,
-    depositNote: (pct) => `(${pct}% Anzahlung \u2014 Rest bei Anreise)`,
+    depositNote: (pct) => `(${pct}% Anzahlung — Rest bei Anreise)`,
   },
 };
 
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
 
     // Accommodation
     const nightsDesc = i18n.nights(nights);
-    const dateRange = `${booking.checkin_date} \u2192 ${booking.checkout_date}`;
+    const dateRange = `${booking.checkin_date} → ${booking.checkout_date}`;
     const accommDesc = isPartialDeposit
       ? `${nightsDesc} (${dateRange}) ${i18n.depositNote(depositPercent)}`
       : `${nightsDesc} (${dateRange})`;

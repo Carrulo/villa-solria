@@ -56,86 +56,86 @@ export default function TermsPage() {
 function PtTerms() {
   return (
     <>
-      <h2>1. Identifica\u00e7\u00e3o do Propriet\u00e1rio</h2>
+      <h2>1. Identificação do Proprietário</h2>
       <p>
         <strong>Villa Solria</strong><br />
-        Propriet\u00e1rio: Bruno Carrulo<br />
+        Proprietário: Bruno Carrulo<br />
         Morada: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
-        Licen\u00e7a de Alojamento Local: 120108/AL<br />
-        Email: bruno@kontrolsat.com
+        Licença de Alojamento Local: 120108/AL<br />
+        Email: reservas@villasolria.com
       </p>
 
-      <h2>2. Condi\u00e7\u00f5es de Reserva</h2>
+      <h2>2. Condições de Reserva</h2>
       <ul>
-        <li>A reserva s\u00f3 \u00e9 considerada confirmada ap\u00f3s confirma\u00e7\u00e3o escrita por parte do propriet\u00e1rio e pagamento do sinal correspondente.</li>
-        <li>O pagamento do sinal (30% do valor total) deve ser efetuado no prazo de 48 horas ap\u00f3s a confirma\u00e7\u00e3o.</li>
-        <li>O valor remanescente deve ser pago at\u00e9 14 dias antes da data de check-in.</li>
-        <li>Os pre\u00e7os incluem IVA \u00e0 taxa legal em vigor.</li>
-        <li>A taxa de limpeza est\u00e1 inclu\u00edda no pre\u00e7o.</li>
+        <li>A reserva só é considerada confirmada após confirmação escrita por parte do proprietário e pagamento do sinal correspondente.</li>
+        <li>O pagamento do sinal (30% do valor total) deve ser efetuado no prazo de 48 horas após a confirmação.</li>
+        <li>O valor remanescente deve ser pago até 14 dias antes da data de check-in.</li>
+        <li>Os preços incluem IVA à taxa legal em vigor.</li>
+        <li>A taxa de limpeza está incluída no preço.</li>
       </ul>
 
-      <h2>3. Pol\u00edtica de Cancelamento</h2>
+      <h2>3. Política de Cancelamento</h2>
       <ul>
-        <li><strong>At\u00e9 14 dias antes do check-in:</strong> Cancelamento gratuito com reembolso total do sinal.</li>
+        <li><strong>Até 14 dias antes do check-in:</strong> Cancelamento gratuito com reembolso total do sinal.</li>
         <li><strong>Entre 14 e 7 dias antes:</strong> Reembolso de 50% do sinal.</li>
         <li><strong>Menos de 7 dias antes:</strong> Sem reembolso do sinal.</li>
-        <li><strong>N\u00e3o comparência (no-show):</strong> Sem reembolso de qualquer valor pago.</li>
+        <li><strong>Não comparência (no-show):</strong> Sem reembolso de qualquer valor pago.</li>
       </ul>
-      <p>Recomendamos a contrata\u00e7\u00e3o de um seguro de viagem que cubra cancelamentos.</p>
+      <p>Recomendamos a contratação de um seguro de viagem que cubra cancelamentos.</p>
 
       <h2>4. Check-in e Check-out</h2>
       <ul>
         <li><strong>Check-in:</strong> A partir das 16:00 (self check-in com fechadura digital)</li>
-        <li><strong>Check-out:</strong> At\u00e9 \u00e0s 10:30</li>
-        <li>Check-in antecipado ou check-out tardio pode ser solicitado, sujeito a disponibilidade e poss\u00edvel taxa adicional.</li>
+        <li><strong>Check-out:</strong> Até às 10:30</li>
+        <li>Check-in antecipado ou check-out tardio pode ser solicitado, sujeito a disponibilidade e possível taxa adicional.</li>
       </ul>
 
       <h2>5. Regras da Casa</h2>
       <ul>
-        <li>Capacidade m\u00e1xima: 6 h\u00f3spedes</li>
+        <li>Capacidade máxima: 6 hóspedes</li>
         <li>Proibido fumar em toda a propriedade (interior e exterior)</li>
-        <li>N\u00e3o s\u00e3o permitidos animais de estima\u00e7\u00e3o</li>
-        <li>N\u00e3o s\u00e3o permitidas festas ou eventos</li>
-        <li>Respeitar o sil\u00eancio entre as 22:00 e as 08:00</li>
+        <li>Não são permitidos animais de estimação</li>
+        <li>Não são permitidas festas ou eventos</li>
+        <li>Respeitar o silêncio entre as 22:00 e as 08:00</li>
         <li>Manter a propriedade limpa e arrumada</li>
-        <li>Reportar imediatamente qualquer dano ao propriet\u00e1rio</li>
+        <li>Reportar imediatamente qualquer dano ao proprietário</li>
       </ul>
 
       <h2>6. Responsabilidade</h2>
       <ul>
-        <li>O h\u00f3spede \u00e9 respons\u00e1vel por quaisquer danos causados ao im\u00f3vel ou ao seu conte\u00fado durante a estadia.</li>
-        <li>O propriet\u00e1rio n\u00e3o se responsabiliza por objetos pessoais perdidos, roubados ou danificados.</li>
-        <li>O propriet\u00e1rio n\u00e3o se responsabiliza por interrup\u00e7\u00f5es de servi\u00e7os p\u00fablicos (\u00e1gua, eletricidade, internet) ou por obras em propriedades vizinhas.</li>
-        <li>O propriet\u00e1rio reserva-se o direito de solicitar a sa\u00edda imediata do h\u00f3spede em caso de viola\u00e7\u00e3o grave das regras da casa, sem direito a reembolso.</li>
+        <li>O hóspede é responsável por quaisquer danos causados ao imóvel ou ao seu conteúdo durante a estadia.</li>
+        <li>O proprietário não se responsabiliza por objetos pessoais perdidos, roubados ou danificados.</li>
+        <li>O proprietário não se responsabiliza por interrupções de serviços públicos (água, eletricidade, internet) ou por obras em propriedades vizinhas.</li>
+        <li>O proprietário reserva-se o direito de solicitar a saída imediata do hóspede em caso de violação grave das regras da casa, sem direito a reembolso.</li>
       </ul>
 
-      <h2>7. Estadia M\u00ednima</h2>
+      <h2>7. Estadia Mínima</h2>
       <ul>
-        <li>\u00c9poca baixa (Nov-Mar): m\u00ednimo 3 noites</li>
-        <li>\u00c9poca m\u00e9dia (Abr-Jun, Out): m\u00ednimo 3 noites</li>
-        <li>\u00c9poca alta (Jul-Set): m\u00ednimo 7 noites</li>
+        <li>Época baixa (Nov-Mar): mínimo 3 noites</li>
+        <li>Época média (Abr-Jun, Out): mínimo 3 noites</li>
+        <li>Época alta (Jul-Set): mínimo 7 noites</li>
       </ul>
 
-      <h2>8. Servi\u00e7os Inclu\u00eddos</h2>
-      <p>O pre\u00e7o da reserva inclui:</p>
+      <h2>8. Serviços Incluídos</h2>
+      <p>O preço da reserva inclui:</p>
       <ul>
         <li>Roupa de cama e toalhas (incluindo toalhas de praia)</li>
-        <li>Produtos b\u00e1sicos de higiene</li>
+        <li>Produtos básicos de higiene</li>
         <li>Wi-Fi gratuito</li>
         <li>Estacionamento gratuito</li>
         <li>Limpeza final</li>
-        <li>Consumos de \u00e1gua, eletricidade e g\u00e1s</li>
+        <li>Consumos de água, eletricidade e gás</li>
       </ul>
 
-      <h2>9. Lei Aplic\u00e1vel e Foro Competente</h2>
+      <h2>9. Lei Aplicável e Foro Competente</h2>
       <p>
-        Estes termos e condi\u00e7\u00f5es s\u00e3o regidos pela lei portuguesa. Para a resolu\u00e7\u00e3o de quaisquer lit\u00edgios
-        emergentes ser\u00e1 competente o foro da comarca de Tavira, com ren\u00fancia a qualquer outro.
+        Estes termos e condições são regidos pela lei portuguesa. Para a resolução de quaisquer litígios
+        emergentes será competente o foro da comarca de Tavira, com renúncia a qualquer outro.
       </p>
 
-      <h2>10. Reclama\u00e7\u00f5es</h2>
+      <h2>10. Reclamações</h2>
       <p>
-        O Livro de Reclama\u00e7\u00f5es est\u00e1 dispon\u00edvel em formato eletr\u00f3nico em{' '}
+        O Livro de Reclamações está disponível em formato eletrónico em{' '}
         <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener noreferrer">
           www.livroreclamacoes.pt
         </a>.
@@ -153,7 +153,7 @@ function EnTerms() {
         Owner: Bruno Carrulo<br />
         Address: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
         Local Accommodation License: 120108/AL<br />
-        Email: bruno@kontrolsat.com
+        Email: reservas@villasolria.com
       </p>
 
       <h2>2. Booking Conditions</h2>
@@ -230,7 +230,7 @@ function EsTerms() {
         Propietario: Bruno Carrulo<br />
         Direccion: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
         Licencia de Alojamiento Local: 120108/AL<br />
-        Email: bruno@kontrolsat.com
+        Email: reservas@villasolria.com
       </p>
 
       <h2>2. Condiciones de Reserva</h2>
@@ -278,7 +278,7 @@ function DeTerms() {
         Eigentumer: Bruno Carrulo<br />
         Adresse: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
         Unterkunftslizenz: 120108/AL<br />
-        E-Mail: bruno@kontrolsat.com
+        E-Mail: reservas@villasolria.com
       </p>
 
       <h2>2. Buchungsbedingungen</h2>

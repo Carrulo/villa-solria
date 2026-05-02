@@ -18,7 +18,7 @@ type Props = {
 };
 
 const FOOTER_DEFAULTS: FooterSettings = {
-  email: 'bruno@kontrolsat.com',
+  email: 'reservas@villasolria.com',
   phone: '+351 912 345 678',
   whatsapp: '+351 912 345 678',
   address1: 'Rua do Junco 3.5B',

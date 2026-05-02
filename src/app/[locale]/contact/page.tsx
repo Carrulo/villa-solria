@@ -38,7 +38,7 @@ export default async function ContactPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: 'contact' });
   const settings = await fetchSettings();
 
-  const email = settings.contact_email || 'bruno@kontrolsat.com';
+  const email = settings.contact_email || 'reservas@villasolria.com';
   const phone = settings.contact_phone || '+351 912 345 678';
   const whatsapp = settings.whatsapp_number || phone;
   const address1 = settings.address_line1 || 'Rua do Junco 3.5B';

@@ -56,100 +56,100 @@ export default function PrivacyPage() {
 function PtPrivacy() {
   return (
     <>
-      <h2>1. Respons\u00e1vel pelo Tratamento de Dados</h2>
+      <h2>1. Responsável pelo Tratamento de Dados</h2>
       <p>
         <strong>Villa Solria</strong><br />
-        Respons\u00e1vel: Bruno Carrulo<br />
+        Responsável: Bruno Carrulo<br />
         Morada: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
-        Email: bruno@kontrolsat.com<br />
+        Email: reservas@villasolria.com<br />
         Telefone: +351 912 345 678
       </p>
       <p>
         A Villa Solria compromete-se a proteger a privacidade dos seus utilizadores em conformidade
-        com o Regulamento Geral sobre a Prote\u00e7\u00e3o de Dados (RGPD) — Regulamento (UE) 2016/679 — e a
-        legisla\u00e7\u00e3o portuguesa aplic\u00e1vel (Lei n.\u00ba 58/2019).
+        com o Regulamento Geral sobre a Proteção de Dados (RGPD) — Regulamento (UE) 2016/679 — e a
+        legislação portuguesa aplicável (Lei n.º 58/2019).
       </p>
 
       <h2>2. Dados Pessoais Recolhidos</h2>
-      <p>Recolhemos os seguintes dados pessoais atrav\u00e9s do formul\u00e1rio de reserva e contacto:</p>
+      <p>Recolhemos os seguintes dados pessoais através do formulário de reserva e contacto:</p>
       <ul>
         <li>Nome completo</li>
-        <li>Endere\u00e7o de email</li>
-        <li>N\u00famero de telefone</li>
+        <li>Endereço de email</li>
+        <li>Número de telefone</li>
         <li>Datas de estadia pretendidas</li>
-        <li>N\u00famero de h\u00f3spedes</li>
-        <li>Mensagens e pedidos espec\u00edficos</li>
+        <li>Número de hóspedes</li>
+        <li>Mensagens e pedidos específicos</li>
       </ul>
-      <p>Podemos tamb\u00e9m recolher dados t\u00e9cnicos automaticamente (endere\u00e7o IP, tipo de navegador, p\u00e1ginas visitadas) atrav\u00e9s de cookies anal\u00edticos, caso tenha dado o seu consentimento.</p>
+      <p>Podemos também recolher dados técnicos automaticamente (endereço IP, tipo de navegador, páginas visitadas) através de cookies analíticos, caso tenha dado o seu consentimento.</p>
 
       <h2>3. Finalidades do Tratamento</h2>
-      <p>Os seus dados pessoais s\u00e3o tratados para as seguintes finalidades:</p>
+      <p>Os seus dados pessoais são tratados para as seguintes finalidades:</p>
       <ul>
-        <li><strong>Gest\u00e3o de reservas:</strong> Processar e confirmar o seu pedido de reserva</li>
-        <li><strong>Comunica\u00e7\u00e3o:</strong> Responder a pedidos de informa\u00e7\u00e3o e fornecer detalhes sobre a estadia</li>
-        <li><strong>Obriga\u00e7\u00f5es legais:</strong> Cumprimento de obriga\u00e7\u00f5es fiscais e de registo de h\u00f3spedes (SEF)</li>
-        <li><strong>Marketing:</strong> Envio de comunica\u00e7\u00f5es promocionais, apenas com o seu consentimento expresso</li>
-        <li><strong>Melhoria do servi\u00e7o:</strong> An\u00e1lise estat\u00edstica anonimizada do uso do website</li>
+        <li><strong>Gestão de reservas:</strong> Processar e confirmar o seu pedido de reserva</li>
+        <li><strong>Comunicação:</strong> Responder a pedidos de informação e fornecer detalhes sobre a estadia</li>
+        <li><strong>Obrigações legais:</strong> Cumprimento de obrigações fiscais e de registo de hóspedes (SEF)</li>
+        <li><strong>Marketing:</strong> Envio de comunicações promocionais, apenas com o seu consentimento expresso</li>
+        <li><strong>Melhoria do serviço:</strong> Análise estatística anonimizada do uso do website</li>
       </ul>
 
       <h2>4. Base Legal do Tratamento</h2>
       <ul>
-        <li><strong>Consentimento (Art. 6.\u00ba(1)(a) RGPD):</strong> Para cookies anal\u00edticos, de marketing e comunica\u00e7\u00f5es promocionais</li>
-        <li><strong>Execu\u00e7\u00e3o de contrato (Art. 6.\u00ba(1)(b) RGPD):</strong> Para processar reservas e gerir a estadia</li>
-        <li><strong>Obriga\u00e7\u00e3o legal (Art. 6.\u00ba(1)(c) RGPD):</strong> Para cumprimento de obriga\u00e7\u00f5es fiscais e de registo</li>
-        <li><strong>Interesse leg\u00edtimo (Art. 6.\u00ba(1)(f) RGPD):</strong> Para melhorar o nosso website e servi\u00e7os</li>
+        <li><strong>Consentimento (Art. 6.º(1)(a) RGPD):</strong> Para cookies analíticos, de marketing e comunicações promocionais</li>
+        <li><strong>Execução de contrato (Art. 6.º(1)(b) RGPD):</strong> Para processar reservas e gerir a estadia</li>
+        <li><strong>Obrigação legal (Art. 6.º(1)(c) RGPD):</strong> Para cumprimento de obrigações fiscais e de registo</li>
+        <li><strong>Interesse legítimo (Art. 6.º(1)(f) RGPD):</strong> Para melhorar o nosso website e serviços</li>
       </ul>
 
       <h2>5. Cookies</h2>
       <p>O nosso website utiliza os seguintes tipos de cookies:</p>
-      <h3>Cookies Necess\u00e1rios</h3>
-      <p>Essenciais para o funcionamento do website. Incluem cookies de sess\u00e3o, prefer\u00eancias de idioma e consentimento de cookies. N\u00e3o requerem consentimento.</p>
-      <h3>Cookies Anal\u00edticos (Google Analytics 4)</h3>
-      <p>Utilizados para compreender como os visitantes interagem com o website, recolhendo informa\u00e7\u00e3o anonimizada. S\u00f3 s\u00e3o ativados com o seu consentimento.</p>
+      <h3>Cookies Necessários</h3>
+      <p>Essenciais para o funcionamento do website. Incluem cookies de sessão, preferências de idioma e consentimento de cookies. Não requerem consentimento.</p>
+      <h3>Cookies Analíticos (Google Analytics 4)</h3>
+      <p>Utilizados para compreender como os visitantes interagem com o website, recolhendo informação anonimizada. Só são ativados com o seu consentimento.</p>
       <h3>Cookies de Marketing (Meta Pixel)</h3>
-      <p>Utilizados para apresentar publicidade relevante em plataformas de redes sociais. S\u00f3 s\u00e3o ativados com o seu consentimento.</p>
-      <p>Pode gerir as suas prefer\u00eancias de cookies a qualquer momento clicando em &quot;Gerir cookies&quot; no rodap\u00e9 do website.</p>
+      <p>Utilizados para apresentar publicidade relevante em plataformas de redes sociais. Só são ativados com o seu consentimento.</p>
+      <p>Pode gerir as suas preferências de cookies a qualquer momento clicando em &quot;Gerir cookies&quot; no rodapé do website.</p>
 
       <h2>6. Partilha de Dados</h2>
       <p>Os seus dados pessoais podem ser partilhados com:</p>
       <ul>
-        <li>Servi\u00e7o de Estrangeiros e Fronteiras (SEF) — registo obrigat\u00f3rio de h\u00f3spedes</li>
-        <li>Autoridade Tribut\u00e1ria — obriga\u00e7\u00f5es fiscais</li>
+        <li>Serviço de Estrangeiros e Fronteiras (SEF) — registo obrigatório de hóspedes</li>
+        <li>Autoridade Tributária — obrigações fiscais</li>
         <li>Google (Analytics) — apenas com consentimento</li>
         <li>Meta (Pixel) — apenas com consentimento</li>
       </ul>
-      <p>N\u00e3o vendemos nem partilhamos os seus dados com terceiros para fins comerciais.</p>
+      <p>Não vendemos nem partilhamos os seus dados com terceiros para fins comerciais.</p>
 
-      <h2>7. Per\u00edodo de Conserva\u00e7\u00e3o</h2>
+      <h2>7. Período de Conservação</h2>
       <ul>
-        <li>Dados de reserva: 5 anos ap\u00f3s a estadia (obriga\u00e7\u00e3o fiscal)</li>
-        <li>Dados de contacto: At\u00e9 2 anos ap\u00f3s o \u00faltimo contacto, salvo consentimento para per\u00edodo superior</li>
-        <li>Dados de cookies: Conforme a dura\u00e7\u00e3o do cookie (m\u00e1ximo 13 meses para anal\u00edticos)</li>
+        <li>Dados de reserva: 5 anos após a estadia (obrigação fiscal)</li>
+        <li>Dados de contacto: Até 2 anos após o último contacto, salvo consentimento para período superior</li>
+        <li>Dados de cookies: Conforme a duração do cookie (máximo 13 meses para analíticos)</li>
       </ul>
 
       <h2>8. Direitos do Titular dos Dados</h2>
       <p>Nos termos do RGPD, tem os seguintes direitos:</p>
       <ul>
         <li><strong>Direito de acesso:</strong> Saber que dados pessoais detemos sobre si</li>
-        <li><strong>Direito de retifica\u00e7\u00e3o:</strong> Corrigir dados inexatos ou incompletos</li>
-        <li><strong>Direito ao apagamento:</strong> Solicitar a elimina\u00e7\u00e3o dos seus dados (&quot;direito a ser esquecido&quot;)</li>
-        <li><strong>Direito \u00e0 limita\u00e7\u00e3o:</strong> Restringir o tratamento dos seus dados</li>
-        <li><strong>Direito \u00e0 portabilidade:</strong> Receber os seus dados num formato estruturado e leg\u00edvel por m\u00e1quina</li>
-        <li><strong>Direito de oposi\u00e7\u00e3o:</strong> Opor-se ao tratamento dos seus dados para determinadas finalidades</li>
+        <li><strong>Direito de retificação:</strong> Corrigir dados inexatos ou incompletos</li>
+        <li><strong>Direito ao apagamento:</strong> Solicitar a eliminação dos seus dados (&quot;direito a ser esquecido&quot;)</li>
+        <li><strong>Direito à limitação:</strong> Restringir o tratamento dos seus dados</li>
+        <li><strong>Direito à portabilidade:</strong> Receber os seus dados num formato estruturado e legível por máquina</li>
+        <li><strong>Direito de oposição:</strong> Opor-se ao tratamento dos seus dados para determinadas finalidades</li>
         <li><strong>Direito de retirar o consentimento:</strong> A qualquer momento, sem afetar a licitude do tratamento anterior</li>
       </ul>
       <p>
-        Para exercer os seus direitos, contacte-nos atrav\u00e9s de: <strong>bruno@kontrolsat.com</strong>
+        Para exercer os seus direitos, contacte-nos através de: <strong>reservas@villasolria.com</strong>
       </p>
       <p>
-        Tem tamb\u00e9m o direito de apresentar reclama\u00e7\u00e3o junto da Comiss\u00e3o Nacional de Prote\u00e7\u00e3o de Dados (CNPD) — <a href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a>
+        Tem também o direito de apresentar reclamação junto da Comissão Nacional de Proteção de Dados (CNPD) — <a href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a>
       </p>
 
-      <h2>9. Seguran\u00e7a</h2>
-      <p>Implementamos medidas t\u00e9cnicas e organizativas adequadas para proteger os seus dados pessoais contra acesso n\u00e3o autorizado, perda ou destrui\u00e7\u00e3o, incluindo encripta\u00e7\u00e3o SSL/TLS em todas as comunica\u00e7\u00f5es.</p>
+      <h2>9. Segurança</h2>
+      <p>Implementamos medidas técnicas e organizativas adequadas para proteger os seus dados pessoais contra acesso não autorizado, perda ou destruição, incluindo encriptação SSL/TLS em todas as comunicações.</p>
 
-      <h2>10. Altera\u00e7\u00f5es a esta Pol\u00edtica</h2>
-      <p>Reservamo-nos o direito de atualizar esta pol\u00edtica de privacidade. Quaisquer altera\u00e7\u00f5es significativas ser\u00e3o comunicadas atrav\u00e9s do website.</p>
+      <h2>10. Alterações a esta Política</h2>
+      <p>Reservamo-nos o direito de atualizar esta política de privacidade. Quaisquer alterações significativas serão comunicadas através do website.</p>
     </>
   );
 }
@@ -162,7 +162,7 @@ function EnPrivacy() {
         <strong>Villa Solria</strong><br />
         Controller: Bruno Carrulo<br />
         Address: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
-        Email: bruno@kontrolsat.com<br />
+        Email: reservas@villasolria.com<br />
         Phone: +351 912 345 678
       </p>
       <p>
@@ -237,7 +237,7 @@ function EnPrivacy() {
         <li>Object to processing</li>
         <li>Withdraw consent at any time</li>
       </ul>
-      <p>To exercise your rights, contact us at: <strong>bruno@kontrolsat.com</strong></p>
+      <p>To exercise your rights, contact us at: <strong>reservas@villasolria.com</strong></p>
       <p>You also have the right to lodge a complaint with the Portuguese Data Protection Authority (CNPD) — <a href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a></p>
 
       <h2>9. Security</h2>
@@ -257,7 +257,7 @@ function EsPrivacy() {
         <strong>Villa Solria</strong><br />
         Responsable: Bruno Carrulo<br />
         Direccion: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
-        Email: bruno@kontrolsat.com<br />
+        Email: reservas@villasolria.com<br />
         Telefono: +351 912 345 678
       </p>
       <p>
@@ -295,7 +295,7 @@ function EsPrivacy() {
       <p>Cookies necesarias (sesion, idioma), analiticas (Google Analytics 4) y de marketing (Meta Pixel). Puede gestionar sus preferencias en &quot;Gestionar cookies&quot; en el pie de pagina.</p>
 
       <h2>6. Derechos del Titular</h2>
-      <p>Acceso, rectificacion, supresion, limitacion, portabilidad, oposicion y retirada del consentimiento. Contacto: <strong>bruno@kontrolsat.com</strong></p>
+      <p>Acceso, rectificacion, supresion, limitacion, portabilidad, oposicion y retirada del consentimiento. Contacto: <strong>reservas@villasolria.com</strong></p>
       <p>Puede presentar reclamacion ante la CNPD — <a href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a></p>
 
       <h2>7. Seguridad</h2>
@@ -312,7 +312,7 @@ function DePrivacy() {
         <strong>Villa Solria</strong><br />
         Verantwortlicher: Bruno Carrulo<br />
         Adresse: Rua do Junco 3.5B, 8800-591 Tavira, Portugal<br />
-        E-Mail: bruno@kontrolsat.com<br />
+        E-Mail: reservas@villasolria.com<br />
         Telefon: +351 912 345 678
       </p>
       <p>
@@ -350,7 +350,7 @@ function DePrivacy() {
       <p>Notwendige Cookies (Sitzung, Sprache), analytische (Google Analytics 4) und Marketing-Cookies (Meta Pixel). Verwalten Sie Ihre Einstellungen unter &quot;Cookies verwalten&quot; in der Fusszeile.</p>
 
       <h2>6. Ihre Rechte</h2>
-      <p>Auskunft, Berichtigung, Loschung, Einschrankung, Datenubertragbarkeit, Widerspruch und Widerruf der Einwilligung. Kontakt: <strong>bruno@kontrolsat.com</strong></p>
+      <p>Auskunft, Berichtigung, Loschung, Einschrankung, Datenubertragbarkeit, Widerspruch und Widerruf der Einwilligung. Kontakt: <strong>reservas@villasolria.com</strong></p>
       <p>Beschwerderecht bei der CNPD — <a href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a></p>
 
       <h2>7. Sicherheit</h2>

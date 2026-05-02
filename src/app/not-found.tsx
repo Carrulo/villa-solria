@@ -16,10 +16,10 @@ export default function NotFound() {
               Villa Solria
             </h2>
             <p className="text-lg mb-2" style={{ color: '#6B7280' }}>
-              P\u00e1gina n\u00e3o encontrada / Page not found
+              Página não encontrada / Page not found
             </p>
             <p className="text-sm mb-8" style={{ color: '#9CA3AF' }}>
-              A p\u00e1gina que procura n\u00e3o existe ou foi movida.
+              A página que procura não existe ou foi movida.
               <br />
               The page you are looking for does not exist or has been moved.
             </p>
@@ -36,7 +36,7 @@ export default function NotFound() {
                 fontSize: '14px',
               }}
             >
-              Voltar ao in\u00edcio / Back to homepage
+              Voltar ao início / Back to homepage
             </Link>
           </div>
         </div>

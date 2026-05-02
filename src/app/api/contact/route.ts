@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       });
 
       const resendKey = settings.resend_api_key;
-      const toEmail = settings.email_contact_email || 'bruno@kontrolsat.com';
+      const toEmail = settings.email_contact_email || 'reservas@villasolria.com';
 
       if (resendKey) {
         const { Resend } = await import('resend');
