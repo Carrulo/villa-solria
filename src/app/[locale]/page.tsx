@@ -388,9 +388,30 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     {host('responseTime')}
                   </span>
                 </div>
-                <p className="text-gray-600 leading-relaxed mb-6">
+                <p className="text-gray-600 leading-relaxed mb-4">
                   {host('bio')}
                 </p>
+                {/* Social proof — listings on the major OTAs (no link out: pure trust signal) */}
+                <div className="mb-6">
+                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-2">
+                    {host('listedOn') || 'Também listados em'}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
+                      <Star size={11} className="text-accent fill-accent" />
+                      <span className="font-semibold">9.8/10</span>
+                      <span className="text-gray-500">Booking.com</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
+                      <Star size={11} className="text-accent fill-accent" />
+                      <span className="font-semibold">4.96/5</span>
+                      <span className="text-gray-500">Airbnb</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
+                      <span className="text-gray-500">Vrbo</span>
+                    </span>
+                  </div>
+                </div>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                   <a
                     href={`https://wa.me/${whatsappNumber}`}
