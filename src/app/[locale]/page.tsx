@@ -222,31 +222,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* Video background — autoplays on desktop, image fallback covers
-            mobile/slow connections (browsers that can't autoplay still get
-            the poster as a still image). */}
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="/videos/villa-tour-poster.jpg"
-          preload="metadata"
-        >
-          <source src="/videos/villa-tour-mobile.mp4" media="(max-width: 768px)" type="video/mp4" />
-          <source src="/videos/villa-tour.mp4" type="video/mp4" />
-          {/* Fallback for browsers that don't support video: */}
-          <Image
-            src={heroSrc}
-            alt={heroAlt}
-            fill
-            priority
-            className="object-cover"
-            sizes="100vw"
-            unoptimized={heroSrc.startsWith('http')}
-          />
-        </video>
+        <Image
+          src={heroSrc}
+          alt={heroAlt}
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+          unoptimized={heroSrc.startsWith('http')}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
