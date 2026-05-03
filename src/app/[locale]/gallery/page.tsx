@@ -34,7 +34,13 @@ export default function GalleryPage() {
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [galleryPhotos, setGalleryPhotos] = useState(
-    fallbackPhotos.map((p) => ({ src: p.src, label: p.fallbackLabel, key: p.key, category: p.category as string }))
+    fallbackPhotos.map((p) => ({
+      src: p.src,
+      label: p.fallbackLabel,
+      key: p.key,
+      category: p.category as string,
+      isDbPhoto: false,
+    }))
   );
 
   useEffect(() => {
@@ -45,9 +51,10 @@ export default function GalleryPage() {
           setGalleryPhotos(
             data.map((p) => ({
               src: getPhotoUrl(p),
-              label: p.alt_text || p.filename,
+              label: p.alt_text || '',
               key: p.id,
               category: p.category,
+              isDbPhoto: true,
             }))
           );
         }
@@ -61,8 +68,24 @@ export default function GalleryPage() {
     ? galleryPhotos
     : galleryPhotos.filter((p) => p.category === activeFilter);
 
-  const getLabel = (photo: { label: string; key: string }) => {
-    // Try translation by key, fall back to label from DB/fallback
+  // Looks like a UUID or raw filename slug — never display these.
+  const looksLikeNoise = (s: string): boolean =>
+    !s ||
+    /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s) ||
+    /^gallery\.[0-9a-f-]+/i.test(s) ||
+    /^IMG[_-]?\d+/i.test(s);
+
+  const getLabel = (photo: {
+    label: string;
+    key: string;
+    isDbPhoto?: boolean;
+  }): string => {
+    // DB photos already have proper SEO alt text — use it directly
+    // (skip the translation lookup that produced the UUID labels).
+    if (photo.isDbPhoto) {
+      return looksLikeNoise(photo.label) ? '' : photo.label;
+    }
+    // Fallback hardcoded photos use translation keys.
     try {
       return t(photo.key);
     } catch {
@@ -121,9 +144,11 @@ export default function GalleryPage() {
                 unoptimized={photo.src.startsWith('http')}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="absolute bottom-3 left-3 text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
-                {getLabel(photo)}
-              </span>
+              {getLabel(photo) && (
+                <span className="absolute bottom-3 left-3 text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
+                  {getLabel(photo)}
+                </span>
+              )}
             </div>
           ))}
         </div>
