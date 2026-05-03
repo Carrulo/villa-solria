@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
-import { MapPin, Umbrella, Building2, Plane, Palmtree, UtensilsCrossed, Bike, Landmark } from 'lucide-react';
+import { MapPin, Umbrella, Building2, Palmtree, UtensilsCrossed, Bike, Landmark } from 'lucide-react';
 import { supabase, getPhotoUrl, type Photo } from '@/lib/supabase';
 
 type Props = {
@@ -42,7 +42,6 @@ export default async function LocationPage() {
     { icon: Umbrella, name: t('distances.beach'), dist: t('distances.beachDist'), color: 'bg-accent/10 text-accent' },
     { icon: Building2, name: t('distances.tavira'), dist: t('distances.taviraDist'), color: 'bg-primary/10 text-primary' },
     { icon: Palmtree, name: t('distances.island'), dist: t('distances.islandDist'), color: 'bg-sand/20 text-sand' },
-    { icon: Plane, name: t('distances.airport'), dist: t('distances.airportDist'), color: 'bg-gray-100 text-gray-600' },
   ];
 
   const recommendations = [
