@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import RotatingImage from '@/components/RotatingImage';
+import ScrollGallery from '@/components/ScrollGallery';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
@@ -308,23 +309,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               {h('photosTitle')}
             </h2>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-            {previewPhotos.map((photo, i) => (
-              <div
-                key={photo.src + i}
-                className={`relative overflow-hidden rounded-2xl ${i === 0 ? 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto' : 'aspect-[4/3]'}`}
-              >
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-500"
-                  sizes={i === 0 ? '(max-width: 1024px) 100vw, 50vw' : '(max-width: 1024px) 50vw, 25vw'}
-                  unoptimized={photo.src.startsWith('http')}
-                />
-              </div>
-            ))}
-          </div>
+          <ScrollGallery photos={previewPhotos} variant="feature" />
           <div className="text-center mt-8">
             <Link
               href="/gallery"
@@ -371,23 +356,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
 
             {/* Photo grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-              {areaPhotos.map((photo, i) => (
-                <div
-                  key={photo.src + i}
-                  className={`relative overflow-hidden rounded-2xl ${i === 0 ? 'col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto' : 'aspect-[4/3]'}`}
-                >
-                  <Image
-                    src={photo.src}
-                    alt={photo.alt}
-                    fill
-                    className="object-cover hover:scale-105 transition-transform duration-500"
-                    sizes={i === 0 ? '(max-width: 1024px) 100vw, 66vw' : '(max-width: 1024px) 50vw, 33vw'}
-                    unoptimized={photo.src.startsWith('http')}
-                  />
-                </div>
-              ))}
-            </div>
+            <ScrollGallery photos={areaPhotos} variant="even" />
           </div>
         </section>
       )}
