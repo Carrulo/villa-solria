@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
+import RotatingImage from '@/components/RotatingImage';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
@@ -206,8 +207,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const allPhotos = (dbPhotos || []) as Photo[];
   const heroPhoto = allPhotos.find((p) => p.is_hero);
-  const heroSrc = heroPhoto ? getPhotoUrl(heroPhoto) : '/images/property/hero-ria-formosa.jpg';
-  const heroAlt = heroPhoto?.alt_text || 'Ria Formosa panoramic view from Villa Solria';
+  // Hero rotates through every "Vistas" photo + the explicit hero,
+  // de-duplicated, with the hero/star photo first as anchor.
+  const heroAnchor = heroPhoto ? getPhotoUrl(heroPhoto) : null;
+  const viewPhotoUrls = allPhotos
+    .filter((p) => p.category === 'view' && p.is_visible !== false)
+    .map(getPhotoUrl);
+  const heroCarousel = (() => {
+    const urls: string[] = [];
+    if (heroAnchor) urls.push(heroAnchor);
+    for (const u of viewPhotoUrls) if (!urls.includes(u)) urls.push(u);
+    return urls.length > 0 ? urls : ['/images/property/hero-ria-formosa.jpg'];
+  })();
+  const heroAlt = heroPhoto?.alt_text || 'Vistas Villa Solria - Cabanas de Tavira - Algarve';
 
   const previewPhotos =
     allPhotos.length > 0
@@ -237,14 +249,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        <Image
-          src={heroSrc}
+        <RotatingImage
+          urls={heroCarousel}
           alt={heroAlt}
-          fill
-          priority
-          className="object-cover"
           sizes="100vw"
-          unoptimized={heroSrc.startsWith('http')}
+          intervalMs={7000}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
 
