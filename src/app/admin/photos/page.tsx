@@ -101,6 +101,13 @@ export default function AdminPhotosPage() {
       const pa = priority(a.category);
       const pb = priority(b.category);
       if (pa !== pb) return pa - pb;
+      // Within bedrooms, group by room_label so each room's photos
+      // (incl. its varanda etc.) stay contiguous.
+      if (a.category === 'bedroom' && b.category === 'bedroom') {
+        const ra = a.room_label || 'zzz';
+        const rb = b.room_label || 'zzz';
+        if (ra !== rb) return ra.localeCompare(rb);
+      }
       return a.sort_order - b.sort_order;
     });
     const renumbered = sorted.map((p, i) => ({ ...p, sort_order: i }));
@@ -241,6 +248,19 @@ export default function AdminPhotosPage() {
     }
     setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, is_visible: !visible } : p)));
     showToast(visible ? 'Foto oculta' : 'Foto visível', 'success');
+  }
+
+  // Update room label (only meaningful for bedroom category)
+  async function updateRoomLabel(id: string, room_label: string | null) {
+    const { error } = await supabase
+      .from('photos')
+      .update({ room_label })
+      .eq('id', id);
+    if (error) {
+      showToast('Erro ao atualizar quarto', 'error');
+      return;
+    }
+    setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, room_label } : p)));
   }
 
   // Update category
@@ -600,9 +620,16 @@ export default function AdminPhotosPage() {
               ),
             ];
             return orderedCats.map((cat) => {
-              const group = (groups.get(cat) || []).sort(
-                (a, b) => a.sort_order - b.sort_order,
-              );
+              const group = (groups.get(cat) || []).sort((a, b) => {
+                // For bedrooms, group by room_label first so "Quarto 1" + its
+                // varanda end up adjacent regardless of sort_order.
+                if (cat === 'bedroom') {
+                  const ra = a.room_label || 'zzz';
+                  const rb = b.room_label || 'zzz';
+                  if (ra !== rb) return ra.localeCompare(rb);
+                }
+                return a.sort_order - b.sort_order;
+              });
               const label = PHOTO_CATEGORY_LABELS[cat as PhotoCategory] || cat;
               return (
                 <section key={cat} className="space-y-3">
@@ -658,6 +685,7 @@ export default function AdminPhotosPage() {
                           onToggleHero={() => toggleHero(photo)}
                           onToggleVisibility={() => toggleVisibility(photo.id, photo.is_visible)}
                           onUpdateCategory={(c) => updateCategory(photo.id, c)}
+                          onUpdateRoomLabel={(rl) => updateRoomLabel(photo.id, rl)}
                           onUpdateSortOrder={(order) => updateSortOrder(photo.id, order)}
                           onStartEditAlt={() => {
                             setEditingAlt(photo.id);
@@ -731,6 +759,7 @@ function PhotoCard({
   onToggleHero,
   onToggleVisibility,
   onUpdateCategory,
+  onUpdateRoomLabel,
   onUpdateSortOrder,
   onStartEditAlt,
   onSaveAlt,
@@ -748,6 +777,7 @@ function PhotoCard({
   onToggleHero: () => void;
   onToggleVisibility: () => void;
   onUpdateCategory: (cat: string) => void;
+  onUpdateRoomLabel: (label: string | null) => void;
   onUpdateSortOrder: (order: number) => void;
   onStartEditAlt: () => void;
   onSaveAlt: () => void;
@@ -912,6 +942,21 @@ function PhotoCard({
             title="Ordem"
           />
         </div>
+
+        {/* Room sub-tag (only for bedroom category) */}
+        {photo.category === 'bedroom' && (
+          <select
+            value={photo.room_label || ''}
+            onChange={(e) => onUpdateRoomLabel(e.target.value || null)}
+            className="w-full bg-amber-500/10 border border-amber-500/30 rounded-lg px-2 py-1 text-xs text-amber-200"
+            title="A que quarto pertence esta foto?"
+          >
+            <option value="">— sem quarto —</option>
+            <option value="Quarto 1">Quarto 1 (principal)</option>
+            <option value="Quarto 2">Quarto 2</option>
+            <option value="Quarto 3">Quarto 3</option>
+          </select>
+        )}
       </div>
     </div>
   );

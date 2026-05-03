@@ -101,6 +101,7 @@ export interface Photo {
   is_hero: boolean;
   is_visible: boolean;
   source: 'local' | 'storage';
+  room_label?: string | null;
   width?: number;
   height?: number;
   created_at: string;
