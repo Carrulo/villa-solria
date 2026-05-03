@@ -23,13 +23,23 @@ export default function FloatingBookCTA() {
   // /pricing already has its own sticky MobileBookingBar — hide here.
   const onPricing = pathname?.includes('/pricing') ?? false;
 
-  // Hide on top of page (don't compete with hero CTA), reveal after
-  // the visitor scrolls past the first viewport.
+  // Show after first viewport scroll, hide when the footer is in view
+  // so the pill doesn't overlap the footer Facebook button on mobile.
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > window.innerHeight * 0.6);
+    const handler = () => {
+      const past = window.scrollY > window.innerHeight * 0.6;
+      const nearBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 220;
+      setScrolled(past && !nearBottom);
+    };
     handler();
     window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
+    window.addEventListener('resize', handler);
+    return () => {
+      window.removeEventListener('scroll', handler);
+      window.removeEventListener('resize', handler);
+    };
   }, []);
 
   // Close modal with Escape
