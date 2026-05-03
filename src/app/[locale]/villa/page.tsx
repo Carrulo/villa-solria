@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import AmenityIcon from '@/components/AmenityIcon';
 import { supabase, getPhotoUrl, type Photo } from '@/lib/supabase';
+import RotatingImage from '@/components/RotatingImage';
 import {
   AirVent, Wifi, UtensilsCrossed, GlassWater, WashingMachine,
   Flame, Beef, Car, Lock, Sun, Eye, TreePine, Coffee,
@@ -25,9 +26,11 @@ type VillaSlots = {
   living: string;
   kitchen: string;
   bedroom1: string;
-  bedroom2: string;
+  // The "second" slots are arrays — they rotate as a carousel on the
+  // page, cycling through every other photo in that category.
+  bedroom2Carousel: string[];
   outdoor1: string;
-  outdoor2: string;
+  outdoor2Carousel: string[];
 };
 
 async function getVillaSlots(): Promise<VillaSlots> {
@@ -46,17 +49,16 @@ async function getVillaSlots(): Promise<VillaSlots> {
     firstOf('hero') ||
     firstOf('view');
 
-  // Two distinct bedrooms: prefer Quarto 1 first, then a different room
+  // Quarto 1 = main fixed photo. All photos NOT in Quarto 1 rotate
+  // in the second slot (Quarto 2, Quarto 3, etc.).
   const bedrooms = allOf('bedroom');
   const bed1 = bedrooms.find((p) => p.room_label === 'Quarto 1') || bedrooms[0];
-  const bed2 =
-    bedrooms.find((p) => p.id !== bed1?.id && (p.room_label || '') !== (bed1?.room_label || '')) ||
-    bedrooms[1] ||
-    bed1;
+  const otherBedrooms = bedrooms.filter((p) => p.id !== bed1?.id);
 
+  // Outdoor: 1st by sort_order is fixed. All others rotate in slot 2.
   const outdoors = allOf('outdoor');
   const out1 = outdoors[0];
-  const out2 = outdoors[1] || out1;
+  const otherOutdoors = outdoors.slice(1);
 
   const url = (p: Photo | undefined, fallback: string) =>
     p ? getPhotoUrl(p) : fallback;
@@ -66,9 +68,13 @@ async function getVillaSlots(): Promise<VillaSlots> {
     living: url(firstOf('living'), '/images/property/living-room.jpg'),
     kitchen: url(firstOf('kitchen'), '/images/property/kitchen.jpg'),
     bedroom1: url(bed1, '/images/property/bedroom-master.jpg'),
-    bedroom2: url(bed2, '/images/property/bedroom-double.jpg'),
+    bedroom2Carousel: otherBedrooms.length > 0
+      ? otherBedrooms.map(getPhotoUrl)
+      : ['/images/property/bedroom-double.jpg'],
     outdoor1: url(out1, '/images/property/garden.jpg'),
-    outdoor2: url(out2, '/images/property/balcony.jpg'),
+    outdoor2Carousel: otherOutdoors.length > 0
+      ? otherOutdoors.map(getPhotoUrl)
+      : ['/images/property/balcony.jpg'],
   };
 }
 
@@ -181,13 +187,10 @@ export default async function VillaPage() {
                 />
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                <Image
-                  src={slots.bedroom2}
-                  alt="Double bedroom"
-                  fill
-                  className="object-cover"
+                <RotatingImage
+                  urls={slots.bedroom2Carousel}
+                  alt="Other bedrooms"
                   sizes="(max-width: 1024px) 50vw, 25vw"
-                  unoptimized={slots.bedroom2.startsWith('http')}
                 />
               </div>
             </div>
@@ -220,13 +223,10 @@ export default async function VillaPage() {
               />
             </div>
             <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
-              <Image
-                src={slots.outdoor2}
-                alt="Master bedroom balcony"
-                fill
-                className="object-cover"
+              <RotatingImage
+                urls={slots.outdoor2Carousel}
+                alt="Outdoor"
                 sizes="(max-width: 1024px) 100vw, 33vw"
-                unoptimized={slots.outdoor2.startsWith('http')}
               />
             </div>
           </div>
