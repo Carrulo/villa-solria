@@ -1,7 +1,7 @@
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import { MapPin, Umbrella, Building2, Plane, Palmtree, UtensilsCrossed, Bike, Landmark } from 'lucide-react';
+import { supabase, getPhotoUrl, type Photo } from '@/lib/supabase';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -13,8 +13,23 @@ export async function generateMetadata({ params }: Props) {
   return { title: t('locationTitle'), description: t('locationDescription') };
 }
 
-export default function LocationPage() {
-  const t = useTranslations('location');
+async function getLocationHeroUrl(): Promise<string> {
+  // Prefer area / view photos for the location page hero
+  const { data } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('is_visible', true)
+    .in('category', ['area', 'view'])
+    .order('category', { ascending: true }) // area before view
+    .order('sort_order', { ascending: true })
+    .limit(1);
+  const photo = data?.[0] as Photo | undefined;
+  return photo ? getPhotoUrl(photo) : '/images/property/beach-view.jpg';
+}
+
+export default async function LocationPage() {
+  const t = await getTranslations('location');
+  const heroUrl = await getLocationHeroUrl();
 
   const distances = [
     { icon: Umbrella, name: t('distances.beach'), dist: t('distances.beachDist'), color: 'bg-accent/10 text-accent' },
@@ -35,12 +50,13 @@ export default function LocationPage() {
       {/* Hero Image */}
       <div className="relative h-[35vh] lg:h-[45vh] w-full">
         <Image
-          src="/images/property/beach-view.jpg"
-          alt="Beach view near Villa Solria"
+          src={heroUrl}
+          alt="Villa Solria area"
           fill
           priority
           className="object-cover"
           sizes="100vw"
+          unoptimized={heroUrl.startsWith('http')}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
         <div className="absolute bottom-8 left-0 right-0 text-center">

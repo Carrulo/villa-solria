@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import AmenityIcon from '@/components/AmenityIcon';
+import { supabase, getPhotoUrl, type Photo } from '@/lib/supabase';
 import {
   AirVent, Wifi, UtensilsCrossed, GlassWater, WashingMachine,
   Flame, Beef, Car, Lock, Sun, Eye, TreePine, Coffee,
@@ -19,8 +20,23 @@ export async function generateMetadata({ params }: Props) {
   return { title: t('villaTitle'), description: t('villaDescription') };
 }
 
-export default function VillaPage() {
-  const t = useTranslations('villa');
+async function getHeroUrl(): Promise<string> {
+  // 1) explicit hero, 2) any 'hero' category, 3) fallback aerial
+  const { data } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('is_visible', true)
+    .or('is_hero.eq.true,category.eq.hero')
+    .order('is_hero', { ascending: false })
+    .order('sort_order', { ascending: true })
+    .limit(1);
+  const photo = (data?.[0] as Photo | undefined);
+  return photo ? getPhotoUrl(photo) : '/images/property/aerial-view.jpg';
+}
+
+export default async function VillaPage() {
+  const t = await getTranslations('villa');
+  const heroUrl = await getHeroUrl();
 
   const amenities = [
     { icon: AirVent, key: 'ac' },
@@ -56,12 +72,13 @@ export default function VillaPage() {
       {/* Hero Image */}
       <div className="relative h-[40vh] lg:h-[50vh] w-full">
         <Image
-          src="/images/property/aerial-view.jpg"
-          alt="Villa Solria aerial view"
+          src={heroUrl}
+          alt="Villa Solria"
           fill
           priority
           className="object-cover"
           sizes="100vw"
+          unoptimized={heroUrl.startsWith('http')}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
         <div className="absolute bottom-8 left-0 right-0 text-center">
