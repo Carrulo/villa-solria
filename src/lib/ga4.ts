@@ -1,39 +1,110 @@
-import { BetaAnalyticsDataClient } from '@google-analytics/data';
+import { JWT } from 'google-auth-library';
 
 const PROPERTY_ID = process.env.GA4_PROPERTY_ID || '534083614';
 
+interface ServiceAccount {
+  client_email: string;
+  private_key: string;
+  project_id?: string;
+}
+
 /**
- * Build a GA4 Data API client from the service account JSON env var.
- * Returns null if creds aren't configured (admin page renders empty state).
+ * Decode the SA credentials from base64 (preferred) or raw JSON env var.
+ * Returns null if neither is configured.
  */
-export function getGa4Client(): BetaAnalyticsDataClient | null {
-  // Prefer base64 to avoid quote-escaping issues on Vercel env vars.
-  // Falls back to raw JSON if the base64 var isn't set.
+function getCredentials(): ServiceAccount | null {
   const b64 = process.env.GA4_SERVICE_ACCOUNT_B64;
   const rawJson = process.env.GA4_SERVICE_ACCOUNT_JSON;
   let raw: string | undefined;
   if (b64) {
-    try { raw = Buffer.from(b64, 'base64').toString('utf-8'); } catch { /* fall through */ }
+    try { raw = Buffer.from(b64, 'base64').toString('utf-8'); } catch { /* try next */ }
   }
   if (!raw && rawJson) raw = rawJson;
   if (!raw) return null;
   try {
-    const credentials = JSON.parse(raw);
-    console.log('GA4 client init: project=', credentials.project_id, 'email=', credentials.client_email, 'key_chars=', credentials.private_key?.length);
-    // When the JSON is stored as a raw env var with embedded `\n` in
-    // private_key, the literal backslash-n needs to be turned back into
-    // an actual newline before Google's auth library will accept the PEM.
-    if (credentials.private_key && typeof credentials.private_key === 'string') {
-      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-    }
-    // Vercel serverless functions have flaky gRPC/HTTP2 connectivity to
-    // Google's Analytics Data API. Force REST/HTTP1 transport — works
-    // reliably in serverless and produces identical results.
-    return new BetaAnalyticsDataClient({ credentials, fallback: true });
+    const parsed = JSON.parse(raw) as ServiceAccount;
+    // Some env-var pipelines store the literal "\\n" instead of real newlines
+    // inside private_key — un-escape so the PEM parser is happy.
+    if (parsed.private_key) parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    return parsed;
   } catch (err) {
     console.error('Invalid GA4 service account env var:', err);
     return null;
   }
+}
+
+/**
+ * Returns true if credentials are configured. Used by the admin page to
+ * decide whether to render the empty-state warning.
+ */
+export function getGa4Client(): { ok: true } | null {
+  return getCredentials() ? { ok: true } : null;
+}
+
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Mint a Google access token via JWT — direct REST flow, no gRPC.
+ * Tokens are cached for 50 minutes.
+ */
+async function getAccessToken(creds: ServiceAccount): Promise<string> {
+  const now = Date.now();
+  if (cachedToken && cachedToken.expiresAt > now + 60_000) {
+    return cachedToken.token;
+  }
+  const jwt = new JWT({
+    email: creds.client_email,
+    key: creds.private_key,
+    scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
+  });
+  const { access_token } = await jwt.authorize();
+  if (!access_token) throw new Error('No access token returned by JWT.authorize()');
+  cachedToken = { token: access_token, expiresAt: now + 50 * 60 * 1000 };
+  return access_token;
+}
+
+interface RunReportRequest {
+  dimensions?: { name: string }[];
+  metrics: { name: string }[];
+  dateRanges: { startDate: string; endDate: string }[];
+  orderBys?: Array<
+    | { metric: { metricName: string }; desc?: boolean }
+    | { dimension: { dimensionName: string }; desc?: boolean }
+  >;
+  limit?: number;
+}
+
+interface RunReportRow {
+  dimensionValues?: { value: string }[];
+  metricValues?: { value: string }[];
+}
+
+interface RunReportResponse {
+  rows?: RunReportRow[];
+  rowCount?: number;
+}
+
+async function runReport(
+  creds: ServiceAccount,
+  body: RunReportRequest,
+): Promise<RunReportResponse> {
+  const token = await getAccessToken(creds);
+  const res = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY_ID}:runReport`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GA4 runReport ${res.status}: ${text.slice(0, 500)}`);
+  }
+  return res.json() as Promise<RunReportResponse>;
 }
 
 export interface Ga4Snapshot {
@@ -60,115 +131,92 @@ const empty: Ga4Snapshot = {
 };
 
 /**
- * Pull a full snapshot for the admin dashboard. One round-trip via batchRunReports.
- * @param days Lookback window. 7 or 30 are the usual choices.
+ * Pull a full dashboard snapshot. Six parallel runReport calls — each
+ * tiny, all reuse the same cached access token.
  */
 export async function fetchGa4Snapshot(days: number = 7): Promise<Ga4Snapshot> {
-  const client = getGa4Client();
-  if (!client) return empty;
-
-  const property = `properties/${PROPERTY_ID}`;
-  // GA4 Data API needs 24-48h to aggregate per-day data; use yesterday as the
-  // upper bound so reports return populated rows. Real-time is a separate API.
+  const creds = getCredentials();
+  if (!creds) return empty;
   const dateRange = { startDate: `${days}daysAgo`, endDate: 'today' };
-  console.log('GA4 query property=', PROPERTY_ID, 'range=', JSON.stringify(dateRange));
 
   try {
-    const [response] = await client.batchRunReports({
-      property,
-      requests: [
-        {
-          dimensions: [],
-          metrics: [
-            { name: 'activeUsers' },
-            { name: 'newUsers' },
-            { name: 'sessions' },
-            { name: 'averageSessionDuration' },
-          ],
-          dateRanges: [dateRange],
-        },
-        {
-          dimensions: [{ name: 'pagePath' }],
-          metrics: [{ name: 'screenPageViews' }],
-          dateRanges: [dateRange],
-          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-          limit: 8,
-        },
-        {
-          dimensions: [{ name: 'country' }],
-          metrics: [{ name: 'activeUsers' }],
-          dateRanges: [dateRange],
-          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
-          limit: 8,
-        },
-        {
-          dimensions: [{ name: 'sessionSource' }],
-          metrics: [{ name: 'activeUsers' }],
-          dateRanges: [dateRange],
-          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
-          limit: 8,
-        },
-        {
-          dimensions: [{ name: 'deviceCategory' }],
-          metrics: [{ name: 'activeUsers' }],
-          dateRanges: [dateRange],
-          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
-        },
-        {
-          dimensions: [{ name: 'date' }],
-          metrics: [{ name: 'activeUsers' }],
-          dateRanges: [dateRange],
-          orderBys: [{ dimension: { dimensionName: 'date' } }],
-        },
-      ],
-    });
+    const [totalsR, pagesR, countriesR, sourcesR, devicesR, dailyR] = await Promise.all([
+      runReport(creds, {
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'newUsers' },
+          { name: 'sessions' },
+          { name: 'averageSessionDuration' },
+        ],
+        dateRanges: [dateRange],
+      }),
+      runReport(creds, {
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }],
+        dateRanges: [dateRange],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 8,
+      }),
+      runReport(creds, {
+        dimensions: [{ name: 'country' }],
+        metrics: [{ name: 'activeUsers' }],
+        dateRanges: [dateRange],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        limit: 8,
+      }),
+      runReport(creds, {
+        dimensions: [{ name: 'sessionSource' }],
+        metrics: [{ name: 'activeUsers' }],
+        dateRanges: [dateRange],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        limit: 8,
+      }),
+      runReport(creds, {
+        dimensions: [{ name: 'deviceCategory' }],
+        metrics: [{ name: 'activeUsers' }],
+        dateRanges: [dateRange],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+      }),
+      runReport(creds, {
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'activeUsers' }],
+        dateRanges: [dateRange],
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+      }),
+    ]);
 
-    const reports = response.reports || [];
-    console.log('GA4 reports rowCounts=', reports.map((r) => r.rowCount));
-    const get = (i: number) => reports[i];
-
-    const totalsRow = get(0)?.rows?.[0];
+    const t0 = totalsR.rows?.[0]?.metricValues || [];
     const totals = {
-      activeUsers: Number(totalsRow?.metricValues?.[0]?.value || 0),
-      newUsers: Number(totalsRow?.metricValues?.[1]?.value || 0),
-      sessions: Number(totalsRow?.metricValues?.[2]?.value || 0),
-      avgSessionDurationSec: Number(totalsRow?.metricValues?.[3]?.value || 0),
+      activeUsers: Number(t0[0]?.value || 0),
+      newUsers: Number(t0[1]?.value || 0),
+      sessions: Number(t0[2]?.value || 0),
+      avgSessionDurationSec: Number(t0[3]?.value || 0),
     };
-
-    const topPages = (get(1)?.rows || []).map((r) => ({
+    const topPages = (pagesR.rows || []).map((r) => ({
       path: r.dimensionValues?.[0]?.value || '',
       views: Number(r.metricValues?.[0]?.value || 0),
     }));
-
-    const topCountries = (get(2)?.rows || []).map((r) => ({
+    const topCountries = (countriesR.rows || []).map((r) => ({
       country: r.dimensionValues?.[0]?.value || '',
       users: Number(r.metricValues?.[0]?.value || 0),
     }));
-
-    const topSources = (get(3)?.rows || []).map((r) => ({
+    const topSources = (sourcesR.rows || []).map((r) => ({
       source: r.dimensionValues?.[0]?.value || '',
       users: Number(r.metricValues?.[0]?.value || 0),
     }));
-
-    const devices = (get(4)?.rows || []).map((r) => ({
+    const devices = (devicesR.rows || []).map((r) => ({
       device: r.dimensionValues?.[0]?.value || '',
       users: Number(r.metricValues?.[0]?.value || 0),
     }));
-
-    const ratePerDay = (get(5)?.rows || []).map((r) => ({
+    const ratePerDay = (dailyR.rows || []).map((r) => ({
       date: r.dimensionValues?.[0]?.value || '',
       users: Number(r.metricValues?.[0]?.value || 0),
     }));
 
     return { totals, topPages, topCountries, topSources, devices, ratePerDay };
   } catch (err) {
-    const e = err as { message?: string; code?: number; details?: string; stack?: string };
-    console.error('GA4 fetch failed:', JSON.stringify({
-      message: e.message,
-      code: e.code,
-      details: e.details,
-      stack: e.stack?.split('\n').slice(0, 3),
-    }));
+    const e = err as { message?: string };
+    console.error('GA4 fetch failed:', e.message);
     return empty;
   }
 }

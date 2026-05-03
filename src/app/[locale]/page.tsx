@@ -7,6 +7,7 @@ import EmailCapture from '@/components/EmailCapture';
 import LongStayDiscountsCard from '@/components/LongStayDiscountsCard';
 import TrustBadges from '@/components/TrustBadges';
 import FloatingBookCTA from '@/components/FloatingBookCTA';
+import RecentInterestBadge from '@/components/RecentInterestBadge';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
 import { getPhotoUrl } from '@/lib/supabase';
@@ -357,6 +358,27 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Long-stay discounts */}
       <LongStayDiscountsCard locale={locale} />
 
+      {/* Reviews — moved above Host: third-party social proof (many guests)
+          builds trust before introducing the host (one person). */}
+      <section className="py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+              {h('reviewsTitle')}
+            </h2>
+            <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full">
+              <Star size={16} className="text-accent fill-accent" />
+              <span className="text-accent font-semibold">{r('rating')}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reviews.map((review) => (
+              <ReviewCard key={review.name} {...review} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Host */}
       <section className="py-16 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -437,26 +459,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-              {h('reviewsTitle')}
-            </h2>
-            <div className="inline-flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-full">
-              <Star size={16} className="text-accent fill-accent" />
-              <span className="text-accent font-semibold">{r('rating')}</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {reviews.map((review) => (
-              <ReviewCard key={review.name} {...review} />
-            ))}
           </div>
         </div>
       </section>
