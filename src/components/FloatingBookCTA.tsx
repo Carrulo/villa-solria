@@ -55,7 +55,7 @@ export default function FloatingBookCTA() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t('cta')}
-        className={`hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-2 px-5 py-3 rounded-full bg-accent hover:bg-accent-hover text-white font-semibold shadow-lg shadow-accent/30 transition-all ${
+        className={`hidden md:flex fixed bottom-6 right-24 z-40 items-center gap-2 px-5 py-3 rounded-full bg-accent hover:bg-accent-hover text-white font-semibold shadow-lg shadow-accent/30 transition-all ${
           scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
       >

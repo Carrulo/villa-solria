@@ -274,53 +274,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
       </section>
 
-      {/* Direct Booking Savings Banner */}
-      <section className="py-8 lg:py-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-6 sm:p-8 text-center shadow-lg">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9zdmc+')] opacity-50" />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 mb-3">
-                <BadgePercent size={24} className="text-white" />
-                <span className="text-sm font-medium text-white/80 uppercase tracking-wider">
-                  {t('saveCompare')}
-                </span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                {t('saveBanner', { percent: savingsPercent })}
-              </h3>
-              <p className="text-white/80 text-base sm:text-lg max-w-xl mx-auto">
-                {t('saveBannerDesc')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Long-stay discounts */}
-      <LongStayDiscountsCard locale={locale} />
-
-      {/* Features */}
-      <section className="py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl lg:text-3xl font-bold text-center text-gray-900 mb-12">
-            {f('title')}
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            {features.map((feat) => (
-              <div key={feat.title} className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <feat.icon size={28} className="text-primary" />
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-1">{feat.title}</h3>
-                <p className="text-sm text-gray-500">{feat.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Photo Grid */}
+      {/* Photo Grid — first thing after the hero, sells the property */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -355,6 +309,53 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
       </section>
+
+      {/* Features */}
+      <section className="py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl lg:text-3xl font-bold text-center text-gray-900 mb-12">
+            {f('title')}
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {features.map((feat) => (
+              <div key={feat.title} className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <feat.icon size={28} className="text-primary" />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">{feat.title}</h3>
+                <p className="text-sm text-gray-500">{feat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Direct Booking Savings Banner — moved below the visual sell so the
+          'save 20%' message hits AFTER the visitor wants the place. */}
+      <section className="py-8 lg:py-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-6 sm:p-8 text-center shadow-lg">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9zdmc+')] opacity-50" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <BadgePercent size={24} className="text-white" />
+                <span className="text-sm font-medium text-white/80 uppercase tracking-wider">
+                  {t('saveCompare')}
+                </span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                {t('saveBanner', { percent: savingsPercent })}
+              </h3>
+              <p className="text-white/80 text-base sm:text-lg max-w-xl mx-auto">
+                {t('saveBannerDesc')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Long-stay discounts */}
+      <LongStayDiscountsCard locale={locale} />
 
       {/* Host */}
       <section className="py-16 lg:py-24">
