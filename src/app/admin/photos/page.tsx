@@ -42,7 +42,34 @@ export default function AdminPhotosPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [importing, setImporting] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<string>('');
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Drag-and-drop reorder. Drops the dragged photo before the target,
+   * then renumbers sort_order from 0..N and persists every changed row
+   * in parallel. Optimistic UI: update local state immediately.
+   */
+  async function reorderPhotos(draggedId: string, targetId: string) {
+    if (draggedId === targetId) return;
+    const fromIdx = photos.findIndex((p) => p.id === draggedId);
+    const toIdx = photos.findIndex((p) => p.id === targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = [...photos];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    const renumbered = next.map((p, i) => ({ ...p, sort_order: i }));
+    setPhotos(renumbered);
+    // Persist only rows whose sort_order actually changed
+    const before = new Map(photos.map((p) => [p.id, p.sort_order]));
+    const dirty = renumbered.filter((p) => before.get(p.id) !== p.sort_order);
+    await Promise.all(
+      dirty.map((p) =>
+        supabase.from('photos').update({ sort_order: p.sort_order }).eq('id', p.id),
+      ),
+    );
+  }
 
   useEffect(() => {
     fetchPhotos();
@@ -495,29 +522,66 @@ export default function AdminPhotosPage() {
             </button>
           </div>
 
+          <p className="text-xs text-gray-500">
+            Arraste as fotos para reordenar. A primeira foto é a que aparece
+            no topo de cada secção / galeria.
+          </p>
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {photos.map((photo) => (
-              <PhotoCard
+              <div
                 key={photo.id}
-                photo={photo}
-                isSelected={selected.has(photo.id)}
-                isEditingAlt={editingAlt === photo.id}
-                altText={editingAlt === photo.id ? altText : photo.alt_text}
-                onToggleSelect={() => toggleSelect(photo.id)}
-                onToggleHero={() => toggleHero(photo)}
-                onToggleVisibility={() => toggleVisibility(photo.id, photo.is_visible)}
-                onUpdateCategory={(cat) => updateCategory(photo.id, cat)}
-                onUpdateSortOrder={(order) => updateSortOrder(photo.id, order)}
-                onStartEditAlt={() => {
-                  setEditingAlt(photo.id);
-                  setAltText(photo.alt_text);
+                draggable
+                onDragStart={(e) => {
+                  setDraggingId(photo.id);
+                  e.dataTransfer.effectAllowed = 'move';
                 }}
-                onSaveAlt={() => saveAltText(photo.id)}
-                onCancelAlt={() => setEditingAlt(null)}
-                onAltChange={setAltText}
-                onDelete={() => handleDelete(photo)}
-                onReplace={(file) => handleReplace(photo, file)}
-              />
+                onDragEnd={() => {
+                  setDraggingId(null);
+                  setDropTargetId(null);
+                }}
+                onDragOver={(e) => {
+                  if (!draggingId || draggingId === photo.id) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  if (dropTargetId !== photo.id) setDropTargetId(photo.id);
+                }}
+                onDragLeave={(e) => {
+                  // Only clear when leaving the card entirely
+                  if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                  if (dropTargetId === photo.id) setDropTargetId(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggingId && draggingId !== photo.id) {
+                    reorderPhotos(draggingId, photo.id);
+                  }
+                  setDraggingId(null);
+                  setDropTargetId(null);
+                }}
+                className={`transition-all ${draggingId === photo.id ? 'opacity-40 scale-95' : ''} ${dropTargetId === photo.id ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-900 rounded-2xl' : ''}`}
+              >
+                <PhotoCard
+                  photo={photo}
+                  isSelected={selected.has(photo.id)}
+                  isEditingAlt={editingAlt === photo.id}
+                  altText={editingAlt === photo.id ? altText : photo.alt_text}
+                  onToggleSelect={() => toggleSelect(photo.id)}
+                  onToggleHero={() => toggleHero(photo)}
+                  onToggleVisibility={() => toggleVisibility(photo.id, photo.is_visible)}
+                  onUpdateCategory={(cat) => updateCategory(photo.id, cat)}
+                  onUpdateSortOrder={(order) => updateSortOrder(photo.id, order)}
+                  onStartEditAlt={() => {
+                    setEditingAlt(photo.id);
+                    setAltText(photo.alt_text);
+                  }}
+                  onSaveAlt={() => saveAltText(photo.id)}
+                  onCancelAlt={() => setEditingAlt(null)}
+                  onAltChange={setAltText}
+                  onDelete={() => handleDelete(photo)}
+                  onReplace={(file) => handleReplace(photo, file)}
+                />
+              </div>
             ))}
           </div>
         </>
