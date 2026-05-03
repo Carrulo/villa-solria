@@ -52,6 +52,7 @@ export default function AdminPhotosPage() {
   const [bulkCategory, setBulkCategory] = useState<string>('');
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -667,6 +668,7 @@ export default function AdminPhotosPage() {
                           onAltChange={setAltText}
                           onDelete={() => handleDelete(photo)}
                           onReplace={(file) => handleReplace(photo, file)}
+                          onPreview={() => setPreviewPhoto(photo)}
                         />
                       </div>
                     ))}
@@ -676,6 +678,31 @@ export default function AdminPhotosPage() {
             });
           })()}
         </>
+      )}
+
+      {/* Lightbox preview */}
+      {previewPhoto && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-6"
+          onClick={() => setPreviewPhoto(null)}
+        >
+          <button
+            onClick={() => setPreviewPhoto(null)}
+            className="absolute top-6 right-6 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white"
+          >
+            <X size={20} />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={getPhotoUrl(previewPhoto)}
+            alt={previewPhoto.alt_text}
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <p className="absolute bottom-6 text-white/70 text-sm">
+            {previewPhoto.filename} · {PHOTO_CATEGORY_LABELS[previewPhoto.category as PhotoCategory] || previewPhoto.category}
+          </p>
+        </div>
       )}
 
       {/* Toast */}
@@ -711,6 +738,7 @@ function PhotoCard({
   onAltChange,
   onDelete,
   onReplace,
+  onPreview,
 }: {
   photo: Photo;
   isSelected: boolean;
@@ -727,6 +755,7 @@ function PhotoCard({
   onAltChange: (val: string) => void;
   onDelete: () => void;
   onReplace: (file: File) => void;
+  onPreview: () => void;
 }) {
   const url = getPhotoUrl(photo);
   const replaceInputRef = useRef<HTMLInputElement>(null);
@@ -742,8 +771,10 @@ function PhotoCard({
         <img
           src={url}
           alt={photo.alt_text}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover cursor-zoom-in"
           loading="lazy"
+          onDoubleClick={onPreview}
+          title="Duplo-clique para ampliar"
         />
 
         {/* Overlay actions on hover */}
