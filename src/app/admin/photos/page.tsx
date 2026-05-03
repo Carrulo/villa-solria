@@ -7,8 +7,16 @@ import { PHOTO_CATEGORIES, PHOTO_CATEGORY_LABELS, getPhotoUrl } from '@/lib/supa
 import {
   Upload, Trash2, Eye, EyeOff, Star, StarOff, Check, X,
   ImageIcon, Download, ChevronDown, Loader2, AlertCircle,
-  CheckSquare, Square, RefreshCw,
+  CheckSquare, Square, RefreshCw, Sparkles,
 } from 'lucide-react';
+
+// Priority order for "Auto-organize". Categories higher up appear first
+// in galleries / home preview. Within each category, current order is
+// preserved (so the user can fine-tune by dragging inside the section).
+const CATEGORY_ORDER: PhotoCategory[] = [
+  'hero', 'view', 'living', 'dining', 'kitchen', 'bedroom',
+  'bathroom', 'outdoor', 'area', 'general',
+];
 
 // Known local photos with sensible defaults
 const LOCAL_PHOTOS: { filename: string; category: PhotoCategory; alt: string }[] = [
@@ -56,12 +64,14 @@ export default function AdminPhotosPage() {
     const fromIdx = photos.findIndex((p) => p.id === draggedId);
     const toIdx = photos.findIndex((p) => p.id === targetId);
     if (fromIdx < 0 || toIdx < 0) return;
+    // Only allow drag within the same category — cross-category moves
+    // are done by changing the category dropdown, not by dragging.
+    if (photos[fromIdx].category !== photos[toIdx].category) return;
     const next = [...photos];
     const [moved] = next.splice(fromIdx, 1);
     next.splice(toIdx, 0, moved);
     const renumbered = next.map((p, i) => ({ ...p, sort_order: i }));
     setPhotos(renumbered);
-    // Persist only rows whose sort_order actually changed
     const before = new Map(photos.map((p) => [p.id, p.sort_order]));
     const dirty = renumbered.filter((p) => before.get(p.id) !== p.sort_order);
     await Promise.all(
@@ -69,6 +79,39 @@ export default function AdminPhotosPage() {
         supabase.from('photos').update({ sort_order: p.sort_order }).eq('id', p.id),
       ),
     );
+  }
+
+  /**
+   * Auto-organize: rebuild sort_order globally so photos come out in
+   * CATEGORY_ORDER. Within each category, preserves current relative
+   * order (so the user's fine-tune drags survive). Hero photo always
+   * stays at sort_order 0.
+   */
+  async function autoOrganize() {
+    if (!confirm('Reorganizar todas as fotos por categoria (hero → vistas → sala → … )? A ordem dentro de cada categoria é mantida.')) return;
+    const priority = (cat: string) => {
+      const i = CATEGORY_ORDER.indexOf(cat as PhotoCategory);
+      return i === -1 ? 999 : i;
+    };
+    const sorted = [...photos].sort((a, b) => {
+      // Hero always first
+      if (a.is_hero && !b.is_hero) return -1;
+      if (b.is_hero && !a.is_hero) return 1;
+      const pa = priority(a.category);
+      const pb = priority(b.category);
+      if (pa !== pb) return pa - pb;
+      return a.sort_order - b.sort_order;
+    });
+    const renumbered = sorted.map((p, i) => ({ ...p, sort_order: i }));
+    const before = new Map(photos.map((p) => [p.id, p.sort_order]));
+    const dirty = renumbered.filter((p) => before.get(p.id) !== p.sort_order);
+    setPhotos(renumbered);
+    await Promise.all(
+      dirty.map((p) =>
+        supabase.from('photos').update({ sort_order: p.sort_order }).eq('id', p.id),
+      ),
+    );
+    showToast(`Reorganizadas ${dirty.length} fotos`, 'success');
   }
 
   useEffect(() => {
@@ -414,14 +457,24 @@ export default function AdminPhotosPage() {
             </button>
           )}
           {photos.length > 0 && (
-            <button
-              onClick={importLocal}
-              disabled={importing}
-              className="flex items-center gap-2 px-4 py-2 bg-white/5 text-gray-300 rounded-xl hover:bg-white/10 transition-colors text-sm disabled:opacity-50"
-            >
-              {importing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Importar locais
-            </button>
+            <>
+              <button
+                onClick={autoOrganize}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-xl hover:bg-purple-600/30 transition-colors text-sm"
+                title="Reordenar tudo por categoria (hero → vistas → sala → quartos → …)"
+              >
+                <Sparkles size={16} />
+                Auto-organizar
+              </button>
+              <button
+                onClick={importLocal}
+                disabled={importing}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 text-gray-300 rounded-xl hover:bg-white/10 transition-colors text-sm disabled:opacity-50"
+              >
+                {importing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                Importar locais
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -522,68 +575,106 @@ export default function AdminPhotosPage() {
             </button>
           </div>
 
-          <p className="text-xs text-gray-500">
-            Arraste as fotos para reordenar. A primeira foto é a que aparece
-            no topo de cada secção / galeria.
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {photos.map((photo) => (
-              <div
-                key={photo.id}
-                draggable
-                onDragStart={(e) => {
-                  setDraggingId(photo.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
-                onDragEnd={() => {
-                  setDraggingId(null);
-                  setDropTargetId(null);
-                }}
-                onDragOver={(e) => {
-                  if (!draggingId || draggingId === photo.id) return;
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                  if (dropTargetId !== photo.id) setDropTargetId(photo.id);
-                }}
-                onDragLeave={(e) => {
-                  // Only clear when leaving the card entirely
-                  if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-                  if (dropTargetId === photo.id) setDropTargetId(null);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (draggingId && draggingId !== photo.id) {
-                    reorderPhotos(draggingId, photo.id);
-                  }
-                  setDraggingId(null);
-                  setDropTargetId(null);
-                }}
-                className={`transition-all ${draggingId === photo.id ? 'opacity-40 scale-95' : ''} ${dropTargetId === photo.id ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-900 rounded-2xl' : ''}`}
-              >
-                <PhotoCard
-                  photo={photo}
-                  isSelected={selected.has(photo.id)}
-                  isEditingAlt={editingAlt === photo.id}
-                  altText={editingAlt === photo.id ? altText : photo.alt_text}
-                  onToggleSelect={() => toggleSelect(photo.id)}
-                  onToggleHero={() => toggleHero(photo)}
-                  onToggleVisibility={() => toggleVisibility(photo.id, photo.is_visible)}
-                  onUpdateCategory={(cat) => updateCategory(photo.id, cat)}
-                  onUpdateSortOrder={(order) => updateSortOrder(photo.id, order)}
-                  onStartEditAlt={() => {
-                    setEditingAlt(photo.id);
-                    setAltText(photo.alt_text);
-                  }}
-                  onSaveAlt={() => saveAltText(photo.id)}
-                  onCancelAlt={() => setEditingAlt(null)}
-                  onAltChange={setAltText}
-                  onDelete={() => handleDelete(photo)}
-                  onReplace={(file) => handleReplace(photo, file)}
-                />
-              </div>
-            ))}
+          <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl px-4 py-3 text-xs text-purple-200/80 leading-relaxed">
+            <strong className="text-purple-300">Como organizar rápido:</strong>{' '}
+            1) Marca a categoria certa em cada foto (dropdown). 2) Carrega em{' '}
+            <span className="text-purple-300 font-medium">Auto-organizar</span> — agrupa por
+            categoria pela ordem de importância. 3) Arrasta dentro de cada secção para
+            ajustar a ordem fina. Drag entre categorias diferentes não funciona — muda a
+            categoria pelo dropdown.
           </div>
+
+          {(() => {
+            // Render one section per category that has photos, in CATEGORY_ORDER.
+            const groups = new Map<string, Photo[]>();
+            for (const p of photos) {
+              const arr = groups.get(p.category) || [];
+              arr.push(p);
+              groups.set(p.category, arr);
+            }
+            const orderedCats = [
+              ...CATEGORY_ORDER.filter((c) => groups.has(c)),
+              ...Array.from(groups.keys()).filter(
+                (c) => !CATEGORY_ORDER.includes(c as PhotoCategory),
+              ),
+            ];
+            return orderedCats.map((cat) => {
+              const group = (groups.get(cat) || []).sort(
+                (a, b) => a.sort_order - b.sort_order,
+              );
+              const label = PHOTO_CATEGORY_LABELS[cat as PhotoCategory] || cat;
+              return (
+                <section key={cat} className="space-y-3">
+                  <div className="flex items-center gap-3 sticky top-0 z-10 bg-[#0f1729]/80 backdrop-blur py-2">
+                    <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+                      {label}
+                    </h2>
+                    <span className="text-xs text-gray-500">{group.length} fotos</span>
+                    <div className="flex-1 h-px bg-white/5" />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {group.map((photo) => (
+                      <div
+                        key={photo.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggingId(photo.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => {
+                          setDraggingId(null);
+                          setDropTargetId(null);
+                        }}
+                        onDragOver={(e) => {
+                          if (!draggingId || draggingId === photo.id) return;
+                          // Visual hint only when same category
+                          const dragged = photos.find((p) => p.id === draggingId);
+                          if (!dragged || dragged.category !== photo.category) return;
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          if (dropTargetId !== photo.id) setDropTargetId(photo.id);
+                        }}
+                        onDragLeave={(e) => {
+                          if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                          if (dropTargetId === photo.id) setDropTargetId(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggingId && draggingId !== photo.id) {
+                            reorderPhotos(draggingId, photo.id);
+                          }
+                          setDraggingId(null);
+                          setDropTargetId(null);
+                        }}
+                        className={`transition-all ${draggingId === photo.id ? 'opacity-40 scale-95' : ''} ${dropTargetId === photo.id ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-900 rounded-2xl' : ''}`}
+                      >
+                        <PhotoCard
+                          photo={photo}
+                          isSelected={selected.has(photo.id)}
+                          isEditingAlt={editingAlt === photo.id}
+                          altText={editingAlt === photo.id ? altText : photo.alt_text}
+                          onToggleSelect={() => toggleSelect(photo.id)}
+                          onToggleHero={() => toggleHero(photo)}
+                          onToggleVisibility={() => toggleVisibility(photo.id, photo.is_visible)}
+                          onUpdateCategory={(c) => updateCategory(photo.id, c)}
+                          onUpdateSortOrder={(order) => updateSortOrder(photo.id, order)}
+                          onStartEditAlt={() => {
+                            setEditingAlt(photo.id);
+                            setAltText(photo.alt_text);
+                          }}
+                          onSaveAlt={() => saveAltText(photo.id)}
+                          onCancelAlt={() => setEditingAlt(null)}
+                          onAltChange={setAltText}
+                          onDelete={() => handleDelete(photo)}
+                          onReplace={(file) => handleReplace(photo, file)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            });
+          })()}
         </>
       )}
 
