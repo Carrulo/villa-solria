@@ -25,7 +25,7 @@ type VillaSlots = {
   hero: string;
   // Slots that rotate through every photo in their category
   livingCarousel: string[];
-  kitchenCarousel: string[];
+  kitchen: string;
   bedroom1: string;
   bedroom2Carousel: string[];
   outdoor1: string;
@@ -65,16 +65,13 @@ async function getVillaSlots(): Promise<VillaSlots> {
   // Ground floor: Sala includes both 'living' and 'dining' so the
   // dining-area photos also show up rotating.
   const livings = [...allOf('living'), ...allOf('dining')];
-  const kitchens = allOf('kitchen');
 
   return {
     hero: url(hero, '/images/property/aerial-view.jpg'),
     livingCarousel: livings.length > 0
       ? livings.map(getPhotoUrl)
       : ['/images/property/living-room.jpg'],
-    kitchenCarousel: kitchens.length > 0
-      ? kitchens.map(getPhotoUrl)
-      : ['/images/property/kitchen.jpg'],
+    kitchen: url(firstOf('kitchen'), '/images/property/kitchen.jpg'),
     bedroom1: url(bed1, '/images/property/bedroom-master.jpg'),
     bedroom2Carousel: otherBedrooms.length > 0
       ? otherBedrooms.map(getPhotoUrl)
@@ -166,10 +163,13 @@ export default async function VillaPage() {
                 />
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                <RotatingImage
-                  urls={slots.kitchenCarousel}
+                <Image
+                  src={slots.kitchen}
                   alt="Cozinha"
+                  fill
+                  className="object-cover"
                   sizes="(max-width: 1024px) 50vw, 25vw"
+                  unoptimized={slots.kitchen.startsWith('http')}
                 />
               </div>
             </div>
