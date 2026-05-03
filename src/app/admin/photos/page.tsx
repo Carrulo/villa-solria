@@ -18,6 +18,31 @@ const CATEGORY_ORDER: PhotoCategory[] = [
   'bathroom', 'outdoor', 'area', 'general',
 ];
 
+// SEO-friendly per-category labels used in alt text + filename slugs.
+const SEO_LABELS: Record<PhotoCategory, string> = {
+  hero: 'Vista Aerea',
+  view: 'Vista Ria Formosa',
+  living: 'Sala de Estar',
+  dining: 'Sala de Jantar',
+  kitchen: 'Cozinha Equipada',
+  bedroom: 'Quarto',
+  bathroom: 'Casa de Banho',
+  outdoor: 'Terraco Exterior',
+  area: 'Cabanas de Tavira',
+  general: 'Detalhe',
+};
+
+const BASE_SUFFIX = 'Villa Solria - Cabanas de Tavira - Algarve';
+
+function slugify(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 // Known local photos with sensible defaults
 const LOCAL_PHOTOS: { filename: string; category: PhotoCategory; alt: string }[] = [
   { filename: 'hero-ria-formosa.jpg', category: 'hero', alt: 'Ria Formosa panoramic view' },
@@ -80,6 +105,46 @@ export default function AdminPhotosPage() {
         supabase.from('photos').update({ sort_order: p.sort_order }).eq('id', p.id),
       ),
     );
+  }
+
+  /**
+   * Rebuild SEO-friendly alt_text + filename for every photo based on
+   * its category. Format: "Villa Solria - {Category} {N} - Cabanas de
+   * Tavira - Algarve". Helps Google Images and screen readers, and
+   * replaces ugly UUID-looking labels in the public gallery.
+   */
+  async function renameForSEO() {
+    if (!confirm('Reescrever alt-text e nomes para SEO em todas as fotos? (Villa Solria - Categoria - Cabanas de Tavira)')) return;
+    // Number per category so we get "Quarto 1, Quarto 2, …"
+    const perCat = new Map<string, number>();
+    const updates = photos.map((p) => {
+      const n = (perCat.get(p.category) || 0) + 1;
+      perCat.set(p.category, n);
+      const cat = SEO_LABELS[p.category as PhotoCategory] || p.category;
+      const room = p.category === 'bedroom' && p.room_label
+        ? ` ${p.room_label}`
+        : '';
+      const idx = perCat.get(p.category)! > 1 ? ` ${n}` : '';
+      const altText = `${cat}${room}${idx} - ${BASE_SUFFIX}`;
+      const ext = p.filename.split('.').pop()?.toLowerCase() || 'jpg';
+      const filename = `${slugify(altText)}.${ext}`;
+      return { id: p.id, alt_text: altText, filename };
+    });
+    setPhotos((prev) =>
+      prev.map((p) => {
+        const u = updates.find((x) => x.id === p.id);
+        return u ? { ...p, alt_text: u.alt_text, filename: u.filename } : p;
+      }),
+    );
+    await Promise.all(
+      updates.map((u) =>
+        supabase
+          .from('photos')
+          .update({ alt_text: u.alt_text, filename: u.filename })
+          .eq('id', u.id),
+      ),
+    );
+    showToast(`Renomeadas ${updates.length} fotos para SEO`, 'success');
   }
 
   /**
@@ -172,10 +237,16 @@ export default function AdminPhotosPage() {
       }
 
       // Create DB record
+      // SEO-friendly defaults: ignore the raw camera filename (often a
+      // UUID or "IMG_1234"). Use a Villa Solria branded alt_text and a
+      // slugged filename. User can re-run "Renomear SEO" later after
+      // setting the right category.
+      const baseAlt = `${SEO_LABELS.general} - ${BASE_SUFFIX}`;
+      const seoFilename = `${slugify(baseAlt)}-${Date.now()}.${ext}`;
       const { error: dbError } = await supabase.from('photos').insert({
-        filename: file.name,
+        filename: seoFilename,
         storage_path: storagePath,
-        alt_text: file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+        alt_text: baseAlt,
         category: 'general',
         sort_order: photos.length + uploaded,
         source: 'storage',
@@ -503,6 +574,14 @@ export default function AdminPhotosPage() {
               >
                 <Sparkles size={16} />
                 Auto-organizar
+              </button>
+              <button
+                onClick={renameForSEO}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-xl hover:bg-emerald-600/30 transition-colors text-sm"
+                title="Reescrever alt-text e nomes para SEO (Villa Solria - Categoria - Cabanas de Tavira)"
+              >
+                <Sparkles size={16} />
+                Renomear SEO
               </button>
               <button
                 onClick={importLocal}
