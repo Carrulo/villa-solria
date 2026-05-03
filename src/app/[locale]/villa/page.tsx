@@ -23,11 +23,10 @@ export async function generateMetadata({ params }: Props) {
 
 type VillaSlots = {
   hero: string;
-  living: string;
-  kitchen: string;
+  // Slots that rotate through every photo in their category
+  livingCarousel: string[];
+  kitchenCarousel: string[];
   bedroom1: string;
-  // The "second" slots are arrays — they rotate as a carousel on the
-  // page, cycling through every other photo in that category.
   bedroom2Carousel: string[];
   outdoor1: string;
   outdoor2Carousel: string[];
@@ -63,10 +62,19 @@ async function getVillaSlots(): Promise<VillaSlots> {
   const url = (p: Photo | undefined, fallback: string) =>
     p ? getPhotoUrl(p) : fallback;
 
+  // Ground floor: Sala includes both 'living' and 'dining' so the
+  // dining-area photos also show up rotating.
+  const livings = [...allOf('living'), ...allOf('dining')];
+  const kitchens = allOf('kitchen');
+
   return {
     hero: url(hero, '/images/property/aerial-view.jpg'),
-    living: url(firstOf('living'), '/images/property/living-room.jpg'),
-    kitchen: url(firstOf('kitchen'), '/images/property/kitchen.jpg'),
+    livingCarousel: livings.length > 0
+      ? livings.map(getPhotoUrl)
+      : ['/images/property/living-room.jpg'],
+    kitchenCarousel: kitchens.length > 0
+      ? kitchens.map(getPhotoUrl)
+      : ['/images/property/kitchen.jpg'],
     bedroom1: url(bed1, '/images/property/bedroom-master.jpg'),
     bedroom2Carousel: otherBedrooms.length > 0
       ? otherBedrooms.map(getPhotoUrl)
@@ -151,23 +159,17 @@ export default async function VillaPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                <Image
-                  src={slots.living}
-                  alt="Living room"
-                  fill
-                  className="object-cover"
+                <RotatingImage
+                  urls={slots.livingCarousel}
+                  alt="Sala / sala de jantar"
                   sizes="(max-width: 1024px) 50vw, 25vw"
-                  unoptimized={slots.living.startsWith('http')}
                 />
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                <Image
-                  src={slots.kitchen}
-                  alt="Kitchen"
-                  fill
-                  className="object-cover"
+                <RotatingImage
+                  urls={slots.kitchenCarousel}
+                  alt="Cozinha"
                   sizes="(max-width: 1024px) 50vw, 25vw"
-                  unoptimized={slots.kitchen.startsWith('http')}
                 />
               </div>
             </div>
