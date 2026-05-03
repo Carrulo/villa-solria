@@ -49,7 +49,6 @@ export default function RotatingImage({
         fill
         className={className}
         sizes={sizes}
-        unoptimized={urls[0].startsWith('http')}
       />
     );
   }
@@ -63,7 +62,6 @@ export default function RotatingImage({
           alt={alt}
           fill
           sizes={sizes}
-          unoptimized={url.startsWith('http')}
           className={`${className} transition-opacity duration-1000 ${
             i === idx ? 'opacity-100' : 'opacity-0'
           }`}

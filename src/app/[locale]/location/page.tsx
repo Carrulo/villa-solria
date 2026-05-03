@@ -63,7 +63,6 @@ export default async function LocationPage() {
           priority
           className="object-cover"
           sizes="100vw"
-          unoptimized={heroUrl.startsWith('http')}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
         <div className="absolute bottom-8 left-0 right-0 text-center">

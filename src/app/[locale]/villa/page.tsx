@@ -131,7 +131,6 @@ export default async function VillaPage() {
           priority
           className="object-cover"
           sizes="100vw"
-          unoptimized={heroUrl.startsWith('http')}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
         <div className="absolute bottom-8 left-0 right-0 text-center">
@@ -185,7 +184,6 @@ export default async function VillaPage() {
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 50vw, 25vw"
-                  unoptimized={slots.bedroom1.startsWith('http')}
                 />
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
@@ -221,7 +219,6 @@ export default async function VillaPage() {
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 33vw"
-                unoptimized={slots.outdoor1.startsWith('http')}
               />
             </div>
             <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
