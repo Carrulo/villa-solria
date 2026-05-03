@@ -2,22 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { Calendar, X } from 'lucide-react';
 import BookingForm from './BookingForm';
 
 /**
- * Floating "Book now" CTA shown on desktop only (md+).
- * Mobile users already have <MobileBookingBar /> — this avoids a
- * double CTA on small screens.
+ * Floating "Book now" CTA shown on every page after the user scrolls
+ * past the first viewport. On mobile sits bottom-left so it doesn't
+ * overlap WhatsApp (bottom-right). On desktop sits next to WhatsApp.
  *
  * Click opens a modal with the existing BookingForm so the visitor
- * never has to leave the page they're on (the home, the gallery,
- * the FAQ, etc) just to start a reservation.
+ * never has to leave the page they're on just to start a reservation.
  */
 export default function FloatingBookCTA() {
   const t = useTranslations('hero');
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  // /pricing already has its own sticky MobileBookingBar — hide here.
+  const onPricing = pathname?.includes('/pricing') ?? false;
 
   // Hide on top of page (don't compete with hero CTA), reveal after
   // the visitor scrolls past the first viewport.
@@ -48,14 +52,15 @@ export default function FloatingBookCTA() {
     }
   }, [open]);
 
+  if (onPricing) return null;
+
   return (
     <>
-      {/* Floating button — desktop only */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t('cta')}
-        className={`hidden md:flex fixed bottom-6 right-24 z-40 items-center gap-2 px-5 py-3 rounded-full bg-accent hover:bg-accent-hover text-white font-semibold shadow-lg shadow-accent/30 transition-all ${
+        className={`flex fixed z-40 items-center gap-2 px-5 py-3 rounded-full bg-accent hover:bg-accent-hover text-white font-semibold shadow-lg shadow-accent/30 transition-all bottom-5 left-4 md:bottom-6 md:left-auto md:right-24 ${
           scrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
       >
