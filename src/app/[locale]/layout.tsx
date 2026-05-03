@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import type { FooterSettings } from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import FloatingBookCTA from '@/components/FloatingBookCTA';
 import CookieConsent from '@/components/CookieConsent';
 import Analytics from '@/components/Analytics';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
@@ -148,6 +149,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <main className="flex-1 pt-16 lg:pt-20">{children}</main>
           <Footer settings={footerSettings} />
           <WhatsAppButton phoneNumber={footerSettings.whatsapp} />
+          <FloatingBookCTA />
           <CookieConsent />
           <Analytics />
           {/* Vercel Analytics — cookieless, GDPR-compliant, no consent needed */}

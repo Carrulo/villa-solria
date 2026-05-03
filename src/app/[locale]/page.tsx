@@ -6,7 +6,6 @@ import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
 import LongStayDiscountsCard from '@/components/LongStayDiscountsCard';
 import TrustBadges from '@/components/TrustBadges';
-import FloatingBookCTA from '@/components/FloatingBookCTA';
 import RecentInterestBadge from '@/components/RecentInterestBadge';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
@@ -227,7 +226,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   return (
     <>
       <JsonLd ratingValue={jsonLdRatingValue} ratingCount={jsonLdRatingCount} lowPrice={jsonLdLowPrice} highPrice={jsonLdHighPrice} seasonCount={seasonCount} />
-      <FloatingBookCTA />
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
