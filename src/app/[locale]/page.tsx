@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
-import RotatingImage from '@/components/RotatingImage';
+import ParallaxHero from '@/components/ParallaxHero';
 import ScrollGallery from '@/components/ScrollGallery';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
@@ -250,12 +250,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        <RotatingImage
-          urls={heroCarousel}
-          alt={heroAlt}
-          sizes="100vw"
-          intervalMs={7000}
-        />
+        <ParallaxHero urls={heroCarousel} alt={heroAlt} intervalMs={7000} />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">

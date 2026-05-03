@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import type { FooterSettings } from '@/components/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import FloatingBookCTA from '@/components/FloatingBookCTA';
+import SmoothScroll from '@/components/SmoothScroll';
 import CookieConsent from '@/components/CookieConsent';
 import Analytics from '@/components/Analytics';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
@@ -145,6 +146,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <SmoothScroll />
           <Header />
           <main className="flex-1 pt-16 lg:pt-20">{children}</main>
           <Footer settings={footerSettings} />
