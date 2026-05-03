@@ -99,6 +99,7 @@ export interface Photo {
   category: string; // 'hero' | 'bedroom' | 'living' | 'kitchen' | 'bathroom' | 'outdoor' | 'view' | 'general'
   sort_order: number;
   is_hero: boolean;
+  is_location_hero?: boolean;
   is_visible: boolean;
   source: 'local' | 'storage';
   room_label?: string | null;

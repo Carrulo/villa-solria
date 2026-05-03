@@ -14,13 +14,20 @@ export async function generateMetadata({ params }: Props) {
 }
 
 async function getLocationHeroUrl(): Promise<string> {
-  // Prefer area / view photos for the location page hero
+  // 1) Photo explicitly flagged as location hero
+  const { data: pinned } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('is_location_hero', true)
+    .eq('is_visible', true)
+    .limit(1);
+  if (pinned?.[0]) return getPhotoUrl(pinned[0] as Photo);
+  // 2) Otherwise first visible 'view' photo
   const { data } = await supabase
     .from('photos')
     .select('*')
     .eq('is_visible', true)
-    .in('category', ['area', 'view'])
-    .order('category', { ascending: true }) // area before view
+    .eq('category', 'view')
     .order('sort_order', { ascending: true })
     .limit(1);
   const photo = data?.[0] as Photo | undefined;

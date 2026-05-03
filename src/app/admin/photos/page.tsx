@@ -7,7 +7,7 @@ import { PHOTO_CATEGORIES, PHOTO_CATEGORY_LABELS, getPhotoUrl } from '@/lib/supa
 import {
   Upload, Trash2, Eye, EyeOff, Star, StarOff, Check, X,
   ImageIcon, Download, ChevronDown, Loader2, AlertCircle,
-  CheckSquare, Square, RefreshCw, Sparkles,
+  CheckSquare, Square, RefreshCw, Sparkles, MapPin,
 } from 'lucide-react';
 
 // Priority order for "Auto-organize". Categories higher up appear first
@@ -233,6 +233,23 @@ export default function AdminPhotosPage() {
     }
     fetchPhotos();
     showToast(photo.is_hero ? 'Principal removida' : 'Definida como foto principal', 'success');
+  }
+
+  // Toggle "use as cover of /localizacao". Only one photo can be flagged.
+  async function toggleLocationHero(photo: Photo) {
+    if (!photo.is_location_hero) {
+      await supabase.from('photos').update({ is_location_hero: false }).eq('is_location_hero', true);
+    }
+    const { error } = await supabase
+      .from('photos')
+      .update({ is_location_hero: !photo.is_location_hero })
+      .eq('id', photo.id);
+    if (error) {
+      showToast('Erro ao atualizar', 'error');
+      return;
+    }
+    fetchPhotos();
+    showToast(photo.is_location_hero ? 'Capa de Localização removida' : 'Definida como capa da Localização', 'success');
   }
 
   // Toggle visibility
@@ -683,6 +700,7 @@ export default function AdminPhotosPage() {
                           altText={editingAlt === photo.id ? altText : photo.alt_text}
                           onToggleSelect={() => toggleSelect(photo.id)}
                           onToggleHero={() => toggleHero(photo)}
+                          onToggleLocationHero={() => toggleLocationHero(photo)}
                           onToggleVisibility={() => toggleVisibility(photo.id, photo.is_visible)}
                           onUpdateCategory={(c) => updateCategory(photo.id, c)}
                           onUpdateRoomLabel={(rl) => updateRoomLabel(photo.id, rl)}
@@ -757,6 +775,7 @@ function PhotoCard({
   altText,
   onToggleSelect,
   onToggleHero,
+  onToggleLocationHero,
   onToggleVisibility,
   onUpdateCategory,
   onUpdateRoomLabel,
@@ -775,6 +794,7 @@ function PhotoCard({
   altText: string;
   onToggleSelect: () => void;
   onToggleHero: () => void;
+  onToggleLocationHero: () => void;
   onToggleVisibility: () => void;
   onUpdateCategory: (cat: string) => void;
   onUpdateRoomLabel: (label: string | null) => void;
@@ -817,6 +837,15 @@ function PhotoCard({
             title={photo.is_hero ? 'Remover principal' : 'Definir como principal'}
           >
             {photo.is_hero ? <Star size={16} /> : <StarOff size={16} />}
+          </button>
+          <button
+            onClick={onToggleLocationHero}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+              photo.is_location_hero ? 'bg-sky-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+            title={photo.is_location_hero ? 'Remover capa Localização' : 'Definir como capa da página Localização'}
+          >
+            <MapPin size={16} />
           </button>
           <button
             onClick={onToggleVisibility}
@@ -872,6 +901,11 @@ function PhotoCard({
           {photo.is_hero && (
             <span className="px-2 py-0.5 bg-yellow-500 text-black text-[10px] font-bold rounded-full uppercase">
               Hero
+            </span>
+          )}
+          {photo.is_location_hero && (
+            <span className="px-2 py-0.5 bg-sky-500 text-white text-[10px] font-bold rounded-full uppercase">
+              Localização
             </span>
           )}
           {photo.source === 'local' && (
