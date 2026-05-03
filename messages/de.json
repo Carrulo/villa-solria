@@ -145,6 +145,41 @@
     },
     "aboutTitle": "Über Cabanas de Tavira",
     "aboutText": "Cabanas de Tavira ist ein charmantes Fischerdorf im Naturpark Ria Formosa. Bekannt für seine goldenen Sandstrände, kristallklares Wasser und friedliche Atmosphäre, ist es das perfekte Ziel für einen entspannten Urlaub an der Algarve. Das Dorf bietet ausgezeichnete Fischrestaurants, gemütliche Cafés und eine Strandpromenade mit atemberaubendem Blick.",
+    "highlightsTitle": "Top-Sehenswürdigkeiten",
+    "highlightsSubtitle": "Die Highlights nur wenige Minuten von der Villa Solria entfernt. Insider-Tipps und Kontakte im exklusiven Gästeführer.",
+    "highlightsGuideHint": "Bestätigte Gäste erhalten den ausführlichen Guide mit Restaurantempfehlungen, Kontakten und Öffnungszeiten.",
+    "highlights": {
+      "iliaCabanas": {
+        "name": "Insel Cabanas",
+        "distance": "3 Min mit dem Boot",
+        "blurb": "Paradiesischer Strand mit weißem Sand, kristallklarem Wasser und kaum Menschenmassen. Die Fähre fährt vom Hafen wenige Schritte vom Haus ab."
+      },
+      "riaFormosa": {
+        "name": "Naturpark Ria Formosa",
+        "distance": "vor der Tür",
+        "blurb": "Einzigartiges Naturreservat in Europa: Flamingos, Salinen, Kanäle und Barrier-Inseln. Perfekt für Bootstouren, Kajak oder Paddel."
+      },
+      "taviraCentro": {
+        "name": "Historische Altstadt Tavira",
+        "distance": "8 Min mit dem Auto",
+        "blurb": "Maurisch-römische Stadt mit Burg, römischer Brücke, Kirchen und traditionellen Tavernen. Ein Muss bei Sonnenuntergang."
+      },
+      "praiaBarril": {
+        "name": "Praia do Barril",
+        "distance": "15 Min mit dem Auto",
+        "blurb": "Bekannt für den Anker-Friedhof, erreichbar mit einer Touristenbahn über die Ria. Weiter, wilder Strand mit beeindruckenden Dünen."
+      },
+      "cacelaVelha": {
+        "name": "Cacela Velha",
+        "distance": "10 Min mit dem Auto",
+        "blurb": "Befestigtes Dorf auf einer Klippe über der Ria. Atemberaubende Aussichten, besonders bei Sonnenuntergang."
+      },
+      "castroMarim": {
+        "name": "Castro Marim",
+        "distance": "20 Min mit dem Auto",
+        "blurb": "Mittelalterliche Burg, Salinen mit Fleur de Sel und der berühmte Mittelaltermarkt im August. 5 Min zur spanischen Grenze."
+      }
+    },
     "recommendationsTitle": "Aktivitäten",
     "recommendations": {
       "beaches": "Strände",

@@ -122,6 +122,53 @@ export default async function LocationPage() {
           <p className="text-gray-600 leading-relaxed text-lg text-center">{t('aboutText')}</p>
         </div>
 
+        {/* Main attractions — 6 highlights for SEO + pre-booking convincers.
+            Detailed insider info (specific restaurants, contacts, opening
+            hours) stays in the post-booking guide. */}
+        <div className="mb-16">
+          <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2 text-center">
+            {t('highlightsTitle')}
+          </h2>
+          <p className="text-gray-500 text-center max-w-2xl mx-auto mb-8">
+            {t('highlightsSubtitle')}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { key: 'iliaCabanas', emoji: '🏝️', gradient: 'from-sky-500 to-cyan-400' },
+              { key: 'riaFormosa', emoji: '⛵', gradient: 'from-emerald-500 to-teal-400' },
+              { key: 'taviraCentro', emoji: '🏛️', gradient: 'from-amber-500 to-orange-400' },
+              { key: 'praiaBarril', emoji: '⚓', gradient: 'from-rose-500 to-pink-400' },
+              { key: 'cacelaVelha', emoji: '🌅', gradient: 'from-purple-500 to-fuchsia-400' },
+              { key: 'castroMarim', emoji: '🏰', gradient: 'from-yellow-500 to-amber-400' },
+            ].map((h) => (
+              <div
+                key={h.key}
+                className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className={`h-32 bg-gradient-to-br ${h.gradient} flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-500`}>
+                  <span aria-hidden>{h.emoji}</span>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 text-lg">
+                      {t(`highlights.${h.key}.name`)}
+                    </h3>
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                      {t(`highlights.${h.key}.distance`)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {t(`highlights.${h.key}.blurb`)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-6 italic">
+            {t('highlightsGuideHint')}
+          </p>
+        </div>
+
         {/* Recommendations */}
         <div>
           <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-8 text-center">{t('recommendationsTitle')}</h2>

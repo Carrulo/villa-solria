@@ -145,6 +145,41 @@
     },
     "aboutTitle": "About Cabanas de Tavira",
     "aboutText": "Cabanas de Tavira is a charming fishing village located in the Ria Formosa Natural Park. Known for its golden sand beaches, crystal-clear waters and peaceful atmosphere, it is the perfect destination for those seeking a relaxing holiday in the Algarve. The village offers excellent seafood restaurants, cozy cafes and a waterfront promenade with stunning views.",
+    "highlightsTitle": "Top attractions",
+    "highlightsSubtitle": "The must-sees just minutes from Villa Solria. Insider tips and contacts in the exclusive guest guide.",
+    "highlightsGuideHint": "Confirmed guests receive the detailed guide with recommended restaurants, contacts and opening hours.",
+    "highlights": {
+      "iliaCabanas": {
+        "name": "Cabanas Island",
+        "distance": "3 min by boat",
+        "blurb": "Paradise beach with white sand, crystal water and almost no crowds. The ferry leaves from the marina just steps from the house."
+      },
+      "riaFormosa": {
+        "name": "Ria Formosa Natural Park",
+        "distance": "at the door",
+        "blurb": "A unique European nature reserve: flamingos, salt flats, channels and barrier islands. Perfect for boat trips, kayak or paddle."
+      },
+      "taviraCentro": {
+        "name": "Tavira Historic Centre",
+        "distance": "8 min by car",
+        "blurb": "Roman-Moorish town with castle, Roman bridge, churches and traditional taverns. A must at sunset."
+      },
+      "praiaBarril": {
+        "name": "Barril Beach",
+        "distance": "15 min by car",
+        "blurb": "Famous for its Anchor Cemetery, reached by a tourist train across the Ria. Wide, wild beach with stunning dunes."
+      },
+      "cacelaVelha": {
+        "name": "Cacela Velha",
+        "distance": "10 min by car",
+        "blurb": "Walled village on a clifftop over the Ria. Breathtaking views, especially at sunset."
+      },
+      "castroMarim": {
+        "name": "Castro Marim",
+        "distance": "20 min by car",
+        "blurb": "Medieval castle, salt flats producing fleur de sel, and the famous medieval fair in August. 5 min from the Spanish border."
+      }
+    },
     "recommendationsTitle": "Things to Do",
     "recommendations": {
       "beaches": "Beaches",

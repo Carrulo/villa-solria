@@ -145,6 +145,41 @@
     },
     "aboutTitle": "Sobre Cabanas de Tavira",
     "aboutText": "Cabanas de Tavira é uma encantadora aldeia piscatória localizada no Parque Natural da Ria Formosa. Conhecida pelas suas praias de areia dourada, águas cristalinas e ambiente tranquilo, é o destino perfeito para quem procura férias relaxantes no Algarve. A vila oferece excelentes restaurantes de marisco, cafés acolhedores e um passeio à beira-mar com vistas deslumbrantes.",
+    "highlightsTitle": "Principais atrações",
+    "highlightsSubtitle": "Os imperdíveis a poucos minutos da Villa Solria. Dicas de insider e contactos no guia exclusivo dos hóspedes.",
+    "highlightsGuideHint": "Hóspedes confirmados recebem o guia detalhado com restaurantes recomendados, contactos e horários.",
+    "highlights": {
+      "iliaCabanas": {
+        "name": "Ilha de Cabanas",
+        "distance": "3 min de barco",
+        "blurb": "Praia paradisíaca de areia branca, água cristalina e quase sem multidões. O ferry sai da marginal a poucos passos da casa."
+      },
+      "riaFormosa": {
+        "name": "Parque Natural da Ria Formosa",
+        "distance": "à porta",
+        "blurb": "Reserva natural única na Europa: flamingos, salinas, canais e ilhas-barreira. Ideal para passeios de barco, kayak ou paddle."
+      },
+      "taviraCentro": {
+        "name": "Centro Histórico de Tavira",
+        "distance": "8 min de carro",
+        "blurb": "Cidade árabe-romana com castelo, ponte romana, igrejas e tasquinhas tradicionais. Imperdível ao fim da tarde."
+      },
+      "praiaBarril": {
+        "name": "Praia do Barril",
+        "distance": "15 min de carro",
+        "blurb": "Famosa pelo Cemitério das Âncoras, acessível por comboio turístico atravessando a Ria. Praia ampla e selvagem."
+      },
+      "cacelaVelha": {
+        "name": "Cacela Velha",
+        "distance": "10 min de carro",
+        "blurb": "Aldeia muralhada num miradouro sobre a Ria. Vistas que cortam a respiração, especialmente ao pôr-do-sol."
+      },
+      "castroMarim": {
+        "name": "Castro Marim",
+        "distance": "20 min de carro",
+        "blurb": "Castelo medieval, salinas onde nasce a flor de sal, e a famosa feira medieval em Agosto. A 5 min da fronteira com Espanha."
+      }
+    },
     "recommendationsTitle": "O que fazer",
     "recommendations": {
       "beaches": "Praias",
