@@ -3,6 +3,7 @@ import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import ParallaxHero from '@/components/ParallaxHero';
 import ScrollGallery from '@/components/ScrollGallery';
+import Reveal from '@/components/Reveal';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import EmailCapture from '@/components/EmailCapture';
@@ -299,11 +300,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Photo Grid — first thing after the hero, sells the property */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <Reveal direction="up" className="text-center mb-12">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
               {h('photosTitle')}
             </h2>
-          </div>
+          </Reveal>
           <ScrollGallery photos={previewPhotos} variant="feature" />
           <div className="text-center mt-8">
             <Link
@@ -321,17 +322,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {areaPhotos.length > 0 && (
         <section className="py-16 lg:py-24 bg-gradient-to-b from-white to-sand/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
+            <Reveal direction="up" className="text-center mb-10">
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
                 {area('title')}
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
                 {area('subtitle')}
               </p>
-            </div>
+            </Reveal>
 
             {/* Activity chips */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+            <Reveal
+              stagger
+              staggerDelay={0.06}
+              className="flex flex-wrap items-center justify-center gap-2 mb-10"
+            >
               {[
                 { emoji: '🏝️', label: area('beach') },
                 { emoji: '⛵', label: area('boatRia') },
@@ -342,13 +347,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               ].map((a) => (
                 <span
                   key={a.label}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white rounded-full text-sm font-medium text-gray-700 shadow-sm border border-gray-100"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white rounded-full text-sm font-medium text-gray-700 shadow-sm border border-gray-100 hover:scale-105 hover:shadow-md transition-transform"
                 >
                   <span aria-hidden>{a.emoji}</span>
                   <span>{a.label}</span>
                 </span>
               ))}
-            </div>
+            </Reveal>
 
             {/* Photo grid */}
             <ScrollGallery photos={areaPhotos} variant="even" />
@@ -359,12 +364,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Features */}
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl lg:text-3xl font-bold text-center text-gray-900 mb-12">
-            {f('title')}
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <Reveal direction="up">
+            <h2 className="text-2xl lg:text-3xl font-bold text-center text-gray-900 mb-12">
+              {f('title')}
+            </h2>
+          </Reveal>
+          <Reveal stagger staggerDelay={0.08} className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {features.map((feat) => (
-              <div key={feat.title} className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div key={feat.title} className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <feat.icon size={28} className="text-primary" />
                 </div>
@@ -372,7 +379,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 <p className="text-sm text-gray-500">{feat.desc}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -380,7 +387,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           'save 20%' message hits AFTER the visitor wants the place. */}
       <section className="py-8 lg:py-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-6 sm:p-8 text-center shadow-lg">
+          <Reveal direction="scale" className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-6 sm:p-8 text-center shadow-lg">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9zdmc+')] opacity-50" />
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 mb-3">
@@ -396,7 +403,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {t('saveBannerDesc')}
               </p>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -407,7 +414,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           builds trust before introducing the host (one person). */}
       <section className="py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <Reveal direction="up" className="text-center mb-12">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
               {h('reviewsTitle')}
             </h2>
@@ -415,19 +422,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <Star size={16} className="text-accent fill-accent" />
               <span className="text-accent font-semibold">{r('rating')}</span>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          </Reveal>
+          <Reveal stagger staggerDelay={0.12} className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {reviews.map((review) => (
               <ReviewCard key={review.name} {...review} />
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Host */}
       <section className="py-16 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-gray-100">
+          <Reveal direction="right" className="bg-white rounded-2xl p-8 sm:p-10 shadow-sm border border-gray-100">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-primary/10">
@@ -504,7 +511,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -513,7 +520,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* CTA */}
       <section className="py-16 lg:py-24 bg-primary">
-        <div className="max-w-3xl mx-auto px-4 text-center">
+        <Reveal direction="scale" className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
             {h('ctaTitle')}
           </h2>
@@ -522,12 +529,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </p>
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-semibold rounded-xl hover:bg-accent-hover transition-all shadow-lg text-lg"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-accent text-white font-semibold rounded-xl hover:bg-accent-hover hover:scale-105 transition-all shadow-lg text-lg"
           >
             {h('ctaButton')}
             <ArrowRight size={20} />
           </Link>
-        </div>
+        </Reveal>
       </section>
     </>
   );
