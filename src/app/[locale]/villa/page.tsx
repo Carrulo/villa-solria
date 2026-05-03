@@ -20,23 +20,62 @@ export async function generateMetadata({ params }: Props) {
   return { title: t('villaTitle'), description: t('villaDescription') };
 }
 
-async function getHeroUrl(): Promise<string> {
-  // 1) explicit hero, 2) any 'hero' category, 3) fallback aerial
+type VillaSlots = {
+  hero: string;
+  living: string;
+  kitchen: string;
+  bedroom1: string;
+  bedroom2: string;
+  outdoor1: string;
+  outdoor2: string;
+};
+
+async function getVillaSlots(): Promise<VillaSlots> {
   const { data } = await supabase
     .from('photos')
     .select('*')
     .eq('is_visible', true)
-    .or('is_hero.eq.true,category.eq.hero')
-    .order('is_hero', { ascending: false })
-    .order('sort_order', { ascending: true })
-    .limit(1);
-  const photo = (data?.[0] as Photo | undefined);
-  return photo ? getPhotoUrl(photo) : '/images/property/aerial-view.jpg';
+    .order('sort_order', { ascending: true });
+  const photos = (data || []) as Photo[];
+
+  const firstOf = (cat: string) => photos.find((p) => p.category === cat);
+  const allOf = (cat: string) => photos.filter((p) => p.category === cat);
+
+  const hero =
+    photos.find((p) => p.is_hero) ||
+    firstOf('hero') ||
+    firstOf('view');
+
+  // Two distinct bedrooms: prefer Quarto 1 first, then a different room
+  const bedrooms = allOf('bedroom');
+  const bed1 = bedrooms.find((p) => p.room_label === 'Quarto 1') || bedrooms[0];
+  const bed2 =
+    bedrooms.find((p) => p.id !== bed1?.id && (p.room_label || '') !== (bed1?.room_label || '')) ||
+    bedrooms[1] ||
+    bed1;
+
+  const outdoors = allOf('outdoor');
+  const out1 = outdoors[0];
+  const out2 = outdoors[1] || out1;
+
+  const url = (p: Photo | undefined, fallback: string) =>
+    p ? getPhotoUrl(p) : fallback;
+
+  return {
+    hero: url(hero, '/images/property/aerial-view.jpg'),
+    living: url(firstOf('living'), '/images/property/living-room.jpg'),
+    kitchen: url(firstOf('kitchen'), '/images/property/kitchen.jpg'),
+    bedroom1: url(bed1, '/images/property/bedroom-master.jpg'),
+    bedroom2: url(bed2, '/images/property/bedroom-double.jpg'),
+    outdoor1: url(out1, '/images/property/garden.jpg'),
+    outdoor2: url(out2, '/images/property/balcony.jpg'),
+  };
 }
 
 export default async function VillaPage() {
   const t = await getTranslations('villa');
-  const heroUrl = await getHeroUrl();
+  const slots = await getVillaSlots();
+  const heroUrl = slots.hero;
 
   const amenities = [
     { icon: AirVent, key: 'ac' },
@@ -107,20 +146,22 @@ export default async function VillaPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
                 <Image
-                  src="/images/property/living-room.jpg"
+                  src={slots.living}
                   alt="Living room"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 50vw, 25vw"
+                  unoptimized={slots.living.startsWith('http')}
                 />
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
                 <Image
-                  src="/images/property/kitchen.jpg"
+                  src={slots.kitchen}
                   alt="Kitchen"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 50vw, 25vw"
+                  unoptimized={slots.kitchen.startsWith('http')}
                 />
               </div>
             </div>
@@ -131,20 +172,22 @@ export default async function VillaPage() {
             <div className="grid grid-cols-2 gap-3 lg:order-1 order-2">
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
                 <Image
-                  src="/images/property/bedroom-master.jpg"
+                  src={slots.bedroom1}
                   alt="Master bedroom"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 50vw, 25vw"
+                  unoptimized={slots.bedroom1.startsWith('http')}
                 />
               </div>
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
                 <Image
-                  src="/images/property/bedroom-double.jpg"
+                  src={slots.bedroom2}
                   alt="Double bedroom"
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 50vw, 25vw"
+                  unoptimized={slots.bedroom2.startsWith('http')}
                 />
               </div>
             </div>
@@ -168,20 +211,22 @@ export default async function VillaPage() {
             </div>
             <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
               <Image
-                src="/images/property/garden.jpg"
+                src={slots.outdoor1}
                 alt="Garden"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 33vw"
+                unoptimized={slots.outdoor1.startsWith('http')}
               />
             </div>
             <div className="relative aspect-[4/3] lg:aspect-auto rounded-xl overflow-hidden">
               <Image
-                src="/images/property/balcony.jpg"
+                src={slots.outdoor2}
                 alt="Master bedroom balcony"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 33vw"
+                unoptimized={slots.outdoor2.startsWith('http')}
               />
             </div>
           </div>
