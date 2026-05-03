@@ -39,7 +39,8 @@
     "fromPrice": "Desde {price}€/noite",
     "saveBanner": "Reserve direto e poupe até {percent}%",
     "saveBannerDesc": "Sem taxas de serviço — pague menos do que no Airbnb ou Booking.com",
-    "saveCompare": "vs plataformas externas"
+    "saveCompare": "vs plataformas externas",
+    "recentInterest": "{count} viram esta propriedade nos últimos 7 dias"
   },
   "features": {
     "title": "Porquê a Villa Solria?",

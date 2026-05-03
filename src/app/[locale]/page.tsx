@@ -239,6 +239,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <TrustBadges variant="hero" />
 
+          <div className="flex justify-center mb-4">
+            <RecentInterestBadge label={(c) => t('recentInterest', { count: c })} />
+          </div>
+
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Villa Solria
           </h1>
