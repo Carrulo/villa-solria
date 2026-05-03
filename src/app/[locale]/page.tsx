@@ -99,6 +99,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const h = await getTranslations({ locale, namespace: 'home' });
   const r = await getTranslations({ locale, namespace: 'reviews' });
   const host = await getTranslations({ locale, namespace: 'host' });
+  const area = await getTranslations({ locale, namespace: 'area' });
 
   const features = [
     { icon: BedDouble, title: f('bedrooms'), desc: f('bedroomsDesc') },
@@ -204,7 +205,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const previewPhotos =
     allPhotos.length > 0
       ? allPhotos
-          .filter((p) => !p.is_hero)
+          .filter((p) => !p.is_hero && p.category !== 'area')
           .slice(0, 9)
           .map((p) => ({ src: getPhotoUrl(p), alt: p.alt_text || p.filename }))
       : [
@@ -217,6 +218,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { src: '/images/property/terrace-view.jpg', alt: 'Terrace View' },
           { src: '/images/property/garden.jpg', alt: 'Garden' },
         ];
+
+  const areaPhotos = allPhotos
+    .filter((p) => p.category === 'area' && p.is_visible !== false)
+    .slice(0, 9)
+    .map((p) => ({ src: getPhotoUrl(p), alt: p.alt_text || p.filename }));
 
   return (
     <>
@@ -314,6 +320,62 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
       </section>
+
+      {/* Surroundings — emotional storytelling about the area & activities.
+          Renders only when there are photos tagged category='area'. */}
+      {areaPhotos.length > 0 && (
+        <section className="py-16 lg:py-24 bg-gradient-to-b from-white to-sand/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+                {area('title')}
+              </h2>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                {area('subtitle')}
+              </p>
+            </div>
+
+            {/* Activity chips */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+              {[
+                { emoji: '🏝️', label: area('beach') },
+                { emoji: '⛵', label: area('boatRia') },
+                { emoji: '🌊', label: area('boatSea') },
+                { emoji: '🛶', label: area('kayak') },
+                { emoji: '🏄', label: area('padel') },
+                { emoji: '🎣', label: area('fishing') },
+              ].map((a) => (
+                <span
+                  key={a.label}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white rounded-full text-sm font-medium text-gray-700 shadow-sm border border-gray-100"
+                >
+                  <span aria-hidden>{a.emoji}</span>
+                  <span>{a.label}</span>
+                </span>
+              ))}
+            </div>
+
+            {/* Photo grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+              {areaPhotos.map((photo, i) => (
+                <div
+                  key={photo.src + i}
+                  className={`relative overflow-hidden rounded-2xl ${i === 0 ? 'col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto' : 'aspect-[4/3]'}`}
+                >
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    fill
+                    className="object-cover hover:scale-105 transition-transform duration-500"
+                    sizes={i === 0 ? '(max-width: 1024px) 100vw, 66vw' : '(max-width: 1024px) 50vw, 33vw'}
+                    unoptimized={photo.src.startsWith('http')}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features */}
       <section className="py-16 lg:py-24">

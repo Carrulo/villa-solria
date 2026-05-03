@@ -26,7 +26,7 @@ const fallbackPhotos: { src: string; key: string; fallbackLabel: string; categor
   { src: '/images/property/entrance.jpg', key: 'entrance', fallbackLabel: 'Entrada', category: 'outdoor' },
 ];
 
-const FILTER_CATEGORIES = ['all', 'bedroom', 'living', 'outdoor', 'view'] as const;
+const FILTER_CATEGORIES = ['all', 'bedroom', 'living', 'outdoor', 'view', 'area'] as const;
 type FilterCategory = typeof FILTER_CATEGORIES[number];
 
 export default function GalleryPage() {

@@ -125,7 +125,8 @@
     "diningArea": "Essbereich",
     "sunsetView": "Sonnenuntergang",
     "beachView": "Strandblick",
-    "entrance": "Eingang"
+    "entrance": "Eingang",
+    "filter_area": "Umgebung"
   },
   "location": {
     "title": "Lage",
@@ -417,5 +418,15 @@
     "license": "Lizenz AL 120108/AL",
     "owner": "Bruno, Eigentümer",
     "refund": "Volle Rückerstattung bis 14 Tage vorher"
+  },
+  "area": {
+    "title": "Entdecken Sie die Umgebung",
+    "subtitle": "Cabanas de Tavira ist das Tor zu einzigartigen Algarve-Erlebnissen",
+    "fishing": "Angeln",
+    "beach": "Strand",
+    "kayak": "Kajakfahren",
+    "boatRia": "Bootsfahrten auf der Ria",
+    "boatSea": "Meeresausflüge",
+    "padel": "Stand-up-Paddling"
   }
 }

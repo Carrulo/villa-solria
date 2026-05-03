@@ -125,7 +125,8 @@
     "diningArea": "Dining Area",
     "sunsetView": "Sunset",
     "beachView": "Beach View",
-    "entrance": "Entrance"
+    "entrance": "Entrance",
+    "filter_area": "Area"
   },
   "location": {
     "title": "Location",
@@ -417,5 +418,15 @@
     "license": "License AL 120108/AL",
     "owner": "Bruno, owner",
     "refund": "Full refund up to 14 days before"
+  },
+  "area": {
+    "title": "Discover the surroundings",
+    "subtitle": "Cabanas de Tavira is the gateway to unique Algarve experiences",
+    "fishing": "Fishing",
+    "beach": "Beach",
+    "kayak": "Kayaking",
+    "boatRia": "Ria boat trips",
+    "boatSea": "Sea outings",
+    "padel": "Paddleboard"
   }
 }

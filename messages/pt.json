@@ -125,7 +125,8 @@
     "diningArea": "Zona de Refeições",
     "sunsetView": "Pôr do Sol",
     "beachView": "Vista Praia",
-    "entrance": "Entrada"
+    "entrance": "Entrada",
+    "filter_area": "Zona Envolvente"
   },
   "location": {
     "title": "Localização",
@@ -417,5 +418,15 @@
     "license": "Licença AL 120108/AL",
     "owner": "Bruno, proprietário",
     "refund": "Reembolso 100% até 14 dias antes"
+  },
+  "area": {
+    "title": "Conheça a zona envolvente",
+    "subtitle": "Cabanas de Tavira é o ponto de partida para experiências únicas no Algarve",
+    "fishing": "Pesca",
+    "beach": "Praia",
+    "kayak": "Canoagem",
+    "boatRia": "Passeios na Ria",
+    "boatSea": "Saídas ao mar",
+    "padel": "Stand-up Paddle"
   }
 }
