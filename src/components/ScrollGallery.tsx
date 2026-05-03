@@ -8,8 +8,13 @@ type Photo = { src: string; alt: string };
 
 type Props = {
   photos: Photo[];
-  /** "feature" = first photo spans 2x2 on desktop (matches home grid). "even" = uniform. */
-  variant?: 'feature' | 'even';
+  /**
+   * Layout variant:
+   *  - "feature" = 4-col grid, first photo spans 2x2 (home preview)
+   *  - "area"    = 3-col grid, first photo spans 2x2 (surroundings)
+   *  - "even"    = uniform 4-col grid (gallery, simple lists)
+   */
+  variant?: 'feature' | 'area' | 'even';
 };
 
 /**
@@ -83,10 +88,15 @@ export default function ScrollGallery({ photos, variant = 'feature' }: Props) {
     <>
       <div
         ref={containerRef}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4"
+        className={
+          variant === 'area'
+            ? 'grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4'
+            : 'grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4'
+        }
       >
         {photos.map((p, i) => {
-          const featured = variant === 'feature' && i === 0;
+          const featured =
+            (variant === 'feature' || variant === 'area') && i === 0;
           return (
             <button
               key={p.src + i}
@@ -96,7 +106,9 @@ export default function ScrollGallery({ photos, variant = 'feature' }: Props) {
               style={{ transitionDelay: `${Math.min(i * 60, 360)}ms` }}
               className={`group relative overflow-hidden rounded-2xl cursor-zoom-in opacity-0 translate-y-6 [&.visible]:opacity-100 [&.visible]:translate-y-0 transition-[opacity,transform] duration-700 ease-out ${
                 featured
-                  ? 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto'
+                  ? variant === 'area'
+                    ? 'col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto'
+                    : 'lg:col-span-2 lg:row-span-2 aspect-[4/3] lg:aspect-auto'
                   : 'aspect-[4/3]'
               }`}
             >

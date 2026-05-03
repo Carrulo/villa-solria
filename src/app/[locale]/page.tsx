@@ -356,7 +356,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Reveal>
 
             {/* Photo grid */}
-            <ScrollGallery photos={areaPhotos} variant="even" />
+            <ScrollGallery photos={areaPhotos} variant="area" />
           </div>
         </section>
       )}
