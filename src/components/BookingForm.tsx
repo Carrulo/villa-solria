@@ -243,10 +243,13 @@ export default function BookingForm() {
           },
         ],
       });
+      // event_id MUST match server-side (lib/meta-capi.ts -> eventIdFor.initiateCheckout)
+      // so that the browser Pixel and the CAPI server event deduplicate.
       trackMetaEvent('InitiateCheckout', {
         currency: 'EUR',
         value: total,
         num_items: 1,
+        eventID: `checkout_${bookingId}`,
       });
 
       // Redirect to Stripe Checkout

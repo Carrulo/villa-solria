@@ -61,9 +61,13 @@ function BookingSuccessContent() {
           ],
         });
 
+        // event_id MUST match server-side (lib/meta-capi.ts -> eventIdFor.purchase)
+        // so the browser Pixel and the CAPI Purchase event deduplicate within Meta.
+        const bookingId = data?.booking?.id;
         trackMetaEvent('Purchase', {
           currency: 'EUR',
           value,
+          ...(bookingId ? { eventID: `purchase_${bookingId}` } : {}),
         });
       })
       .catch(() => {

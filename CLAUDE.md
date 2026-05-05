@@ -2,16 +2,31 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-05-01 22:00)
-- **Active branch**: main (clean)
+## 📍 Current State (updated 2026-05-05 23:30)
+- **Active branch**: main (clean — CAPI changes pendentes commit/push)
 - **Open PRs**: none
-- **In-flight work**: none
-- **Blockers**: none
+- **In-flight work**: Meta CAPI server-side wired in (lib/meta-capi.ts + webhook + checkout/session). Pendente:
+  1. Gerar **System User token** no Events Manager → `Definições do conjunto de dados` → CAPI → `Generate access token`. Colar em **Admin → Settings → Tracking → Meta Conversions API token**.
+  2. (Opcional) gerar **test_event_code** em Events Manager → Test Events e colar em `Meta CAPI test event code` para validar antes de produção. Apagar depois.
+  3. Após 7+ Purchases reais (ou 7d com CAPI activo), duplicar campanhas para **OUTCOME_SALES** optimizando `Purchase`.
+- **Blockers**: nenhum técnico. Token CAPI fica em `settings.meta_capi_token` (Supabase) — nunca em env.
 - **Last deploy**: ed8372d → Production (Vercel) on 2026-04-25
 - **Live FB Ads (Bruno Carrulo `act_2080974932079132`)**:
   - PT (live): campaign `120253240193200586` / adset `120253240193170586` / ad `120253240193150586` — €5/d × 7d, PT video, targets PT 30+, video ID `2576195622801046`
   - EN (live 2026-05-01): campaign `120253316714670586` / adset `120253316714660586` / ad `120253316714680586` — €5/d × 7d, `villa-solria-en.mp4`, targets UK+DE+NL 30+, interests Vacation rental + Beaches, CTA Book now → villasolria.com
 - **Orphan MCP campaign** (PAUSED, sem ad): `120253316804090586` / adset `120253316811480586` — pode apagar
+- **Last 7d ads performance (28/4-4/5)**: €49 spend · 51,6k imp · 1 630 link clicks · 948 LPV · **0 purchases registadas** → diagnóstico foi falta de CAPI + objectivo LINK_CLICKS em vez de SALES (ver secção CAPI abaixo).
+
+## 📡 Meta CAPI (server-side conversions)
+- **Helper**: `src/lib/meta-capi.ts` — `sendMetaEvent(name, userData, customData, { eventId, eventSourceUrl })`
+  - Hash automático SHA-256 (em, ph, fn, ln, ct, country)
+  - Lê `meta_pixel_id` + `meta_capi_token` (+ `meta_test_event_code`) de `settings`, com cache de 60s
+  - `extractClientContext(request)` extrai `client_ip`, `user_agent`, `_fbp`, `_fbc` de Next.js Request
+- **Eventos ligados**:
+  - `InitiateCheckout` server-side em `src/app/api/checkout/session/route.ts` (POST) — alta qualidade de match (apanha IP/UA/fbp do utilizador)
+  - `Purchase` server-side em `src/app/api/stripe/webhook/route.ts` (`fulfillBooking`) — sem IP/UA mas com email + telefone hashed
+- **Dedup browser↔server**: `event_id` determinístico via `eventIdFor.purchase(bookingId)` / `eventIdFor.initiateCheckout(bookingId)`. Browser envia o mesmo `eventID` em `trackMetaEvent` (`Analytics.tsx` move-o para a 4ª posição do `fbq`).
+- **Privacy**: `meta_capi_token` NUNCA é exposto em `/api/settings/tracking` (esse endpoint só lê `ga4_measurement_id` e `meta_pixel_id`). O token só é lido no servidor.
 
 ## ✅ Recently resolved (May 2026)
 - **FB Ads EN campaign launched** (May 1): Duplicado do PT via Ads Manager, vídeo EN uploaded manualmente, copy EN, targeting UK+DE+NL. Limitação confirmada: meta-ads MCP em `development_access` tier — não cria creatives live (error_subcode 1885183). Workflow híbrido (browser + MCP read) é o único viável até App Review.

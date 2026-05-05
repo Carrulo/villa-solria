@@ -3,6 +3,7 @@ import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 import { generateBookingReference, sendBookingConfirmationEmail, sendAbandonmentEmail } from '@/lib/email';
 import { sendTelegramNotification, buildNewBookingMessage, buildCancellationMessage } from '@/lib/telegram';
+import { sendMetaEvent, eventIdFor } from '@/lib/meta-capi';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -184,6 +185,46 @@ export async function POST(request: NextRequest) {
         total_price: booking.total_price || 0,
       };
 
+      // Meta CAPI Purchase — server-side, dedup with browser via deterministic event_id.
+      // Stripe webhook never has access to the original visitor's IP / UA / fbp cookies,
+      // so the match quality relies mainly on hashed email + value. Browser-side fires
+      // the same event_id from /booking/success so duplicates are merged within 7 days.
+      const [firstName, ...rest] = (booking.guest_name || '').trim().split(/\s+/);
+      const lastName = rest.join(' ') || null;
+
+      const capiPromise = sendMetaEvent(
+        'Purchase',
+        {
+          email: booking.guest_email || null,
+          phone: booking.guest_phone || null,
+          firstName: firstName || null,
+          lastName,
+          country: booking.guest_country || 'pt',
+        },
+        {
+          currency: 'EUR',
+          value: Number(booking.total_price) || 0,
+          contentName: 'Villa Solria Booking',
+          contentCategory: 'vacation_rental',
+          contentIds: [bookingId],
+          numItems: 1,
+          extra: {
+            order_id: reference,
+            num_nights: booking.num_nights ?? undefined,
+            checkin_date: booking.checkin_date,
+            checkout_date: booking.checkout_date,
+          },
+        },
+        {
+          eventId: eventIdFor.purchase(bookingId),
+          eventSourceUrl: `https://villasolria.com/${booking.language || 'pt'}/booking/success`,
+          actionSource: 'website',
+        },
+      ).catch((e) => {
+        console.error('Meta CAPI Purchase failed:', e);
+        return false;
+      });
+
       await Promise.allSettled([
         sendBookingConfirmationEmail(emailData).catch((e) =>
           console.error('Email failed:', e)
@@ -191,6 +232,7 @@ export async function POST(request: NextRequest) {
         sendTelegramNotification(buildNewBookingMessage(telegramData)).catch((e) =>
           console.error('Telegram failed:', e)
         ),
+        capiPromise,
       ]);
     };
 

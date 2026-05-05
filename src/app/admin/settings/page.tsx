@@ -76,6 +76,8 @@ const SECTIONS: SettingSection[] = [
     fields: [
       { key: 'ga4_measurement_id', label: 'Google Analytics 4 (Measurement ID)', placeholder: 'G-XXXXXXXXXX' },
       { key: 'meta_pixel_id', label: 'Meta Pixel ID', placeholder: '1234567890' },
+      { key: 'meta_capi_token', label: 'Meta Conversions API token (System User)', placeholder: 'EAAB...' },
+      { key: 'meta_test_event_code', label: 'Meta CAPI test event code (apenas durante testes)', placeholder: 'TEST12345' },
     ],
   },
   {

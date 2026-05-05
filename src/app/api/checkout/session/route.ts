@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
+import { sendMetaEvent, eventIdFor, extractClientContext } from '@/lib/meta-capi';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -290,6 +291,48 @@ export async function POST(request: NextRequest) {
       .from('bookings')
       .update({ stripe_session_id: session.id })
       .eq('id', bookingId);
+
+    // Meta CAPI InitiateCheckout — fired from the server with the original
+    // request's IP, UA and _fbp/_fbc cookies for high-quality matching.
+    // Browser fires the same event_id from BookingForm so they dedup.
+    const ctx = extractClientContext(request);
+    const totalForCapi = Math.round(
+      (pricePerNight * nights + cleaningFee) *
+        depositMultiplier *
+        (1 - discount / 100) *
+        100,
+    ) / 100;
+
+    const [firstName, ...rest] = (booking.guest_name || '').trim().split(/\s+/);
+    const lastName = rest.join(' ') || null;
+
+    sendMetaEvent(
+      'InitiateCheckout',
+      {
+        email: booking.guest_email || null,
+        phone: booking.guest_phone || null,
+        firstName: firstName || null,
+        lastName,
+        country: booking.guest_country || 'pt',
+        clientIp: ctx.clientIp,
+        userAgent: ctx.userAgent,
+        fbp: ctx.fbp,
+        fbc: ctx.fbc,
+      },
+      {
+        currency: 'EUR',
+        value: totalForCapi,
+        contentName: 'Villa Solria Booking',
+        contentCategory: 'vacation_rental',
+        contentIds: [bookingId],
+        numItems: 1,
+      },
+      {
+        eventId: eventIdFor.initiateCheckout(bookingId),
+        eventSourceUrl: request.headers.get('referer') || `${origin}/${locale}/booking`,
+        actionSource: 'website',
+      },
+    ).catch((e) => console.error('Meta CAPI InitiateCheckout failed:', e));
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

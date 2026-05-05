@@ -59,12 +59,21 @@ export function trackGA4Event(
 
 /**
  * Fire a Meta Pixel event. No-op if fbq is not loaded.
+ *
+ * If `params.eventID` is present it is moved to the 3rd argument of `fbq` —
+ * this is how Meta dedupes browser events against server-side CAPI events
+ * with the same `event_id`. See `src/lib/meta-capi.ts`.
  */
 export function trackMetaEvent(
   eventName: string,
   params?: Record<string, unknown>
 ) {
-  if (typeof window !== 'undefined' && window.fbq) {
+  if (typeof window === 'undefined' || !window.fbq) return;
+
+  if (params && typeof params.eventID === 'string') {
+    const { eventID, ...rest } = params;
+    window.fbq('track', eventName, rest, { eventID });
+  } else {
     window.fbq('track', eventName, params);
   }
 }
