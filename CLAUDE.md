@@ -2,20 +2,22 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-05-05 23:30)
-- **Active branch**: main (clean — CAPI changes pendentes commit/push)
+## 📍 Current State (updated 2026-05-06 21:30)
+- **Active branch**: main (clean — commit `96965c7` em prod)
 - **Open PRs**: none
-- **In-flight work**: Meta CAPI server-side wired in (lib/meta-capi.ts + webhook + checkout/session). Pendente:
-  1. Gerar **System User token** no Events Manager → `Definições do conjunto de dados` → CAPI → `Generate access token`. Colar em **Admin → Settings → Tracking → Meta Conversions API token**.
-  2. (Opcional) gerar **test_event_code** em Events Manager → Test Events e colar em `Meta CAPI test event code` para validar antes de produção. Apagar depois.
-  3. Após 7+ Purchases reais (ou 7d com CAPI activo), duplicar campanhas para **OUTCOME_SALES** optimizando `Purchase`.
-- **Blockers**: nenhum técnico. Token CAPI fica em `settings.meta_capi_token` (Supabase) — nunca em env.
-- **Last deploy**: ed8372d → Production (Vercel) on 2026-04-25
-- **Live FB Ads (Bruno Carrulo `act_2080974932079132`)**:
-  - PT (live): campaign `120253240193200586` / adset `120253240193170586` / ad `120253240193150586` — €5/d × 7d, PT video, targets PT 30+, video ID `2576195622801046`
-  - EN (live 2026-05-01): campaign `120253316714670586` / adset `120253316714660586` / ad `120253316714680586` — €5/d × 7d, `villa-solria-en.mp4`, targets UK+DE+NL 30+, interests Vacation rental + Beaches, CTA Book now → villasolria.com
+- **In-flight work**: Campanhas Meta **PAUSADAS** desde 6 Mai 21:25 para validar CAPI ponta-a-ponta antes de relançar. Próximos passos:
+  1. **Reserva de teste programática** (Stripe test mode) → confirmar `InitiateCheckout` + `Purchase` browser↔CAPI dedup no Events Manager · Event Match Quality ≥7/10.
+  2. **Relançar com `OUTCOME_SALES`** optimizando `Purchase` (mesmo €5/d cada PT/EN, mesmo criativo).
+  3. Adicionar **adset de retargeting LPV últimos 30d** (~1 216 pessoas guardadas) com criativo "Datas Maio/Junho — desconto vs Booking".
+  4. Aceitar lag normal de vacation rentals — primeiras Purchases tipicamente entre dia 14-21.
+- **Blockers**: nenhum.
+- **Last deploy**: `96965c7` (Meta CAPI server-side) → Production (Vercel) on 2026-05-05
+- **Meta CAPI status**: ✅ token gerado em `Set up without Dataset Quality API` (não toca em pixel Kontrolsat) e gravado em `settings.meta_capi_token` (Supabase, 207 chars, prefixo `EAARpuU…`). `meta_test_event_code` vazio.
+- **FB Ads (Bruno Carrulo `act_2080974932079132`) — TODAS PAUSADAS desde 6 Mai 21:25**:
+  - PT: campaign `120253240193200586` (PAUSED) / adset `120253240193170586` / ad `120253240193150586` — €5/d, PT video ID `2576195622801046`, targets PT 30+
+  - EN: campaign `120253316714670586` (PAUSED) / adset `120253316714660586` / ad `120253316714680586` — €5/d, `villa-solria-en.mp4`, targets UK+DE+NL 30+
 - **Orphan MCP campaign** (PAUSED, sem ad): `120253316804090586` / adset `120253316811480586` — pode apagar
-- **Last 7d ads performance (28/4-4/5)**: €49 spend · 51,6k imp · 1 630 link clicks · 948 LPV · **0 purchases registadas** → diagnóstico foi falta de CAPI + objectivo LINK_CLICKS em vez de SALES (ver secção CAPI abaixo).
+- **Spend total 1-6 Maio**: €78,59 · ~60k imp · ~1 800 link clicks · ~1 216 LPV · **0 InitiateCheckout · 0 Purchase**. Audit Supabase confirma 0 visitantes externos passaram do "Reservar". Decisão: pausa enquanto se valida CAPI; ciclo decisão vacation rental é 2-4 semanas, não é problema de CRO ainda.
 
 ## 📡 Meta CAPI (server-side conversions)
 - **Helper**: `src/lib/meta-capi.ts` — `sendMetaEvent(name, userData, customData, { eventId, eventSourceUrl })`
