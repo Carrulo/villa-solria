@@ -2,8 +2,10 @@ name: iCal Sync
 
 on:
   schedule:
-    # Every 30 minutes (GitHub may delay by 5-15 min under load)
-    - cron: '*/30 * * * *'
+    # Every 15 minutes (GitHub may delay by 5-15 min under load).
+    # Reduced from 30→15 min on 2026-05-07 to lower same-day Airbnb
+    # reservation visibility lag (typical end-to-end now ~15-45 min).
+    - cron: '*/15 * * * *'
   workflow_dispatch:
     # Allow manual trigger from GitHub UI
 
