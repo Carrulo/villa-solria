@@ -2600,19 +2600,43 @@ function ShareGuideModal({
   const url = `${origin}/${lang}/guia/${data.guide_token}`;
 
   const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
+
+  // Format check-in / check-out dates in the guest's language.
+  // "7 de maio" / "7 May" / "7 de mayo" / "7. Mai"
+  function fmtDate(iso: string, locale: string): string {
+    if (!iso) return '';
+    try {
+      return new Intl.DateTimeFormat(locale, {
+        day: 'numeric',
+        month: 'long',
+      }).format(new Date(`${iso}T00:00:00`));
+    } catch {
+      return iso;
+    }
+  }
+  const inPt = fmtDate(data.checkin_date, 'pt-PT');
+  const outPt = fmtDate(data.checkout_date, 'pt-PT');
+  const inEn = fmtDate(data.checkin_date, 'en-GB');
+  const outEn = fmtDate(data.checkout_date, 'en-GB');
+  const inEs = fmtDate(data.checkin_date, 'es-ES');
+  const outEs = fmtDate(data.checkout_date, 'es-ES');
+  const inDe = fmtDate(data.checkin_date, 'de-DE');
+  const outDe = fmtDate(data.checkout_date, 'de-DE');
+
   const doorLine = pin
     ? {
-        pt: `\n\n🔑 Código da fechadura: ${pin}`,
+        pt: `\n\n🔑 Código da porta: ${pin}`,
         en: `\n\n🔑 Door code: ${pin}`,
-        es: `\n\n🔑 Código de la cerradura: ${pin}`,
-        de: `\n\n🔑 Türschloss-Code: ${pin}`,
+        es: `\n\n🔑 Código de la puerta: ${pin}`,
+        de: `\n\n🔑 Türcode: ${pin}`,
       }
     : { pt: '', en: '', es: '', de: '' };
+
   const messages: Record<string, string> = {
-    pt: `Olá ${firstName}! 👋\n\nBem-vindo(a) à Villa Solria. Aqui está o seu guia com tudo o que precisa para a estadia (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.pt}\n\nQualquer coisa que precise antes ou durante a estadia, é só dizer.\n\nAté breve!\nBruno`,
-    en: `Hi ${firstName}! 👋\n\nWelcome to Villa Solria. Here is your guide with everything you need for your stay (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.en}\n\nAnything you need before or during your stay, just message me.\n\nSee you soon!\nBruno`,
-    es: `¡Hola ${firstName}! 👋\n\nBienvenido(a) a Villa Solria. Aquí está su guía con todo lo que necesita para su estancia (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.es}\n\nCualquier cosa que necesite antes o durante la estancia, escríbame.\n\n¡Hasta pronto!\nBruno`,
-    de: `Hallo ${firstName}! 👋\n\nWillkommen in der Villa Solria. Hier ist Ihr Leitfaden mit allen Infos zu Ihrem Aufenthalt (${data.checkin_date} → ${data.checkout_date}):\n\n${url}${doorLine.de}\n\nWenn Sie vor oder während des Aufenthalts etwas brauchen, schreiben Sie mir einfach.\n\nBis bald!\nBruno`,
+    pt: `Olá ${firstName}! 👋\n\nBem-vindo(a) à Villa Solria 😊\n\nAqui está o seu guia com todas as informações necessárias para a sua estadia de ${inPt} até ${outPt}:\n\n${url}${doorLine.pt}\n\nO check-in está disponível a partir das 16h e o check-out deverá ser feito até às 11h.\n\nSe precisar de alguma coisa antes ou durante a estadia, basta enviar mensagem.\n\nAté já!\nBruno`,
+    en: `Hi ${firstName}! 👋\n\nWelcome to Villa Solria 😊\n\nHere is your guide with everything you need for your stay from ${inEn} to ${outEn}:\n\n${url}${doorLine.en}\n\nCheck-in is available from 4 pm and check-out should be done by 11 am.\n\nIf you need anything before or during your stay, just send me a message.\n\nSee you soon!\nBruno`,
+    es: `¡Hola ${firstName}! 👋\n\n¡Bienvenido(a) a Villa Solria! 😊\n\nAquí tiene su guía con toda la información necesaria para su estancia del ${inEs} al ${outEs}:\n\n${url}${doorLine.es}\n\nEl check-in está disponible a partir de las 16h y el check-out deberá hacerse hasta las 11h.\n\nSi necesita algo antes o durante la estancia, solo tiene que enviarme un mensaje.\n\n¡Hasta pronto!\nBruno`,
+    de: `Hallo ${firstName}! 👋\n\nWillkommen in der Villa Solria 😊\n\nHier ist Ihr Leitfaden mit allen Informationen für Ihren Aufenthalt vom ${inDe} bis zum ${outDe}:\n\n${url}${doorLine.de}\n\nDer Check-in ist ab 16:00 Uhr möglich und der Check-out sollte bis 11:00 Uhr erfolgen.\n\nWenn Sie vor oder während Ihres Aufenthalts etwas brauchen, schreiben Sie mir einfach.\n\nBis bald!\nBruno`,
   };
   const subjects: Record<string, string> = {
     pt: 'O seu guia da Villa Solria',
