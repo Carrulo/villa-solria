@@ -7,25 +7,19 @@ export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 /**
- * Daily pending-invoices reminder.
+ * Daily pending-invoices reminder. Simple, low-noise:
  *
- * Called by GitHub Actions (`invoice-reminder.yml`) every weekday at 09:00
- * Lisbon time. For each booking with `invoice_details` set and `issued_at`
- * null, decides whether today is a reminder day based on the *legal
- * deadline* (Portuguese fatura-recibo Cat. B can be issued until day 5 of
- * the month following the service).
+ *   • Checkout day (day 0) → 📄 "Lançar fatura — hóspede saiu hoje"
+ *   • Day +1               → ⚠️ "Em atraso — ainda por emitir"
+ *   • Day +2 onwards       → silent (the yellow banner on /admin/bookings
+ *                            already shows it as an overdue task; no
+ *                            more daily Telegram nags)
  *
- * Reminder schedule per booking (avoids daily nagging):
- *   • Day before checkout    → ℹ️ heads-up
- *   • Checkout day           → 📄 first reminder + legal deadline date
- *   • Mid-window             → silent
- *   • 5/3/2 days to deadline → ⚠️ countdown
- *   • 1 day to deadline      → 🚨 "amanhã é prazo"
- *   • Deadline day           → 🚨 "HOJE último dia"
- *   • After deadline         → 🚨 "PRAZO ULTRAPASSADO há N dias"
+ * Marking the invoice as issued in the admin removes the row from the
+ * pending query and stops further reminders.
  *
- * Weekends (Sat/Sun) are skipped entirely — finance work happens on
- * weekdays, no point pinging Bruno at 09h Saturday.
+ * Weekends (Sat/Sun) are skipped — Bruno doesn't process invoices on
+ * those days. workflow_dispatch tests can pass `?force=1` to override.
  */
 type InvoiceDetails = {
   company?: string;
@@ -59,97 +53,41 @@ function daysUntil(iso: string): number {
   return Math.round((target - today) / 86400000);
 }
 
-/**
- * Portuguese fatura-recibo deadline for a given checkout date.
- * Rule: must be issued by day 5 of the month *following* the service.
- * (Standard interpretation for Cat. B independents — confirm with
- * accountant for edge cases like long-stay services spanning months.)
- */
-function computeLegalDeadline(checkoutIso: string): string {
-  const ck = new Date(checkoutIso + 'T00:00:00Z');
-  const y = ck.getUTCFullYear();
-  const m = ck.getUTCMonth(); // 0-indexed
-  // First day 5 of the next month.
-  const deadline = new Date(Date.UTC(y, m + 1, 5));
-  return deadline.toISOString().slice(0, 10);
-}
-
 type ReminderDecision = {
   send: boolean;
-  /** Header line and emoji set by tone. */
   emoji: string;
   headline: string;
 };
 
+/**
+ * Decide if today is a reminder day for this booking.
+ *  - 0 days after checkout (= checkout today): first ping
+ *  - 1 day after checkout: follow-up "em atraso"
+ *  - Otherwise: silent (banner in admin keeps it as a passive overdue
+ *    task until Bruno marks as emitted).
+ */
 function decideReminder(checkoutIso: string, guestName: string): ReminderDecision {
-  const daysToCheckout = daysUntil(checkoutIso);
-  const deadlineIso = computeLegalDeadline(checkoutIso);
-  const daysToDeadline = daysUntil(deadlineIso);
+  const daysSinceCheckout = -daysUntil(checkoutIso); // positive = past
 
-  // Day before checkout — gentle heads-up.
-  if (daysToCheckout === 1) {
-    return {
-      send: true,
-      emoji: 'ℹ️',
-      headline: `Amanhã sai *${guestName}* — depois emite fatura (prazo legal ${deadlineIso}).`,
-    };
-  }
-
-  // Checkout day — first action prompt.
-  if (daysToCheckout === 0) {
+  if (daysSinceCheckout === 0) {
     return {
       send: true,
       emoji: '📄',
-      headline: `*${guestName}* sai hoje — emite fatura até *${deadlineIso}* (${daysToDeadline} dias).`,
+      headline: `Lançar fatura — *${guestName}* saiu hoje.`,
     };
   }
-
-  // Window between checkout+1 and 6 days before deadline: silent.
-  if (daysToDeadline > 5) {
-    return { send: false, emoji: '', headline: '' };
-  }
-
-  // Countdown.
-  if (daysToDeadline === 5 || daysToDeadline === 3 || daysToDeadline === 2) {
+  if (daysSinceCheckout === 1) {
     return {
       send: true,
       emoji: '⚠️',
-      headline: `Faltam *${daysToDeadline} dias* para o prazo legal da fatura de *${guestName}*.`,
+      headline: `*Em atraso* — fatura de *${guestName}* (saiu ontem) ainda por emitir.`,
     };
   }
-
-  if (daysToDeadline === 1) {
-    return {
-      send: true,
-      emoji: '🚨',
-      headline: `*AMANHÃ* é o prazo legal — emite hoje a fatura de *${guestName}*.`,
-    };
-  }
-
-  if (daysToDeadline === 0) {
-    return {
-      send: true,
-      emoji: '🚨',
-      headline: `*HOJE é o ÚLTIMO DIA* — emite agora a fatura de *${guestName}*.`,
-    };
-  }
-
-  if (daysToDeadline < 0) {
-    const lateBy = Math.abs(daysToDeadline);
-    return {
-      send: true,
-      emoji: '🚨',
-      headline: `*PRAZO LEGAL ULTRAPASSADO* há ${lateBy} dia${lateBy > 1 ? 's' : ''} — fatura de *${guestName}* ainda por emitir.`,
-    };
-  }
-
-  // Day 4 — between the 5-day and 3-day reminder. Silent.
   return { send: false, emoji: '', headline: '' };
 }
 
 function buildMessage(row: PendingRow, decision: ReminderDecision): string {
   const inv = row.invoice_details!;
-  const deadline = computeLegalDeadline(row.checkout_date);
   const lines = [
     `${decision.emoji} ${decision.headline}`,
     '',
@@ -157,7 +95,7 @@ function buildMessage(row: PendingRow, decision: ReminderDecision): string {
     `*NIF/VAT:* \`${inv.vat || '(sem NIF)'}\``,
     inv.amount ? `*Valor:* €${inv.amount}` : null,
     inv.email ? `*Email:* ${inv.email}` : null,
-    `*Check-out:* ${row.checkout_date}  ·  *Prazo legal:* ${deadline}`,
+    `*Check-out:* ${row.checkout_date}`,
     '',
     '👉 Emite no [Portal das Finanças](https://www.portaldasfinancas.gov.pt/at/html/index.html) e marca como emitida em /admin/bookings.',
   ].filter(Boolean);

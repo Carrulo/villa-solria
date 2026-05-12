@@ -1430,20 +1430,26 @@ function PendingInvoicesBanner({
   onOpen: (b: Booking) => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = (() => {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() + 1);
-    return d.toISOString().slice(0, 10);
-  })();
 
+  // Show:
+  //   • Today's checkouts (action prompt)
+  //   • Any past checkouts whose invoice is still pending (overdue task)
   const pending = bookings.filter((b) => {
     const inv = (b as Booking & { invoice_details?: InvoiceDetails | null }).invoice_details;
     if (!inv) return false;
     if (inv.issued_at) return false;
-    return b.checkout_date === today || b.checkout_date === tomorrow;
+    return b.checkout_date <= today;
   });
 
   if (pending.length === 0) return null;
+
+  function daysSince(iso: string): number {
+    const t = new Date(today + 'T00:00:00Z').getTime();
+    const c = new Date(iso + 'T00:00:00Z').getTime();
+    return Math.round((t - c) / 86400000);
+  }
+
+  const overdueCount = pending.filter((b) => daysSince(b.checkout_date) >= 2).length;
 
   return (
     <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 mb-3">
@@ -1453,16 +1459,29 @@ function PendingInvoicesBanner({
           {pending.length === 1
             ? '1 fatura para emitir'
             : `${pending.length} faturas para emitir`}
+          {overdueCount > 0 && (
+            <span className="ml-2 text-[11px] text-red-200 bg-red-500/20 px-1.5 py-0.5 rounded">
+              {overdueCount} em atraso
+            </span>
+          )}
         </span>
       </div>
       <ul className="space-y-1.5">
         {pending.map((b) => {
           const inv = (b as Booking & { invoice_details?: InvoiceDetails | null }).invoice_details!;
-          const isToday = b.checkout_date === today;
+          const days = daysSince(b.checkout_date);
+          let badge: { label: string; cls: string };
+          if (days === 0) {
+            badge = { label: 'HOJE', cls: 'bg-amber-500/30 text-amber-100' };
+          } else if (days === 1) {
+            badge = { label: 'ONTEM', cls: 'bg-orange-500/30 text-orange-100' };
+          } else {
+            badge = { label: `EM ATRASO · ${days}d`, cls: 'bg-red-500/30 text-red-100' };
+          }
           return (
             <li key={b.id} className="flex items-center gap-2 text-xs text-amber-100/90">
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isToday ? 'bg-red-500/30 text-red-100' : 'bg-amber-500/30 text-amber-100'}`}>
-                {isToday ? 'HOJE' : 'AMANHÃ'}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${badge.cls}`}>
+                {badge.label}
               </span>
               <span className="font-medium">{b.guest_name}</span>
               <span className="text-amber-200/70">
