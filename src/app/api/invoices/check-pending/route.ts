@@ -9,18 +9,23 @@ export const maxDuration = 30;
 /**
  * Daily pending-invoices reminder.
  *
- * Called by GitHub Actions (`invoice-reminder.yml`) every morning at 09:00
- * Lisbon time. Finds every booking where:
- *  - `invoice_details` is set (guest asked for a B2B invoice)
- *  - `invoice_details.issued_at` is null (host hasn't issued it yet)
- *  - `checkout_date` is within reminder window (tomorrow or earlier)
+ * Called by GitHub Actions (`invoice-reminder.yml`) every weekday at 09:00
+ * Lisbon time. For each booking with `invoice_details` set and `issued_at`
+ * null, decides whether today is a reminder day based on the *legal
+ * deadline* (Portuguese fatura-recibo Cat. B can be issued until day 5 of
+ * the month following the service).
  *
- * For each, sends one Telegram message with urgency depending on how
- * many days late the invoice is. The reminder keeps firing daily until
- * the host clicks "✓ Marcar como emitida" in /admin/bookings.
+ * Reminder schedule per booking (avoids daily nagging):
+ *   • Day before checkout    → ℹ️ heads-up
+ *   • Checkout day           → 📄 first reminder + legal deadline date
+ *   • Mid-window             → silent
+ *   • 5/3/2 days to deadline → ⚠️ countdown
+ *   • 1 day to deadline      → 🚨 "amanhã é prazo"
+ *   • Deadline day           → 🚨 "HOJE último dia"
+ *   • After deadline         → 🚨 "PRAZO ULTRAPASSADO há N dias"
  *
- * Returns the list of bookings processed so the GitHub Actions log is
- * useful for debugging.
+ * Weekends (Sat/Sun) are skipped entirely — finance work happens on
+ * weekdays, no point pinging Bruno at 09h Saturday.
  */
 type InvoiceDetails = {
   company?: string;
@@ -42,41 +47,120 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function daysBetween(iso: string): number {
-  // Positive number = invoice is N days OVERDUE (checkout already passed).
-  // Negative = checkout is N days from now (still in the future).
-  const today = new Date(todayIso() + 'T00:00:00Z').getTime();
-  const target = new Date(iso + 'T00:00:00Z').getTime();
-  return Math.round((today - target) / 86400000);
+function isWeekend(): boolean {
+  const day = new Date().getUTCDay(); // 0 = Sun, 6 = Sat
+  return day === 0 || day === 6;
 }
 
-function buildMessage(row: PendingRow): string {
-  const inv = row.invoice_details!;
-  const days = daysBetween(row.checkout_date);
+function daysUntil(iso: string): number {
+  // Positive = future, negative = past, 0 = today.
+  const today = new Date(todayIso() + 'T00:00:00Z').getTime();
+  const target = new Date(iso + 'T00:00:00Z').getTime();
+  return Math.round((target - today) / 86400000);
+}
 
-  let header: string;
-  if (days < 0) {
-    header = `📄 *Fatura amanhã* — ${row.guest_name}`;
-  } else if (days === 0) {
-    header = `📄 *Fatura HOJE* — ${row.guest_name}`;
-  } else if (days <= 3) {
-    header = `⚠️ *Fatura ATRASADA ${days} dia${days > 1 ? 's' : ''}* — ${row.guest_name}`;
-  } else {
-    header = `🚨 *Fatura ATRASADA ${days} dias* — ${row.guest_name}`;
+/**
+ * Portuguese fatura-recibo deadline for a given checkout date.
+ * Rule: must be issued by day 5 of the month *following* the service.
+ * (Standard interpretation for Cat. B independents — confirm with
+ * accountant for edge cases like long-stay services spanning months.)
+ */
+function computeLegalDeadline(checkoutIso: string): string {
+  const ck = new Date(checkoutIso + 'T00:00:00Z');
+  const y = ck.getUTCFullYear();
+  const m = ck.getUTCMonth(); // 0-indexed
+  // First day 5 of the next month.
+  const deadline = new Date(Date.UTC(y, m + 1, 5));
+  return deadline.toISOString().slice(0, 10);
+}
+
+type ReminderDecision = {
+  send: boolean;
+  /** Header line and emoji set by tone. */
+  emoji: string;
+  headline: string;
+};
+
+function decideReminder(checkoutIso: string, guestName: string): ReminderDecision {
+  const daysToCheckout = daysUntil(checkoutIso);
+  const deadlineIso = computeLegalDeadline(checkoutIso);
+  const daysToDeadline = daysUntil(deadlineIso);
+
+  // Day before checkout — gentle heads-up.
+  if (daysToCheckout === 1) {
+    return {
+      send: true,
+      emoji: 'ℹ️',
+      headline: `Amanhã sai *${guestName}* — depois emite fatura (prazo legal ${deadlineIso}).`,
+    };
   }
 
+  // Checkout day — first action prompt.
+  if (daysToCheckout === 0) {
+    return {
+      send: true,
+      emoji: '📄',
+      headline: `*${guestName}* sai hoje — emite fatura até *${deadlineIso}* (${daysToDeadline} dias).`,
+    };
+  }
+
+  // Window between checkout+1 and 6 days before deadline: silent.
+  if (daysToDeadline > 5) {
+    return { send: false, emoji: '', headline: '' };
+  }
+
+  // Countdown.
+  if (daysToDeadline === 5 || daysToDeadline === 3 || daysToDeadline === 2) {
+    return {
+      send: true,
+      emoji: '⚠️',
+      headline: `Faltam *${daysToDeadline} dias* para o prazo legal da fatura de *${guestName}*.`,
+    };
+  }
+
+  if (daysToDeadline === 1) {
+    return {
+      send: true,
+      emoji: '🚨',
+      headline: `*AMANHÃ* é o prazo legal — emite hoje a fatura de *${guestName}*.`,
+    };
+  }
+
+  if (daysToDeadline === 0) {
+    return {
+      send: true,
+      emoji: '🚨',
+      headline: `*HOJE é o ÚLTIMO DIA* — emite agora a fatura de *${guestName}*.`,
+    };
+  }
+
+  if (daysToDeadline < 0) {
+    const lateBy = Math.abs(daysToDeadline);
+    return {
+      send: true,
+      emoji: '🚨',
+      headline: `*PRAZO LEGAL ULTRAPASSADO* há ${lateBy} dia${lateBy > 1 ? 's' : ''} — fatura de *${guestName}* ainda por emitir.`,
+    };
+  }
+
+  // Day 4 — between the 5-day and 3-day reminder. Silent.
+  return { send: false, emoji: '', headline: '' };
+}
+
+function buildMessage(row: PendingRow, decision: ReminderDecision): string {
+  const inv = row.invoice_details!;
+  const deadline = computeLegalDeadline(row.checkout_date);
   const lines = [
-    header,
+    `${decision.emoji} ${decision.headline}`,
     '',
     `*Empresa:* ${inv.company || '(sem empresa)'}`,
     `*NIF/VAT:* \`${inv.vat || '(sem NIF)'}\``,
     inv.amount ? `*Valor:* €${inv.amount}` : null,
     inv.email ? `*Email:* ${inv.email}` : null,
-    `*Check-out:* ${row.checkout_date}`,
+    `*Check-out:* ${row.checkout_date}  ·  *Prazo legal:* ${deadline}`,
     '',
     '👉 Emite no [Portal das Finanças](https://www.portaldasfinancas.gov.pt/at/html/index.html) e marca como emitida em /admin/bookings.',
   ].filter(Boolean);
-
   return lines.join('\n');
 }
 
@@ -91,25 +175,25 @@ export async function GET(request: Request) {
     }
   }
 
+  // Skip weekends — Bruno doesn't emit invoices on Sat/Sun. Honor a
+  // `?force=1` query so the workflow_dispatch test trigger still works
+  // regardless of the day.
+  const force = new URL(request.url).searchParams.get('force') === '1';
+  if (isWeekend() && !force) {
+    return NextResponse.json({ ok: true, count: 0, skipped: 'weekend' });
+  }
+
   const supabase = createServerClient();
-
-  // Pull all candidate rows. We filter the issued_at clause client-side
-  // because Postgres can't easily index "JSONB field IS NULL OR missing".
-  // Partial index `bookings_invoice_pending_idx` already narrows scan to
-  // rows where `invoice_details IS NOT NULL` and `issued_at IS NULL`.
   const today = todayIso();
-  // Window: send one reminder for tomorrow's check-out + everything overdue.
-  const tomorrow = (() => {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() + 1);
-    return d.toISOString().slice(0, 10);
-  })();
 
+  // No date filter — the per-row decideReminder() routine decides whether
+  // today is a reminder day. The partial index `bookings_invoice_pending_idx`
+  // already keeps the scan cheap (only rows with invoice_details NOT NULL
+  // and issued_at IS NULL are scanned).
   const { data, error } = await supabase
     .from('bookings')
     .select('id, reference, guest_name, checkout_date, invoice_details')
-    .not('invoice_details', 'is', null)
-    .lte('checkout_date', tomorrow);
+    .not('invoice_details', 'is', null);
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -127,18 +211,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, count: 0, today });
   }
 
-  // Send Telegram messages sequentially so we don't blast the bot API.
-  const sent: { booking_id: string; days_overdue: number }[] = [];
+  const sent: { booking_id: string; reason: string }[] = [];
+  const skipped: { booking_id: string; reason: string }[] = [];
+
   for (const row of pending) {
-    const msg = buildMessage(row);
+    const decision = decideReminder(row.checkout_date, row.guest_name);
+    if (!decision.send) {
+      skipped.push({ booking_id: row.id, reason: 'mid-window-silent' });
+      continue;
+    }
+    const msg = buildMessage(row, decision);
     await sendTelegramNotification(msg);
-    sent.push({
-      booking_id: row.id,
-      days_overdue: daysBetween(row.checkout_date),
-    });
-    // Polite pause between sends.
+    sent.push({ booking_id: row.id, reason: decision.headline });
     await new Promise((r) => setTimeout(r, 250));
   }
 
-  return NextResponse.json({ ok: true, count: sent.length, today, sent });
+  return NextResponse.json({
+    ok: true,
+    today,
+    count_sent: sent.length,
+    count_skipped: skipped.length,
+    sent,
+    skipped,
+  });
 }
