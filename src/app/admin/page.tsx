@@ -152,6 +152,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Pending tasks at a glance — only renders if there are any */}
+      <PendingTasksWidget bookings={bookings} />
+
       {/* Month selector */}
       <div className="bg-[#16213e] border border-white/5 rounded-2xl px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div>
@@ -326,6 +329,52 @@ function ChannelCard({
       <p className="text-xl font-bold mt-1">{nights}<span className="text-xs font-normal opacity-70 ml-1">noites</span></p>
       {typeof count === 'number' && <p className="text-[11px] opacity-70 mt-0.5">{count} reserva{count === 1 ? '' : 's'}</p>}
     </div>
+  );
+}
+
+type InvoiceDetailsLite = { issued_at?: string | null; company?: string; vat?: string; amount?: string };
+
+function PendingTasksWidget({ bookings }: { bookings: Booking[] }) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const pendingInvoices = bookings.filter((b) => {
+    const inv = (b as Booking & { invoice_details?: InvoiceDetailsLite | null }).invoice_details;
+    if (!inv) return false;
+    if (inv.issued_at) return false;
+    return b.checkout_date <= today;
+  });
+
+  if (pendingInvoices.length === 0) return null;
+
+  function daysSince(iso: string): number {
+    const t = new Date(today + 'T00:00:00Z').getTime();
+    const c = new Date(iso + 'T00:00:00Z').getTime();
+    return Math.round((t - c) / 86400000);
+  }
+  const overdueCount = pendingInvoices.filter((b) => daysSince(b.checkout_date) >= 2).length;
+
+  return (
+    <a
+      href="/admin/invoices"
+      className="block rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-4 hover:bg-amber-500/15 transition-colors"
+    >
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-semibold text-amber-200 flex items-center gap-2">
+            📄 Tens {pendingInvoices.length} {pendingInvoices.length === 1 ? 'fatura' : 'faturas'} para emitir
+            {overdueCount > 0 && (
+              <span className="text-[11px] px-1.5 py-0.5 rounded bg-red-500/30 text-red-100 font-bold">
+                {overdueCount} em atraso
+              </span>
+            )}
+          </p>
+          <p className="text-xs text-amber-100/70 mt-1">
+            Clica para ver dados e marcar como emitida →
+          </p>
+        </div>
+        <span className="text-amber-200 text-2xl">→</span>
+      </div>
+    </a>
   );
 }
 
