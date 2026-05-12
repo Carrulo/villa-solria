@@ -552,6 +552,13 @@ export default function AdminBookingsPage() {
         <BookingDetailModal
           booking={detailBooking}
           onClose={() => setDetailBooking(null)}
+          onCreateAndShare={(data) => {
+            setDetailBooking(null);
+            setShareTarget(data);
+            // Refresh the list so the synthetic external row is replaced
+            // by the real bookings row we just created.
+            void fetchBookings();
+          }}
         />
       )}
 
@@ -1259,12 +1266,29 @@ function DoorCodeEditor({ booking, onSaved }: { booking: Booking; onSaved: () =>
   );
 }
 
+type ShareTargetData = {
+  booking_id: string;
+  reference: string;
+  guide_token: string | null;
+  language: string;
+  guest_name: string;
+  guest_email: string | null;
+  guest_phone: string | null;
+  checkin_date: string;
+  checkout_date: string;
+};
+
 function BookingDetailModal({
   booking,
   onClose,
+  onCreateAndShare,
 }: {
   booking: Booking;
   onClose: () => void;
+  /** When the user finishes the quick-create form on an external (iCal)
+   *  entry, the parent should close this modal and open the ShareGuideModal
+   *  with the freshly created booking. */
+  onCreateAndShare?: (data: ShareTargetData) => void;
 }) {
   const [notes, setNotes] = useState(booking.message || '');
   const [saving, setSaving] = useState(false);
@@ -1273,6 +1297,89 @@ function BookingDetailModal({
   // See DoorCodeEditor — synthetic `ext:` IDs are not UUIDs and can't be
   // written to the `bookings` table.
   const isExternal = typeof booking.id === 'string' && booking.id.startsWith('ext:');
+  const externalMeta = booking as Booking & {
+    _externalSource?: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical';
+    _externalRef?: string;
+  };
+
+  // Quick-create form state (only used when isExternal). Pre-fill with any
+  // hints we have from the iCal feed.
+  const [qGuestName, setQGuestName] = useState(
+    (() => {
+      const raw = (booking.guest_name || '').trim();
+      // Strip placeholder names that don't help the host.
+      if (!raw || /sem nome|booking\.com|airbnb|reserved|not available/i.test(raw)) return '';
+      return raw;
+    })()
+  );
+  const [qLanguage, setQLanguage] = useState<'pt' | 'en' | 'es' | 'de'>('pt');
+  const [qPhone, setQPhone] = useState(booking.guest_phone || '');
+  const [qEmail, setQEmail] = useState(booking.guest_email || '');
+  const [qDoorCode, setQDoorCode] = useState('');
+  const [qSubmitting, setQSubmitting] = useState(false);
+  const [qError, setQError] = useState<string | null>(null);
+
+  async function submitQuickCreate() {
+    setQError(null);
+    if (!qGuestName.trim()) {
+      setQError('Nome do hóspede é obrigatório');
+      return;
+    }
+    if (!qDoorCode.trim()) {
+      setQError('Código da fechadura é obrigatório para enviar o guia');
+      return;
+    }
+    if (!externalMeta._externalSource || !externalMeta._externalRef) {
+      setQError('Não consegui identificar a origem desta reserva externa');
+      return;
+    }
+    setQSubmitting(true);
+    try {
+      const res = await fetch('/api/bookings/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest_name: qGuestName.trim(),
+          guest_phone: qPhone.trim() || undefined,
+          guest_email: qEmail.trim() || undefined,
+          checkin_date: booking.checkin_date,
+          checkout_date: booking.checkout_date,
+          num_guests: booking.num_guests || 1,
+          total_price: 0,
+          language: qLanguage,
+          door_code: qDoorCode.trim(),
+          link_external: {
+            external_source: externalMeta._externalSource,
+            external_ref: externalMeta._externalRef,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        setQError(data?.error || 'Erro ao criar reserva');
+        return;
+      }
+      if (onCreateAndShare) {
+        onCreateAndShare({
+          booking_id: data.booking_id,
+          reference: data.reference,
+          guide_token: data.guide_token,
+          language: data.language || qLanguage,
+          guest_name: data.guest_name,
+          guest_email: data.guest_email,
+          guest_phone: data.guest_phone,
+          checkin_date: data.checkin_date,
+          checkout_date: data.checkout_date,
+        });
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setQError(err instanceof Error ? err.message : 'Erro de rede');
+    } finally {
+      setQSubmitting(false);
+    }
+  }
 
   async function save() {
     if (isExternal) {
@@ -1417,63 +1524,169 @@ function BookingDetailModal({
           )}
         </div>
 
-        <div className="mb-4">
-          <DoorCodeEditor booking={booking} onSaved={() => { /* noop, admin closes modal */ }} />
-        </div>
+        {isExternal ? (
+          /* External (iCal) entries don't exist as `bookings` rows yet.
+             Render an inline quick-create form so the host can fill in the
+             guest's name/language/door code and immediately get the
+             ShareGuideModal with a ready-to-send message. */
+          <>
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 mb-3">
+              <p className="text-[11px] uppercase tracking-widest text-amber-300 font-semibold mb-1">
+                Reserva importada do calendário
+              </p>
+              <p className="text-xs text-amber-100/80 leading-relaxed">
+                Preenche os dados abaixo e clica em <strong>Criar e enviar guia</strong> —
+                a reserva é guardada e abro-te a mensagem pronta para WhatsApp / email.
+              </p>
+            </div>
 
-        <label className="block mb-2">
-          <span className="block text-xs text-gray-400 mb-1">Notas / histórico de pagamentos</span>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            disabled={saving}
-            rows={8}
-            placeholder="ex: 15/05/2026 — pagou mais 500€, falta 1900€ em mãos à chegada"
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50 font-mono whitespace-pre-wrap"
-          />
-        </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <label className="block sm:col-span-2">
+                <span className="block text-xs text-gray-400 mb-1">Nome do hóspede *</span>
+                <input
+                  value={qGuestName}
+                  onChange={(e) => setQGuestName(e.target.value)}
+                  placeholder="ex: Helena Silva"
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+                />
+              </label>
 
-        <div className="flex items-center gap-2 flex-wrap mb-3">
-          <span className="text-xs text-gray-500">Adicionar entrada rápida:</span>
-          <button
-            onClick={() => {
-              const amount = prompt('Valor pago agora (€)');
-              if (amount) appendStamp(`pagou ${amount}€`);
-            }}
-            className="px-2 py-1 rounded bg-white/5 hover:bg-green-500/20 text-gray-300 text-xs"
-          >
-            + pagamento
-          </button>
-          <button
-            onClick={() => {
-              const what = prompt('Nota');
-              if (what) appendStamp(what);
-            }}
-            className="px-2 py-1 rounded bg-white/5 hover:bg-blue-500/20 text-gray-300 text-xs"
-          >
-            + nota
-          </button>
-        </div>
+              <label className="block sm:col-span-2">
+                <span className="block text-xs text-gray-400 mb-1">Idioma do guia</span>
+                <div className="flex gap-2">
+                  {(['pt', 'en', 'es', 'de'] as const).map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => setQLanguage(lang)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider border transition-colors ${
+                        qLanguage === lang
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              </label>
 
-        <div className="flex items-center justify-between gap-2">
-          {msg && <span className="text-xs text-green-400">{msg}</span>}
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
-            >
-              Fechar
-            </button>
-            <button
-              onClick={save}
-              disabled={!dirty || saving}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium disabled:opacity-50"
-            >
-              {saving ? 'A guardar...' : 'Guardar notas'}
-            </button>
-          </div>
-        </div>
+              <label className="block">
+                <span className="block text-xs text-gray-400 mb-1">Telefone (para WhatsApp)</span>
+                <input
+                  value={qPhone}
+                  onChange={(e) => setQPhone(e.target.value)}
+                  placeholder="+351 9..."
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+                />
+              </label>
+
+              <label className="block">
+                <span className="block text-xs text-gray-400 mb-1">Email (para mailto)</span>
+                <input
+                  type="email"
+                  value={qEmail}
+                  onChange={(e) => setQEmail(e.target.value)}
+                  placeholder="opcional"
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+                />
+              </label>
+
+              <label className="block sm:col-span-2">
+                <span className="block text-xs text-gray-400 mb-1">Código da fechadura *</span>
+                <input
+                  value={qDoorCode}
+                  onChange={(e) => setQDoorCode(e.target.value)}
+                  placeholder="ex: 2565#"
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-blue-500/50"
+                />
+              </label>
+            </div>
+
+            {qError && (
+              <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mb-3">
+                {qError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={onClose}
+                disabled={qSubmitting}
+                className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={submitQuickCreate}
+                disabled={qSubmitting}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-semibold disabled:opacity-50"
+              >
+                {qSubmitting ? 'A criar...' : 'Criar e enviar guia'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-4">
+              <DoorCodeEditor booking={booking} onSaved={() => { /* noop, admin closes modal */ }} />
+            </div>
+
+            <label className="block mb-2">
+              <span className="block text-xs text-gray-400 mb-1">Notas / histórico de pagamentos</span>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={saving}
+                rows={8}
+                placeholder="ex: 15/05/2026 — pagou mais 500€, falta 1900€ em mãos à chegada"
+                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50 font-mono whitespace-pre-wrap"
+              />
+            </label>
+
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <span className="text-xs text-gray-500">Adicionar entrada rápida:</span>
+              <button
+                onClick={() => {
+                  const amount = prompt('Valor pago agora (€)');
+                  if (amount) appendStamp(`pagou ${amount}€`);
+                }}
+                className="px-2 py-1 rounded bg-white/5 hover:bg-green-500/20 text-gray-300 text-xs"
+              >
+                + pagamento
+              </button>
+              <button
+                onClick={() => {
+                  const what = prompt('Nota');
+                  if (what) appendStamp(what);
+                }}
+                className="px-2 py-1 rounded bg-white/5 hover:bg-blue-500/20 text-gray-300 text-xs"
+              >
+                + nota
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              {msg && <span className="text-xs text-green-400">{msg}</span>}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={onClose}
+                  disabled={saving}
+                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium disabled:opacity-50"
+                >
+                  Fechar
+                </button>
+                <button
+                  onClick={save}
+                  disabled={!dirty || saving}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium disabled:opacity-50"
+                >
+                  {saving ? 'A guardar...' : 'Guardar notas'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
