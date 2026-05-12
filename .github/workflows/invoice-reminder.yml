@@ -1,0 +1,43 @@
+name: Invoice Reminder
+
+on:
+  schedule:
+    # Daily at 09:00 Lisbon time (08:00 UTC in winter, 07:00 UTC in summer).
+    # We use 08:00 UTC year-round — at worst it fires at 09:00 (winter) or
+    # 10:00 (summer), both acceptable for a "morning reminder".
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    # Manual trigger from GitHub UI (useful for testing).
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call pending-invoices endpoint
+        env:
+          TOKEN: ${{ secrets.INVOICE_REMINDER_TOKEN }}
+        run: |
+          echo "Triggering invoice reminder at $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          # Build auth header only when token secret is set.
+          if [ -n "$TOKEN" ]; then
+            response=$(curl -s -w "\n%{http_code}" \
+              -H "Authorization: Bearer $TOKEN" \
+              https://villasolria.com/api/invoices/check-pending)
+          else
+            response=$(curl -s -w "\n%{http_code}" \
+              https://villasolria.com/api/invoices/check-pending)
+          fi
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "Status: $status"
+          echo "Response: $body"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Reminder endpoint returned $status"
+            exit 1
+          fi
+          if ! echo "$body" | grep -q '"ok":true'; then
+            echo "::error::Reminder returned ok:false"
+            exit 1
+          fi
