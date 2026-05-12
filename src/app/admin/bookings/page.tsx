@@ -1199,6 +1199,10 @@ type InvoiceDetails = {
   city?: string;
   country?: string;
   email?: string;
+  /** Total invoice amount in EUR (what the guest paid, gross of Booking
+   *  commission). For Payments-by-Booking stays we usually invoice the
+   *  full gross to the client; the commission is settled host↔Booking. */
+  amount?: string;
   issued_at?: string | null;
 };
 
@@ -1359,7 +1363,7 @@ function InvoiceDetailsBlock({
             className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
           />
         </label>
-        <label className="block sm:col-span-2">
+        <label className="block">
           <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Email para envio</span>
           <input
             type="email"
@@ -1367,6 +1371,16 @@ function InvoiceDetailsBlock({
             onChange={(e) => patch('email', e.target.value)}
             placeholder="facturas@example.com"
             className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Valor a faturar (€)</span>
+          <input
+            inputMode="decimal"
+            value={v.amount || ''}
+            onChange={(e) => patch('amount', e.target.value)}
+            placeholder="1045.54"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-blue-500/50"
           />
         </label>
       </div>
@@ -1451,7 +1465,10 @@ function PendingInvoicesBanner({
                 {isToday ? 'HOJE' : 'AMANHÃ'}
               </span>
               <span className="font-medium">{b.guest_name}</span>
-              <span className="text-amber-200/70">— {inv.company || '(sem empresa)'} · {inv.vat || '(sem NIF)'}</span>
+              <span className="text-amber-200/70">
+                — {inv.company || '(sem empresa)'} · {inv.vat || '(sem NIF)'}
+                {inv.amount && ` · €${inv.amount}`}
+              </span>
               <button
                 onClick={() => onOpen(b)}
                 className="ml-auto text-amber-200 hover:text-white underline text-[11px]"
