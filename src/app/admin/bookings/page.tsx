@@ -1187,7 +1187,20 @@ function DoorCodeEditor({ booking, onSaved }: { booking: Booking; onSaved: () =>
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  // External iCal entries (Booking.com / Airbnb / VRBO) live only in
+  // `blocked_dates`, not in the `bookings` table. Their `id` is a synthetic
+  // string like `ext:booking_ical:<uid>` which is NOT a UUID — any direct
+  // update against `bookings` will fail at Postgres level. The proper flow
+  // is to click "Criar guia" on the row, which opens the manual booking
+  // creation modal pre-filled with the iCal dates and creates a real row
+  // (with door_code and a guide_token).
+  const isExternal = typeof booking.id === 'string' && booking.id.startsWith('ext:');
+
   async function save() {
+    if (isExternal) {
+      setMsg('Use "Criar guia" na lista de reservas — esta entrada vem do iCal e ainda não existe como reserva proper.');
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from('bookings').update({ door_code: code.trim() || null }).eq('id', booking.id);
     setSaving(false);
@@ -1198,6 +1211,21 @@ function DoorCodeEditor({ booking, onSaved }: { booking: Booking; onSaved: () =>
     setMsg('Guardado');
     setTimeout(() => setMsg(null), 1500);
     onSaved();
+  }
+
+  if (isExternal) {
+    return (
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-[11px] uppercase tracking-widest text-amber-300 font-semibold">Reserva externa (iCal)</span>
+        </div>
+        <p className="text-xs text-amber-100/90 leading-relaxed">
+          Esta reserva foi importada do calendário e ainda não está guardada como reserva proper.
+          Para definir o <strong>código da fechadura</strong> e gerar o <strong>guia</strong> com link para enviar ao hóspede,
+          fecha esta janela e clica em <strong>&ldquo;Criar guia&rdquo;</strong> na linha da reserva.
+        </p>
+      </div>
+    );
   }
 
   const missing = !code.trim();
@@ -1242,8 +1270,15 @@ function BookingDetailModal({
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const dirty = notes.trim() !== (booking.message || '').trim();
+  // See DoorCodeEditor — synthetic `ext:` IDs are not UUIDs and can't be
+  // written to the `bookings` table.
+  const isExternal = typeof booking.id === 'string' && booking.id.startsWith('ext:');
 
   async function save() {
+    if (isExternal) {
+      setMsg('Notas só podem ser guardadas após criar a reserva proper (botão "Criar guia").');
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from('bookings')
