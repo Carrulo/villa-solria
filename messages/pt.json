@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Villa Solria - O seu refúgio na Ria Formosa | Tavira, Algarve",
-    "description": "Moradia T3 duplex com vista para a Ria Formosa em Cabanas de Tavira, Algarve. 3 quartos, 6 hóspedes, a 5min do barco para a praia. Licença AL 120108/AL.",
+    "title": "Villa Solria — Casa T3 sobre a Ria Formosa | Cabanas de Tavira, Algarve",
+    "description": "Casa T3 em primeira linha da Ria Formosa, em Cabanas de Tavira. Para grupos de amigos, dois casais e famílias multigeracionais. 3 quartos, deck sobre a ria, barco para a Praia da Ilha. Licença AL 120108/AL.",
     "villaTitle": "Villa Solria - A Moradia | Tavira, Algarve",
     "villaDescription": "Descubra todos os detalhes da Villa Solria: quartos, comodidades, equipamentos e regras da casa.",
     "galleryTitle": "Villa Solria - Galeria de Fotos | Tavira, Algarve",
@@ -29,8 +29,8 @@
     "bookNow": "Reservar"
   },
   "hero": {
-    "tagline": "O seu refúgio na Ria Formosa",
-    "subtitle": "Moradia T3 duplex em Cabanas de Tavira, Algarve, com vistas deslumbrantes para a Ria Formosa",
+    "tagline": "Acorde com a Ria à porta. Saia para a praia de barco. Termine o dia ao pôr-do-sol no deck.",
+    "subtitle": "Uma casa T3 em primeira linha da Ria Formosa, pensada para quem sabe que descansar também é uma arte. Cabanas de Tavira, Algarve.",
     "cta": "Ver Disponibilidade",
     "checkIn": "Check-in",
     "checkOut": "Check-out",
@@ -44,12 +44,12 @@
   },
   "features": {
     "title": "Porquê a Villa Solria?",
-    "bedrooms": "3 Quartos",
-    "bedroomsDesc": "Até 6 hóspedes com conforto",
-    "riaFormosa": "Ria Formosa",
-    "riaFormosaDesc": "Vista frontal deslumbrante",
-    "beach": "Praia (5min)",
-    "beachDesc": "5 min a pé até ao barco",
+    "bedrooms": "3 quartos · 2 WCs",
+    "bedroomsDesc": "Privacidade para 6 hóspedes em 3 quartos privados e duas casas de banho, uma em cada piso",
+    "riaFormosa": "Em frente à Ria",
+    "riaFormosaDesc": "Deck, jardim e varanda com vista directa para a Ria Formosa",
+    "beach": "Praia da Ilha",
+    "beachDesc": "Barco do hotel vizinho — três minutos pela ria, todas as idades",
     "rating": "9.8/10",
     "ratingDesc": "Avaliação no Booking.com"
   },
@@ -57,14 +57,14 @@
     "photosTitle": "Descubra a Villa Solria",
     "reviewsTitle": "O que dizem os nossos hóspedes",
     "viewGallery": "Ver galeria completa",
-    "ctaTitle": "Pronto para a sua escapadela?",
-    "ctaSubtitle": "Reserve a Villa Solria e desfrute do melhor do Algarve com vistas para a Ria Formosa.",
-    "ctaButton": "Reservar Agora"
+    "ctaTitle": "Pronto para chegar — e ficar?",
+    "ctaSubtitle": "Reserve a Villa Solria e desfrute do Algarve no seu ritmo, com a Ria Formosa à porta.",
+    "ctaButton": "Ver disponibilidade"
   },
   "villa": {
     "title": "A Moradia",
-    "subtitle": "Uma moradia T3 duplex cuidadosamente equipada para as suas férias perfeitas",
-    "description": "A Villa Solria é uma moradia duplex com 3 quartos localizada em primeira linha da Ria Formosa, em Cabanas de Tavira, no coração do Algarve. Com dois pisos cuidadosamente decorados, jardim com churrasqueira e varanda no quarto principal com vista para a Ria, é o refúgio ideal para famílias e grupos de até 6 pessoas.",
+    "subtitle": "Casa T3 sobre a Ria Formosa, para grupos e famílias multigeracionais",
+    "description": "Imagine acordar lentamente no quarto principal, abrir as portas da varanda e ter a Ria Formosa estendida à frente. A maré a mover-se devagar, a luz a mudar, os flamingos a passar ao fundo. Descer ao deck para o primeiro café, ainda com a mesma vista a acompanhar.\n\nÀ hora do almoço, descer alguns metros até à beira da ria e apanhar o barco que o leva à Praia da Ilha em poucos minutos. Areia branca, sem multidões, água que parece piscina. Voltar ao final da tarde, churrasco no jardim, mesa posta, a ria agora ao pôr-do-sol.\n\nUma casa T3 em dois pisos, com varanda no quarto principal sobre a ria, jardim com churrasqueira e deck com esplanada. Cozinha completa, sala com lareira, duas casas de banho.\n\nPensada para grupos de amigos, dois casais, famílias multigeracionais ou retiros de trabalho. Para quem prefere espaço e silêncio.",
     "groundFloor": "Piso Térreo",
     "groundFloorDesc": "Sala de estar com lareira, cozinha totalmente equipada, 1 quarto com 2 camas individuais (90x200cm) e casa de banho com duche.",
     "firstFloor": "1.o Andar",
@@ -144,7 +144,7 @@
       "airportDist": "53 km"
     },
     "aboutTitle": "Sobre Cabanas de Tavira",
-    "aboutText": "Cabanas de Tavira é uma encantadora aldeia piscatória localizada no Parque Natural da Ria Formosa. Conhecida pelas suas praias de areia dourada, águas cristalinas e ambiente tranquilo, é o destino perfeito para quem procura férias relaxantes no Algarve. A vila oferece excelentes restaurantes de marisco, cafés acolhedores e um passeio à beira-mar com vistas deslumbrantes.",
+    "aboutText": "Cabanas de Tavira é uma vila de pescadores que decidiu não crescer demasiado. Um passeio à beira-mar com tasquinhas onde o peixe ainda chega pela manhã. Marisco fresco servido sem pressa. Pôres-do-sol que parecem desenhados. Ritmo lento o suficiente para os primeiros dias serem um exercício de desaceleração.\n\nTavira histórica fica a 8 minutos de carro; Faro a 50. Mas é em Cabanas que se fica — para o resto não há tempo.",
     "highlightsTitle": "Principais atrações",
     "highlightsSubtitle": "Os imperdíveis a poucos minutos da Villa Solria. Dicas de insider e contactos no guia exclusivo dos hóspedes.",
     "highlightsGuideHint": "Hóspedes confirmados recebem o guia detalhado com restaurantes recomendados, contactos e horários.",
