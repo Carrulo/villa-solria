@@ -5,6 +5,17 @@ import { sendBookingConfirmationEmail } from '@/lib/email';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+type InvoiceDetailsInput = {
+  company?: string;
+  vat?: string;
+  address?: string;
+  postal_code?: string;
+  city?: string;
+  country?: string;
+  email?: string;
+  issued_at?: string | null;
+} | null;
+
 type Body = {
   guest_name?: string;
   guest_phone?: string;
@@ -21,6 +32,7 @@ type Body = {
   mid_stay_dates?: string[];
   link_external?: { external_source?: string; external_ref?: string };
   door_code?: string | null;
+  invoice_details?: InvoiceDetailsInput;
 };
 
 function daysBetween(from: string, to: string): number {
@@ -202,6 +214,14 @@ export async function POST(req: Request) {
       message: messageBlob || null,
       reference,
       door_code: doorSnapshot,
+      // B2B invoice details (optional) — captured from the booking detail
+      // modal / quick-create form. Stored as JSONB so we can add fields
+      // later without a migration. Empty objects are normalized to NULL
+      // upstream so the "facturas pendentes" partial index stays tight.
+      invoice_details: body.invoice_details && Object.keys(body.invoice_details).some(
+        (k) => typeof (body.invoice_details as Record<string, unknown>)[k] === 'string'
+          && ((body.invoice_details as Record<string, string>)[k] || '').trim().length > 0,
+      ) ? body.invoice_details : null,
     })
     .select('id, guide_token, language')
     .single();

@@ -625,6 +625,9 @@ export default function AdminBookingsPage() {
         />
       )}
 
+      {/* Pending invoices banner — checkout happening today / tomorrow */}
+      <PendingInvoicesBanner bookings={bookings} onOpen={(b) => setDetailBooking(b)} />
+
       {/* Header + Filter */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">Reservas</h1>
@@ -1188,6 +1191,281 @@ function RefundConfirmModal({
   );
 }
 
+type InvoiceDetails = {
+  company?: string;
+  vat?: string;
+  address?: string;
+  postal_code?: string;
+  city?: string;
+  country?: string;
+  email?: string;
+  issued_at?: string | null;
+};
+
+/**
+ * Inline B2B invoice capture. Collapsed by default — opens only when the
+ * guest explicitly asks for a company invoice (e.g. Spanish PYME paying
+ * via Booking.com). Stored as a single JSONB column on `bookings`, so
+ * adding/removing fields later doesn't need a migration.
+ *
+ * Used inside both BookingDetailModal (regular bookings, persists via a
+ * direct Supabase update) and the external quick-create form (collected
+ * and passed to /api/bookings/manual via the `notes` path — TODO).
+ */
+function InvoiceDetailsBlock({
+  value,
+  onChange,
+  onPersist,
+  hint,
+}: {
+  value: InvoiceDetails | null;
+  onChange: (next: InvoiceDetails | null) => void;
+  /** Optional immediate-save callback (used by the detail modal). */
+  onPersist?: (next: InvoiceDetails | null) => Promise<void>;
+  /** Optional hint shown above the form. */
+  hint?: string;
+}) {
+  const [open, setOpen] = useState(!!value);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  const v: InvoiceDetails = value || {};
+
+  function patch(field: keyof InvoiceDetails, val: string) {
+    const next = { ...v, [field]: val };
+    // Strip empty object to NULL — keeps "facturas pendentes" query honest.
+    const hasAny = Object.entries(next).some(
+      ([k, vv]) => k !== 'issued_at' && typeof vv === 'string' && vv.trim().length > 0,
+    );
+    onChange(hasAny ? next : null);
+  }
+
+  async function persist() {
+    if (!onPersist) return;
+    setSaving(true);
+    setSavedMsg(null);
+    try {
+      await onPersist(value);
+      setSavedMsg('Guardado');
+      setTimeout(() => setSavedMsg(null), 1500);
+    } catch (e) {
+      setSavedMsg('Erro: ' + (e instanceof Error ? e.message : 'unknown'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function markIssued() {
+    if (!onPersist || !value) return;
+    const next: InvoiceDetails = { ...value, issued_at: new Date().toISOString() };
+    onChange(next);
+    setSaving(true);
+    try {
+      await onPersist(next);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const isIssued = !!value?.issued_at;
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full rounded-xl border border-dashed border-white/15 px-3 py-2.5 text-xs text-gray-400 hover:border-blue-500/40 hover:text-blue-300 transition-colors"
+      >
+        + Dados de fatura (quando o hóspede pede)
+      </button>
+    );
+  }
+
+  return (
+    <div className={`rounded-xl border px-3 py-3 ${isIssued ? 'border-green-500/30 bg-green-500/5' : 'border-blue-500/30 bg-blue-500/5'}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[11px] uppercase tracking-widest text-blue-200 font-semibold">
+          {isIssued ? '✓ Fatura emitida' : 'Dados de fatura'}
+        </span>
+        {savedMsg && <span className="text-[11px] text-green-300 ml-auto">{savedMsg}</span>}
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            onChange(null);
+          }}
+          className="ml-auto text-[11px] text-gray-400 hover:text-red-300"
+          title="Remover dados de fatura"
+        >
+          remover
+        </button>
+      </div>
+
+      {hint && <p className="text-[11px] text-gray-400 mb-2">{hint}</p>}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <label className="block sm:col-span-2">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Nome / razão social *</span>
+          <input
+            value={v.company || ''}
+            onChange={(e) => patch('company', e.target.value)}
+            placeholder="Beautiful Service Design SL"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">NIF / VAT / CIF *</span>
+          <input
+            value={v.vat || ''}
+            onChange={(e) => patch('vat', e.target.value)}
+            placeholder="ESB85195147"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">País</span>
+          <input
+            value={v.country || ''}
+            onChange={(e) => patch('country', e.target.value)}
+            placeholder="ES / PT / FR"
+            maxLength={4}
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm uppercase focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Morada</span>
+          <input
+            value={v.address || ''}
+            onChange={(e) => patch('address', e.target.value)}
+            placeholder="Avenida de Madrid 128 nave 36"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Código postal</span>
+          <input
+            value={v.postal_code || ''}
+            onChange={(e) => patch('postal_code', e.target.value)}
+            placeholder="28500"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Cidade</span>
+          <input
+            value={v.city || ''}
+            onChange={(e) => patch('city', e.target.value)}
+            placeholder="Arganda del Rey"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">Email para envio</span>
+          <input
+            type="email"
+            value={v.email || ''}
+            onChange={(e) => patch('email', e.target.value)}
+            placeholder="facturas@example.com"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+          />
+        </label>
+      </div>
+
+      {onPersist && (
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            type="button"
+            onClick={persist}
+            disabled={saving}
+            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold disabled:opacity-40"
+          >
+            {saving ? '…' : 'Guardar dados'}
+          </button>
+          {value && !isIssued && (
+            <button
+              type="button"
+              onClick={markIssued}
+              disabled={saving}
+              className="px-3 py-1.5 rounded-lg bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold disabled:opacity-40"
+              title="Marcar fatura como emitida"
+            >
+              ✓ Marcar como emitida
+            </button>
+          )}
+          {isIssued && (
+            <span className="text-[11px] text-green-300">
+              Emitida em {value?.issued_at?.slice(0, 10)}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Yellow banner shown above the bookings list when there are bookings
+ * whose guests requested an invoice and whose checkout is today/tomorrow
+ * and the invoice has not been marked as issued yet.
+ */
+function PendingInvoicesBanner({
+  bookings,
+  onOpen,
+}: {
+  bookings: Booking[];
+  onOpen: (b: Booking) => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const tomorrow = (() => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const pending = bookings.filter((b) => {
+    const inv = (b as Booking & { invoice_details?: InvoiceDetails | null }).invoice_details;
+    if (!inv) return false;
+    if (inv.issued_at) return false;
+    return b.checkout_date === today || b.checkout_date === tomorrow;
+  });
+
+  if (pending.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 mb-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-base">📄</span>
+        <span className="text-sm font-semibold text-amber-200">
+          {pending.length === 1
+            ? '1 fatura para emitir'
+            : `${pending.length} faturas para emitir`}
+        </span>
+      </div>
+      <ul className="space-y-1.5">
+        {pending.map((b) => {
+          const inv = (b as Booking & { invoice_details?: InvoiceDetails | null }).invoice_details!;
+          const isToday = b.checkout_date === today;
+          return (
+            <li key={b.id} className="flex items-center gap-2 text-xs text-amber-100/90">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isToday ? 'bg-red-500/30 text-red-100' : 'bg-amber-500/30 text-amber-100'}`}>
+                {isToday ? 'HOJE' : 'AMANHÃ'}
+              </span>
+              <span className="font-medium">{b.guest_name}</span>
+              <span className="text-amber-200/70">— {inv.company || '(sem empresa)'} · {inv.vat || '(sem NIF)'}</span>
+              <button
+                onClick={() => onOpen(b)}
+                className="ml-auto text-amber-200 hover:text-white underline text-[11px]"
+              >
+                ver dados
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function DoorCodeEditor({ booking, onSaved }: { booking: Booking; onSaved: () => void }) {
   const current = (booking as Booking & { door_code?: string | null }).door_code || '';
   const [code, setCode] = useState(current);
@@ -1316,6 +1594,7 @@ function BookingDetailModal({
   const [qPhone, setQPhone] = useState(booking.guest_phone || '');
   const [qEmail, setQEmail] = useState(booking.guest_email || '');
   const [qDoorCode, setQDoorCode] = useState('');
+  const [qInvoice, setQInvoice] = useState<InvoiceDetails | null>(null);
   const [qSubmitting, setQSubmitting] = useState(false);
   const [qError, setQError] = useState<string | null>(null);
 
@@ -1348,6 +1627,7 @@ function BookingDetailModal({
           total_price: 0,
           language: qLanguage,
           door_code: qDoorCode.trim(),
+          invoice_details: qInvoice,
           link_external: {
             external_source: externalMeta._externalSource,
             external_ref: externalMeta._externalRef,
@@ -1603,6 +1883,14 @@ function BookingDetailModal({
               </label>
             </div>
 
+            <div className="mb-3">
+              <InvoiceDetailsBlock
+                value={qInvoice}
+                onChange={setQInvoice}
+                hint="Só se o hóspede pediu fatura. Guarda agora e aparece um aviso no dia do check-out."
+              />
+            </div>
+
             {qError && (
               <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mb-3">
                 {qError}
@@ -1630,6 +1918,26 @@ function BookingDetailModal({
           <>
             <div className="mb-4">
               <DoorCodeEditor booking={booking} onSaved={() => { /* noop, admin closes modal */ }} />
+            </div>
+
+            <div className="mb-4">
+              <InvoiceDetailsBlock
+                value={(booking as Booking & { invoice_details?: InvoiceDetails | null }).invoice_details ?? null}
+                onChange={(next) => {
+                  // Local state mirror so the form re-renders. We store the
+                  // patched object back onto the booking ref — the real
+                  // persistence happens via onPersist below.
+                  (booking as Booking & { invoice_details?: InvoiceDetails | null }).invoice_details = next;
+                }}
+                onPersist={async (next) => {
+                  const { error } = await supabase
+                    .from('bookings')
+                    .update({ invoice_details: next })
+                    .eq('id', booking.id);
+                  if (error) throw error;
+                }}
+                hint="Preenche quando o hóspede pede fatura. Aparece como aviso amarelo na lista no dia do check-out."
+              />
             </div>
 
             <label className="block mb-2">
