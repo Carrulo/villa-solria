@@ -190,8 +190,11 @@ export async function POST(req: Request) {
       // booking — the calendar in admin shows "booking" / "airbnb"
       // instead of "manual", which matches reality (Booking.com still
       // owns the payment, channel, and cancellation flow).
+      // Normalize "<channel>_ical" → "<channel>" so the rendering matches
+      // the synthetic external rows in `fetchBookings` (which use
+      // sourceLabel = 'booking' / 'airbnb' / 'vrbo').
       source: isEnrichingExternal
-        ? (body.link_external!.external_source as string)
+        ? (body.link_external!.external_source as string).replace(/_ical$/, '')
         : 'manual',
       language: ['pt', 'en', 'es', 'de'].includes((body.language || '').toLowerCase())
         ? (body.language || '').toLowerCase()
