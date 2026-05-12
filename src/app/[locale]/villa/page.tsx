@@ -140,9 +140,16 @@ export default async function VillaPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-        {/* Description */}
-        <div className="max-w-3xl mx-auto mb-16">
-          <p className="text-gray-600 leading-relaxed text-lg text-center">{t('description')}</p>
+        {/* Description — preserve paragraph breaks from the i18n source.
+            We split on \n\n so each paragraph renders as its own block
+            with proper vertical spacing, instead of collapsing into a
+            single long blob. */}
+        <div className="max-w-3xl mx-auto mb-16 space-y-5">
+          {t('description').split(/\n{2,}/).map((para, i) => (
+            <p key={i} className="text-gray-600 leading-relaxed text-lg text-center">
+              {para}
+            </p>
+          ))}
         </div>
 
         {/* Floor plans with images */}

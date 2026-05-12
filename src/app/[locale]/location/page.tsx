@@ -115,10 +115,16 @@ export default async function LocationPage() {
           </div>
         </div>
 
-        {/* About */}
+        {/* About — preserve paragraph breaks (\n\n) from the i18n source. */}
         <div className="max-w-3xl mx-auto mb-16">
           <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-6 text-center">{t('aboutTitle')}</h2>
-          <p className="text-gray-600 leading-relaxed text-lg text-center">{t('aboutText')}</p>
+          <div className="space-y-4">
+            {t('aboutText').split(/\n{2,}/).map((para, i) => (
+              <p key={i} className="text-gray-600 leading-relaxed text-lg text-center">
+                {para}
+              </p>
+            ))}
+          </div>
         </div>
 
         {/* Main attractions — 6 highlights for SEO + pre-booking convincers.
