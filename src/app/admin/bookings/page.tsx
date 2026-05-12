@@ -2896,9 +2896,14 @@ function ShareGuideModal({
   const subject = subjects[lang] || subjects.pt;
 
   const phoneClean = (data.guest_phone || '').replace(/[^0-9]/g, '');
+  // Use api.whatsapp.com/send (WhatsApp's official deeplink endpoint)
+  // instead of wa.me — the latter redirects via web.whatsapp.com which on
+  // desktop Chrome occasionally double-encodes UTF-8 and mangles emojis
+  // (4-byte codepoints like 👋 🔑 😊 appear as � on the recipient's side).
+  // api.whatsapp.com goes directly to the WhatsApp web/native flow.
   const waUrl = phoneClean
-    ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(message)}`
-    : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    ? `https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(message)}`
+    : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   const mailUrl = data.guest_email
     ? `mailto:${data.guest_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
     : `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
