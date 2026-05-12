@@ -309,15 +309,25 @@ export async function POST(req: Request) {
       .eq('external_source', linkExt.external_source)
       .eq('external_ref', linkExt.external_ref);
 
-    // Mark the original "Nova reserva Booking — CLOSED - Not available"
-    // notification(s) as read. They referenced this same stay (matched by
-    // date range) and the host has already acted on them by enriching.
-    // Leaving them unread would show as duplicate counter in the bell.
+    // Refresh the existing "Nova reserva Booking — CLOSED - Not available"
+    // notification with the real guest name and dates instead of creating
+    // a second entry. We match by checkout_date + booking_external type
+    // (one stay per night → no false positives in this single-property
+    // setup). Keep `read_at` untouched so it stays unread if the host
+    // hadn't seen it yet.
+    const srcLabel =
+      linkExt.external_source === 'airbnb_ical'
+        ? 'Airbnb'
+        : linkExt.external_source === 'vrbo_ical'
+          ? 'VRBO'
+          : 'Booking';
     await supabase
       .from('notifications')
-      .update({ read_at: new Date().toISOString() })
+      .update({
+        title: `Reserva ${srcLabel} — ${guest_name}`,
+        body: `Check-in ${checkin_date} · check-out ${checkout_date}`,
+      })
       .eq('type', 'booking_external')
-      .is('read_at', null)
       .like('body', `%${checkin_date}%`);
   }
 
