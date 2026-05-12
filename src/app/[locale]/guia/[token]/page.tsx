@@ -26,6 +26,10 @@ interface GuidePlace {
   photo_url: string | null;
   map_url: string | null;
   distance_km: number | null;
+  /** Hide this place when the booking is shorter than this many nights.
+   *  Used for hotel-perks (wristband + boat + restaurants) that aren't
+   *  worth requesting from the hotel manager for 1-2 night stays. */
+  min_stay_nights?: number | null;
 }
 
 interface Booking {
@@ -309,7 +313,23 @@ export default async function GuidePage({
       .replace(/\{\{wifi_password\}\}/g, settings['guide_wifi_password'] || '—');
   }
 
-  const placesByType = places.reduce<Record<string, GuidePlace[]>>((acc, p) => {
+  // Filter out places that require a longer stay than this booking has.
+  // Hotel-related perks (wristband boat + AP Cabanas restaurants) are set
+  // to min_stay_nights = 3 so short stays don't see them — the host
+  // doesn't want to chase the hotel manager for 1-2 night reservations.
+  const bookingNights = Math.max(
+    1,
+    Math.round(
+      (new Date(b.checkout_date + 'T00:00:00Z').getTime() -
+        new Date(b.checkin_date + 'T00:00:00Z').getTime()) /
+        86400000,
+    ),
+  );
+  const visiblePlaces = places.filter(
+    (p) => !p.min_stay_nights || bookingNights >= p.min_stay_nights,
+  );
+
+  const placesByType = visiblePlaces.reduce<Record<string, GuidePlace[]>>((acc, p) => {
     (acc[p.type] = acc[p.type] || []).push(p);
     return acc;
   }, {});
