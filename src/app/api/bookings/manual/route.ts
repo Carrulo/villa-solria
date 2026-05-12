@@ -308,6 +308,17 @@ export async function POST(req: Request) {
       .update({ linked_to_booking_id: bookingId })
       .eq('external_source', linkExt.external_source)
       .eq('external_ref', linkExt.external_ref);
+
+    // Mark the original "Nova reserva Booking — CLOSED - Not available"
+    // notification(s) as read. They referenced this same stay (matched by
+    // date range) and the host has already acted on them by enriching.
+    // Leaving them unread would show as duplicate counter in the bell.
+    await supabase
+      .from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('type', 'booking_external')
+      .is('read_at', null)
+      .like('body', `%${checkin_date}%`);
   }
 
   // Send confirmation email if the guest has one. Fire-and-forget so a
