@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { CleaningTask } from '@/lib/supabase';
-import { CheckCircle2, Sparkles, Shirt, Lock } from 'lucide-react';
+import { CheckCircle2, Sparkles, Shirt, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { effectiveRoomsToPrepare } from '@/lib/cleaning-rooms';
 
 type Tab = 'today' | 'upcoming' | 'done';
@@ -91,6 +91,29 @@ export default function CleaningClient({
   const visible =
     tab === 'today' ? tabs.today : tab === 'upcoming' ? tabs.upcoming : tabs.done;
 
+  // Map: cleaning_date (YYYY-MM-DD) → { taskId, tab }. Lets the calendar
+  // both highlight days with work and jump straight to the right card.
+  const dateIndex = useMemo(() => {
+    const m = new Map<string, { id: string; tab: Tab }>();
+    for (const t of tabs.today) m.set(t.cleaning_date, { id: t.id, tab: 'today' });
+    for (const t of tabs.upcoming) m.set(t.cleaning_date, { id: t.id, tab: 'upcoming' });
+    for (const t of tabs.done) m.set(t.cleaning_date, { id: t.id, tab: 'done' });
+    return m;
+  }, [tabs]);
+
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  function jumpToDate(date: string) {
+    const target = dateIndex.get(date);
+    if (!target) return;
+    if (target.tab !== tab) setTab(target.tab);
+    // Wait a tick so the tab content is rendered before scrolling.
+    setTimeout(() => {
+      const el = cardRefs.current.get(target.id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] p-4 sm:p-6">
       <div className="max-w-3xl mx-auto">
@@ -107,7 +130,9 @@ export default function CleaningClient({
           </div>
         )}
 
-        <div className="flex gap-2 mb-4 overflow-x-auto">
+        <MonthCalendar dateIndex={dateIndex} todayStr={todayStr} onPickDate={jumpToDate} />
+
+        <div className="flex gap-2 mb-4 mt-4 overflow-x-auto">
           <TabButton
             active={tab === 'today'}
             onClick={() => setTab('today')}
@@ -132,8 +157,14 @@ export default function CleaningClient({
             </div>
           ) : (
             visible.map((t) => (
-              <TaskCard
+              <div
                 key={t.id}
+                ref={(el) => {
+                  if (el) cardRefs.current.set(t.id, el);
+                  else cardRefs.current.delete(t.id);
+                }}
+              >
+              <TaskCard
                 task={t}
                 isTurn={turnIds.has(t.id)}
                 isToday={t.cleaning_date <= todayStr}
@@ -154,6 +185,7 @@ export default function CleaningClient({
                 }}
                 onSaveNotes={(text) => update({ id: t.id, cleaner_notes: text })}
               />
+              </div>
             ))
           )}
         </div>
@@ -428,4 +460,109 @@ function formatShortDate(iso: string): string {
     })
     .replace('.', '')
     .replace(',', '');
+}
+
+function MonthCalendar({
+  dateIndex,
+  todayStr,
+  onPickDate,
+}: {
+  dateIndex: Map<string, { id: string; tab: 'today' | 'upcoming' | 'done' }>;
+  todayStr: string;
+  onPickDate: (date: string) => void;
+}) {
+  // Anchor month — defaults to the month with the next upcoming task,
+  // or current month if there are none ahead.
+  const initialMonth = useMemo(() => {
+    const futureDates = Array.from(dateIndex.keys()).filter((d) => d >= todayStr).sort();
+    const seed = futureDates[0] || todayStr;
+    return seed.slice(0, 7); // YYYY-MM
+  }, [dateIndex, todayStr]);
+
+  const [ym, setYm] = useState<string>(initialMonth);
+  const [year, month] = ym.split('-').map(Number);
+
+  function shiftMonth(delta: number) {
+    const d = new Date(Date.UTC(year, month - 1 + delta, 1));
+    setYm(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  }
+
+  // Build a 6-row grid starting on Monday.
+  const firstOfMonth = new Date(Date.UTC(year, month - 1, 1));
+  const monthLabel = firstOfMonth.toLocaleDateString('pt-PT', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  // Monday = 0 ... Sunday = 6
+  const firstDow = (firstOfMonth.getUTCDay() + 6) % 7;
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setUTCDate(firstOfMonth.getUTCDate() - firstDow);
+
+  const cells: { iso: string; day: number; inMonth: boolean }[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setUTCDate(gridStart.getUTCDate() + i);
+    const iso = d.toISOString().slice(0, 10);
+    cells.push({ iso, day: d.getUTCDate(), inMonth: d.getUTCMonth() + 1 === month });
+  }
+
+  const dows = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
+  return (
+    <div className="rounded-2xl bg-white/5 border border-white/10 p-3 mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <button
+          onClick={() => shiftMonth(-1)}
+          className="p-2 rounded-lg hover:bg-white/10 active:bg-white/15 text-gray-300"
+          aria-label="Mês anterior"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-semibold text-gray-100 capitalize">
+          {monthLabel}
+        </span>
+        <button
+          onClick={() => shiftMonth(1)}
+          className="p-2 rounded-lg hover:bg-white/10 active:bg-white/15 text-gray-300"
+          aria-label="Próximo mês"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {dows.map((d, i) => (
+          <div key={i} className="text-center text-[10px] text-gray-500 font-medium">
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((c) => {
+          const has = dateIndex.has(c.iso);
+          const isToday = c.iso === todayStr;
+          const tab = has ? dateIndex.get(c.iso)!.tab : null;
+          const isDone = tab === 'done';
+          return (
+            <button
+              key={c.iso}
+              disabled={!has}
+              onClick={() => onPickDate(c.iso)}
+              className={`aspect-square rounded-lg text-sm font-medium transition-colors ${
+                !c.inMonth
+                  ? 'text-gray-700'
+                  : has
+                  ? isDone
+                    ? 'bg-green-500/20 text-green-200 hover:bg-green-500/30 active:bg-green-500/40'
+                    : 'bg-yellow-400/25 text-yellow-100 hover:bg-yellow-400/40 active:bg-yellow-400/50 font-bold'
+                  : 'text-gray-500'
+              } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
+            >
+              {c.day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
