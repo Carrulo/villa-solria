@@ -562,6 +562,7 @@ function MonthCalendar({
           const tab = has ? dateIndex.get(c.iso)!.tab : null;
           const isDone = tab === 'done';
           const isOccupied = !has && occupiedDates.has(c.iso);
+          const isFreeFuture = c.inMonth && !has && !isOccupied && c.iso >= todayStr;
           return (
             <button
               key={c.iso}
@@ -574,6 +575,8 @@ function MonthCalendar({
                     : 'Dia de limpeza'
                   : isOccupied
                   ? 'Casa ocupada (hóspedes)'
+                  : isFreeFuture
+                  ? 'Livre — pode aparecer reserva'
                   : undefined
               }
               className={`aspect-square rounded-lg text-sm transition-colors flex items-center justify-center ${
@@ -585,7 +588,9 @@ function MonthCalendar({
                     : 'bg-yellow-400 text-slate-900 font-bold hover:bg-yellow-300 active:bg-yellow-500 shadow-md shadow-yellow-400/30'
                   : isOccupied
                   ? 'text-gray-500 line-through decoration-gray-400 decoration-[1.5px]'
-                  : 'text-gray-400'
+                  : isFreeFuture
+                  ? 'bg-blue-400/10 border border-blue-400/20 text-blue-200'
+                  : 'text-gray-500'
               } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
             >
               {c.day}
@@ -600,6 +605,9 @@ function MonthCalendar({
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded bg-green-500/80" /> Feita
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded bg-blue-400/10 border border-blue-400/30" /> Livre
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="line-through decoration-gray-400 decoration-[1.5px]">00</span> Ocupada
