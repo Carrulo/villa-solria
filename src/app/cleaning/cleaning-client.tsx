@@ -101,6 +101,22 @@ export default function CleaningClient({
     return m;
   }, [tabs]);
 
+  // Set of days the villa is occupied (checkin → day before checkout).
+  // Informative shade in the calendar so the cleaner can plan her own
+  // schedule around occupied stretches without expecting work mid-stay.
+  const occupiedDates = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of tasks) {
+      if (!t.checkin_date || !t.stay_checkout_date) continue;
+      const start = new Date(t.checkin_date + 'T00:00:00Z');
+      const end = new Date(t.stay_checkout_date + 'T00:00:00Z');
+      for (let d = new Date(start); d < end; d.setUTCDate(d.getUTCDate() + 1)) {
+        s.add(d.toISOString().slice(0, 10));
+      }
+    }
+    return s;
+  }, [tasks]);
+
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   function jumpToDate(date: string) {
@@ -130,7 +146,12 @@ export default function CleaningClient({
           </div>
         )}
 
-        <MonthCalendar dateIndex={dateIndex} todayStr={todayStr} onPickDate={jumpToDate} />
+        <MonthCalendar
+          dateIndex={dateIndex}
+          occupiedDates={occupiedDates}
+          todayStr={todayStr}
+          onPickDate={jumpToDate}
+        />
 
         <div className="flex gap-2 mb-4 mt-4 overflow-x-auto">
           <TabButton
@@ -459,10 +480,12 @@ function formatShortDate(iso: string): string {
 
 function MonthCalendar({
   dateIndex,
+  occupiedDates,
   todayStr,
   onPickDate,
 }: {
   dateIndex: Map<string, { id: string; tab: 'today' | 'upcoming' | 'done' }>;
+  occupiedDates: Set<string>;
   todayStr: string;
   onPickDate: (date: string) => void;
 }) {
@@ -538,11 +561,13 @@ function MonthCalendar({
           const isToday = c.iso === todayStr;
           const tab = has ? dateIndex.get(c.iso)!.tab : null;
           const isDone = tab === 'done';
+          const isOccupied = !has && occupiedDates.has(c.iso);
           return (
             <button
               key={c.iso}
               disabled={!has}
               onClick={() => onPickDate(c.iso)}
+              title={isOccupied ? 'Casa ocupada (hóspedes)' : undefined}
               className={`aspect-square rounded-lg text-sm font-medium transition-colors ${
                 !c.inMonth
                   ? 'text-gray-700'
@@ -550,6 +575,8 @@ function MonthCalendar({
                   ? isDone
                     ? 'bg-green-500/20 text-green-200 hover:bg-green-500/30 active:bg-green-500/40'
                     : 'bg-yellow-400/25 text-yellow-100 hover:bg-yellow-400/40 active:bg-yellow-400/50 font-bold'
+                  : isOccupied
+                  ? 'bg-slate-500/20 text-slate-300'
                   : 'text-gray-500'
               } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
             >
@@ -557,6 +584,21 @@ function MonthCalendar({
             </button>
           );
         })}
+      </div>
+      {/* Legenda */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] text-gray-400">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded bg-yellow-400/40" /> Limpeza
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded bg-green-500/30" /> Feita
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded bg-slate-500/30" /> Ocupada
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded ring-2 ring-blue-400/60" /> Hoje
+        </span>
       </div>
     </div>
   );
