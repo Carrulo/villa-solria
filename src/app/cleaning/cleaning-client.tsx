@@ -576,24 +576,19 @@ function MonthCalendar({
                   ? 'Casa ocupada (hóspedes)'
                   : undefined
               }
-              className={`relative aspect-square rounded-lg text-sm transition-colors flex flex-col items-center justify-center gap-0.5 ${
+              className={`aspect-square rounded-lg text-sm transition-colors flex items-center justify-center ${
                 !c.inMonth
                   ? 'text-gray-700'
                   : has
-                  ? 'text-white font-semibold hover:bg-white/5 active:bg-white/10'
+                  ? isDone
+                    ? 'bg-green-500/80 text-white font-bold hover:bg-green-500 active:bg-green-600 shadow-md'
+                    : 'bg-yellow-400 text-slate-900 font-bold hover:bg-yellow-300 active:bg-yellow-500 shadow-md shadow-yellow-400/30'
                   : isOccupied
                   ? 'text-gray-500 line-through decoration-gray-400 decoration-[1.5px]'
                   : 'text-gray-400'
               } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
             >
-              <span>{c.day}</span>
-              {has && (
-                <span
-                  className={`block w-1.5 h-1.5 rounded-full ${
-                    isDone ? 'bg-green-400' : 'bg-yellow-400'
-                  }`}
-                />
-              )}
+              {c.day}
             </button>
           );
         })}
@@ -601,10 +596,10 @@ function MonthCalendar({
       {/* Legenda */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-[11px] text-gray-400">
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400" /> Limpeza
+          <span className="inline-block w-3 h-3 rounded bg-yellow-400" /> Limpeza
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-green-400" /> Feita
+          <span className="inline-block w-3 h-3 rounded bg-green-500/80" /> Feita
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="line-through decoration-gray-400 decoration-[1.5px]">00</span> Ocupada
