@@ -562,12 +562,19 @@ function MonthCalendar({
           const tab = has ? dateIndex.get(c.iso)!.tab : null;
           const isDone = tab === 'done';
           const isOccupied = !has && occupiedDates.has(c.iso);
+          const occupiedStyle: React.CSSProperties = isOccupied && c.inMonth && !has
+            ? {
+                backgroundImage:
+                  'linear-gradient(to top right, transparent calc(50% - 1.5px), rgba(148,163,184,0.85) calc(50% - 1.5px), rgba(148,163,184,0.85) calc(50% + 1.5px), transparent calc(50% + 1.5px))',
+              }
+            : {};
           return (
             <button
               key={c.iso}
               disabled={!has}
               onClick={() => onPickDate(c.iso)}
               title={isOccupied ? 'Casa ocupada (hóspedes)' : undefined}
+              style={occupiedStyle}
               className={`aspect-square rounded-lg text-sm font-medium transition-colors ${
                 !c.inMonth
                   ? 'text-gray-700'
@@ -576,7 +583,7 @@ function MonthCalendar({
                     ? 'bg-green-500/20 text-green-200 hover:bg-green-500/30 active:bg-green-500/40'
                     : 'bg-yellow-400/25 text-yellow-100 hover:bg-yellow-400/40 active:bg-yellow-400/50 font-bold'
                   : isOccupied
-                  ? 'text-gray-500 line-through decoration-gray-500 decoration-1'
+                  ? 'text-gray-400'
                   : 'text-gray-500'
               } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
             >
@@ -594,7 +601,14 @@ function MonthCalendar({
           <span className="inline-block w-3 h-3 rounded bg-green-500/30" /> Feita
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block text-gray-500 line-through decoration-1 leading-none">00</span> Ocupada
+          <span
+            className="inline-block w-3 h-3 rounded"
+            style={{
+              backgroundImage:
+                'linear-gradient(to top right, transparent calc(50% - 1px), rgba(148,163,184,0.85) calc(50% - 1px), rgba(148,163,184,0.85) calc(50% + 1px), transparent calc(50% + 1px))',
+            }}
+          />{' '}
+          Ocupada
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded ring-2 ring-blue-400/60" /> Hoje
