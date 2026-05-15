@@ -1,9 +1,8 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CleaningTask } from '@/lib/supabase';
-import { CheckCircle2, Circle, Sparkles, Shirt, Lock, Camera, X as XIcon } from 'lucide-react';
-import { CLEANING_SUBTASKS, checklistCount, isChecklistComplete } from '@/lib/cleaning-checklist';
+import { CheckCircle2, Sparkles, Shirt, Lock } from 'lucide-react';
 import { effectiveRoomsToPrepare } from '@/lib/cleaning-rooms';
 
 type Tab = 'today' | 'upcoming' | 'done';
@@ -136,7 +135,6 @@ export default function CleaningClient({
               <TaskCard
                 key={t.id}
                 task={t}
-                token={token}
                 isTurn={turnIds.has(t.id)}
                 isToday={t.cleaning_date <= todayStr}
                 busy={busyId === t.id}
@@ -154,9 +152,6 @@ export default function CleaningClient({
                   setMessage(m);
                   setTimeout(() => setMessage(null), 3000);
                 }}
-                onPhotosUpdated={(updatedTask) =>
-                  setTasks((prev) => prev.map((x) => (x.id === t.id ? updatedTask : x)))
-                }
                 onSaveNotes={(text) => update({ id: t.id, cleaner_notes: text })}
               />
             ))
@@ -197,20 +192,15 @@ function TabButton({
 
 function TaskCard({
   task,
-  token,
   isTurn,
-  isToday,
   busy,
-  onToggleSubtask,
   onMarkLaundry,
   onUnmarkLaundry,
   onClose,
   onErrorMessage,
-  onPhotosUpdated,
   onSaveNotes,
 }: {
   task: CleaningTask;
-  token: string;
   isTurn: boolean;
   isToday: boolean;
   busy: boolean;
@@ -219,42 +209,15 @@ function TaskCard({
   onUnmarkLaundry: () => void;
   onClose: () => void;
   onErrorMessage: (m: string) => void;
-  onPhotosUpdated: (task: CleaningTask) => void;
   onSaveNotes: (text: string) => void;
 }) {
   const overdue = task.cleaning_date < new Date().toISOString().slice(0, 10) && !task.cleaning_done;
   const taskAny = task as CleaningTask & {
-    subtask_progress?: Record<string, boolean>;
     started_at?: string | null;
     completed_at?: string | null;
-    photo_urls?: string[];
   };
-  const rawProgress = taskAny.subtask_progress || {};
   const completed = !!taskAny.completed_at;
-  // Skipped rooms (effective rooms_to_prepare excluded) count as done so
-  // they don't block checklist completion or the close-cleaning button.
-  // Use the same explicit/inferred resolver as the badge so the two stay
-  // in sync.
-  const effectiveForProgress = effectiveRoomsToPrepare(
-    (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare,
-    task.num_guests,
-    3
-  );
-  const progress: Record<string, boolean> = { ...rawProgress } as Record<string, boolean>;
-  if (effectiveForProgress.rooms) {
-    const allowed = effectiveForProgress.rooms;
-    for (const n of [1, 2, 3]) {
-      if (!allowed.includes(n)) progress[`quarto_${n}`] = true;
-    }
-  }
-  const checklist = checklistCount(progress);
-  const checklistDone = isChecklistComplete(progress);
-  const photos = Array.isArray(taskAny.photo_urls) ? taskAny.photo_urls : [];
-  const photoCount = photos.length;
-  const canClose = !completed && !task.cleaning_paid && checklistDone && task.laundry_taken && photoCount >= 3;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [removingUrl, setRemovingUrl] = useState<string | null>(null);
+  const canClose = !completed && !task.cleaning_paid && task.laundry_taken;
   const initialNotes = (task as CleaningTask & { cleaner_notes?: string | null }).cleaner_notes || '';
   const [notes, setNotes] = useState(initialNotes);
   const [notesSaved, setNotesSaved] = useState(false);
@@ -262,61 +225,10 @@ function TaskCard({
   const ownerNotes = ((task as CleaningTask & { owner_notes?: string | null }).owner_notes || '').trim();
   const roomsToPrepareRaw = (task as CleaningTask & { rooms_to_prepare?: number[] | null }).rooms_to_prepare;
   // Effective rooms: explicit override > inferred from num_guests > all.
-  // This way a 2-person booking does not get a full 3-bedroom prep by
-  // default — the cleaner only makes Q1 unless the host says otherwise.
+  // Shown only as a hint ("preparar Q1") — not enforced via checklist.
   const effective = effectiveRoomsToPrepare(roomsToPrepareRaw, task.num_guests, 3);
   const roomsToPrepare = effective.rooms;
   const roomsSource = effective.source;
-  function isRoomSkipped(subtaskKey: string): boolean {
-    if (!roomsToPrepare) return false;
-    const m = subtaskKey.match(/^quarto_(\d+)$/);
-    if (!m) return false;
-    return !roomsToPrepare.includes(Number(m[1]));
-  }
-  // Collapsible checklist — auto-open only for today's tasks while
-  // incomplete; future cards start collapsed so the cleaner doesn't
-  // wade through 12 identical lists.
-  const [checklistOpen, setChecklistOpen] = useState(isToday && !checklistDone && !completed);
-
-  async function uploadFiles(files: FileList) {
-    setUploading(true);
-    let lastTask: CleaningTask | null = null;
-    try {
-      for (const file of Array.from(files)) {
-        const fd = new FormData();
-        fd.append('token', token);
-        fd.append('task_id', task.id);
-        fd.append('file', file);
-        const res = await fetch('/api/cleaning/photo-upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!res.ok) {
-          onErrorMessage(data.error || 'Erro ao enviar foto');
-          break;
-        }
-        if (data.task) lastTask = data.task as CleaningTask;
-      }
-    } finally {
-      setUploading(false);
-      if (lastTask) onPhotosUpdated(lastTask);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  }
-
-  async function removePhoto(url: string) {
-    setRemovingUrl(url);
-    try {
-      const params = new URLSearchParams({ token, task_id: task.id, url });
-      const res = await fetch('/api/cleaning/photo-upload?' + params.toString(), { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) {
-        onErrorMessage(data.error || 'Erro ao remover');
-        return;
-      }
-      if (data.task) onPhotosUpdated(data.task as CleaningTask);
-    } finally {
-      setRemovingUrl(null);
-    }
-  }
 
   const editable = !completed && !task.cleaning_paid;
 
@@ -369,69 +281,21 @@ function TaskCard({
           </div>
         )}
 
-        {/* 1. Limpar — collapsible */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setChecklistOpen((v) => !v)}
-            style={{ minHeight: 56 }}
-            className="w-full flex items-center justify-between px-4 hover:bg-white/[0.03] active:bg-white/[0.05] transition-colors"
-          >
-            <SectionTitle n={1} label="Limpar" />
-            <span className="flex items-center gap-3">
-              <span className={`text-sm font-mono ${checklistDone ? 'text-green-300' : 'text-gray-400'}`}>
-                {checklist.done}/{checklist.total}
-                {checklistDone ? ' ✓' : ''}
-              </span>
-              <span
-                className={`text-gray-400 text-base transition-transform ${checklistOpen ? 'rotate-180' : ''}`}
-                aria-hidden
-              >
-                ▾
-              </span>
-            </span>
-          </button>
-          {checklistOpen && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3 pb-3 pt-1">
-              {CLEANING_SUBTASKS.map((s) => {
-                const done = progress[s.key] === true;
-                const skipped = isRoomSkipped(s.key);
-                return (
-                  <button
-                    key={s.key}
-                    onClick={() => editable && !busy && !skipped && onToggleSubtask(s.key, !done)}
-                    disabled={busy || !editable || skipped}
-                    style={{ minHeight: 48 }}
-                    title={skipped ? 'Quarto não usado — só cobertor' : undefined}
-                    className={`flex items-center gap-2.5 px-3 rounded-xl border text-left text-base disabled:opacity-60 active:scale-[0.98] transition-transform ${
-                      skipped
-                        ? 'bg-white/[0.02] border-white/5 text-gray-500 line-through'
-                        : done
-                        ? 'bg-green-500/15 border-green-500/40 text-green-200'
-                        : 'bg-white/5 border-white/10 text-gray-200'
-                    }`}
-                  >
-                    {done ? (
-                      <CheckCircle2 size={18} className="shrink-0" />
-                    ) : (
-                      <Circle size={18} className="shrink-0 text-gray-500" />
-                    )}
-                    <span className="text-lg leading-none mr-1">{s.icon}</span>
-                    <span className="truncate">
-                      {s.label}
-                      {skipped && <span className="ml-1 text-[10px] no-underline">(só cobertor)</span>}
-                    </span>
-                  </button>
-                );
-              })}
+        {/* Lembrete geral */}
+        <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-200">
+          ✨ Limpar e organizar <strong>todas as divisões</strong> da casa.
+          {roomsToPrepare && (
+            <div className="mt-1 text-amber-300 text-xs">
+              ↳ Quartos a preparar: <strong>Q{roomsToPrepare.join(', Q')}</strong>
+              {roomsSource === 'inferred' && <span className="ml-1 text-amber-400/70">(automático pelo nº de hóspedes)</span>}
             </div>
           )}
         </div>
 
-        {/* 2. Roupas */}
+        {/* Roupas */}
         <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
           <div className="flex items-center justify-between gap-2 px-1" style={{ minHeight: 32 }}>
-            <SectionTitle n={2} label="Roupas" />
+            <SectionTitle n={1} label="Roupas" />
             {task.laundry_taken && (
               <span className="text-sm text-blue-300 flex items-center gap-1.5">
                 <Shirt size={15} />
@@ -455,62 +319,6 @@ function TaskCard({
                 <RoomButton key={n} disabled={busy} onClick={() => onMarkLaundry(n)} label={`${n}q`} />
               ))}
             </div>
-          )}
-        </div>
-
-        {/* 3. Fotos */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
-          <div className="flex items-center justify-between gap-2 px-1 mb-2.5" style={{ minHeight: 32 }}>
-            <SectionTitle n={3} label="Fotos" />
-            <span className={`text-sm font-mono ${photoCount >= 3 ? 'text-green-300' : 'text-gray-400'}`}>
-              {photoCount}/3 {photoCount >= 3 && '✓'}
-            </span>
-          </div>
-          {photoCount > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {photos.map((url) => (
-                <div key={url} className="relative aspect-square rounded-xl overflow-hidden bg-black/40">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  {editable && (
-                    <button
-                      onClick={() => removePhoto(url)}
-                      disabled={removingUrl === url}
-                      style={{ minHeight: 28, minWidth: 28 }}
-                      className="absolute top-1 right-1 rounded-full bg-black/70 text-white hover:bg-red-500/80 disabled:opacity-50 inline-flex items-center justify-center"
-                      title="Remover"
-                    >
-                      <XIcon size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {editable && (
-            <>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                style={{ minHeight: 52 }}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 active:bg-amber-500/40 text-amber-200 text-base font-semibold disabled:opacity-50"
-              >
-                <Camera size={20} />
-                {uploading ? 'A enviar…' : photoCount === 0 ? 'Tirar fotos' : 'Adicionar mais'}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                multiple
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) uploadFiles(e.target.files);
-                }}
-              />
-            </>
           )}
         </div>
 
@@ -547,24 +355,27 @@ function TaskCard({
             Fechada{taskAny.completed_at ? ` ${new Date(taskAny.completed_at).toLocaleDateString('pt-PT')}` : ''}
           </div>
         ) : (
-          <button
-            onClick={() => {
-              if (!checklistDone) return onErrorMessage('Falta marcar a checklist.');
-              if (!task.laundry_taken) return onErrorMessage('Falta indicar as roupas.');
-              if (photoCount < 3) return onErrorMessage(`Faltam fotos (${photoCount}/3).`);
-              onClose();
-            }}
-            disabled={busy || !canClose}
-            style={{ minHeight: 56 }}
-            className={`w-full flex items-center justify-center gap-2 rounded-2xl text-base font-bold transition-colors ${
-              canClose
-                ? 'bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-400/20'
-                : 'bg-white/5 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            <Lock size={18} />
-            Fechar limpeza
-          </button>
+          <>
+            <div className="rounded-2xl bg-amber-400/15 border border-amber-400/40 px-4 py-3 text-sm text-amber-100 text-center">
+              📸 Quando terminar, por favor envie as fotos da limpeza por <strong>WhatsApp</strong>.
+            </div>
+            <button
+              onClick={() => {
+                if (!task.laundry_taken) return onErrorMessage('Falta indicar as roupas.');
+                onClose();
+              }}
+              disabled={busy || !canClose}
+              style={{ minHeight: 56 }}
+              className={`w-full flex items-center justify-center gap-2 rounded-2xl text-base font-bold transition-colors ${
+                canClose
+                  ? 'bg-yellow-400 hover:bg-yellow-300 active:bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-400/20'
+                  : 'bg-white/5 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <Lock size={18} />
+              Fechar limpeza
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -604,16 +415,6 @@ function SectionTitle({ n, label }: { n: number; label: string }) {
       {label}
     </span>
   );
-}
-
-function formatLongDate(iso: string): string {
-  const d = new Date(iso + 'T00:00:00Z');
-  return d.toLocaleDateString('pt-PT', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    timeZone: 'UTC',
-  });
 }
 
 function formatShortDate(iso: string): string {
