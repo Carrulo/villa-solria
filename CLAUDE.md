@@ -2,7 +2,11 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-05-06 21:30)
+## 📍 Current State (updated 2026-05-15 22:10)
+- **Cleaning model change (2026-05-15)**: `cleaning_date` agora = checkout day (não check-in). Hóspede sai ≤11h, empregada limpa 11h-16h, nova entrada ≥16h. Aplicado em iCal sync + Stripe webhook + manual bookings + admin backfill. 17 tarefas futuras unlinked migradas via UPDATE. Commit `8d9334c`.
+- **Cleaner mobile UI simplified (2026-05-15)**: `/cleaning` perdeu checklist de 14 itens + upload de fotos. Fica só lembrete + Roupas + Notas + botão Fechar. Fotos pedidas via WhatsApp. Commit `2846d7a`.
+
+## 📍 Previous State (updated 2026-05-06 21:30)
 - **Active branch**: main (clean — commit `96965c7` em prod)
 - **Open PRs**: none
 - **In-flight work**: Campanhas Meta **PAUSADAS** desde 6 Mai 21:25 para validar CAPI ponta-a-ponta antes de relançar. Próximos passos:
