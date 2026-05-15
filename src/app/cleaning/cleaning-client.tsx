@@ -576,7 +576,7 @@ function MonthCalendar({
                     ? 'bg-green-500/20 text-green-200 hover:bg-green-500/30 active:bg-green-500/40'
                     : 'bg-yellow-400/25 text-yellow-100 hover:bg-yellow-400/40 active:bg-yellow-400/50 font-bold'
                   : isOccupied
-                  ? 'bg-slate-500/20 text-slate-300'
+                  ? 'text-gray-500 line-through decoration-gray-500 decoration-1'
                   : 'text-gray-500'
               } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
             >
@@ -594,7 +594,7 @@ function MonthCalendar({
           <span className="inline-block w-3 h-3 rounded bg-green-500/30" /> Feita
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded bg-slate-500/30" /> Ocupada
+          <span className="inline-block text-gray-500 line-through decoration-1 leading-none">00</span> Ocupada
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded ring-2 ring-blue-400/60" /> Hoje
