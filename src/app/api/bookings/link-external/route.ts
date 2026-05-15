@@ -81,5 +81,53 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Whenever we link or unlink, the head's effective stay range may have
+  // changed → recompute its cleaning_date so the cleaner sees the right
+  // day. The head is either the row we just linked to (link case) or the
+  // row we just unlinked (unlink case).
+  if (linked_to_external_source && linked_to_external_ref) {
+    await refreshHeadCleaningDate(supabase, linked_to_external_source, linked_to_external_ref);
+  } else {
+    await refreshHeadCleaningDate(supabase, external_source, external_ref);
+  }
+
   return NextResponse.json({ success: true });
+}
+
+// A "head" cleaning_task is the one external row that has no linked_to_*
+// fields. Its cleaning_date should equal the latest stay_checkout_date
+// among itself + all rows linked to it. This handles Booking.com splits
+// where a single guest stay arrives as 2-3 iCal events and the admin
+// manually groups them.
+async function refreshHeadCleaningDate(
+  supabase: ReturnType<typeof createServerClient>,
+  headSource: string,
+  headRef: string,
+) {
+  const { data: head } = await supabase
+    .from('cleaning_tasks')
+    .select('id, stay_checkout_date')
+    .eq('external_source', headSource)
+    .eq('external_ref', headRef)
+    .is('linked_to_booking_id', null)
+    .is('linked_to_external_ref', null)
+    .maybeSingle();
+  if (!head) return;
+
+  const { data: children } = await supabase
+    .from('cleaning_tasks')
+    .select('stay_checkout_date')
+    .eq('linked_to_external_source', headSource)
+    .eq('linked_to_external_ref', headRef);
+
+  let maxCo = head.stay_checkout_date || '';
+  for (const c of children || []) {
+    if (c.stay_checkout_date && c.stay_checkout_date > maxCo) maxCo = c.stay_checkout_date;
+  }
+  if (!maxCo) return;
+
+  await supabase
+    .from('cleaning_tasks')
+    .update({ cleaning_date: maxCo })
+    .eq('id', head.id);
 }
