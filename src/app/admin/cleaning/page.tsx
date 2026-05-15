@@ -278,7 +278,7 @@ export default function AdminCleaningPage() {
         .filter((b) => !existingIds.has(b.id))
         .map((b) => ({
           booking_id: b.id,
-          cleaning_date: b.checkin_date,
+          cleaning_date: b.checkout_date,
           checkin_date: b.checkin_date,
           stay_checkout_date: b.checkout_date,
           guest_name: b.guest_name,

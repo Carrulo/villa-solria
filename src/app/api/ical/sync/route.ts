@@ -182,13 +182,14 @@ async function syncSource(
       // real reservations, so no cleaning task / "booking" entry.
       if (!event.isReservation) continue;
 
-      // One cleaning task per external reservation, on its DTSTART (the
-      // arrival day — the cleaner preps the villa before the guest gets
-      // in). DTEND is kept as stay_checkout_date for the stay range and
-      // same-day turn detection.
-      // Stable ref per platform — prefer UID, fall back to DTSTART.
+      // One cleaning task per external reservation, on its DTEND (the
+      // checkout day — guests leave by 11h, cleaner has the window 11h-16h
+      // before new arrivals are accepted, so the villa is always ready).
+      // DTSTART is kept as checkin_date for the stay range and same-day
+      // turn detection. Stable ref per platform — prefer UID, fall back
+      // to DTSTART.
       const ref = (event.uid || formatDate(startDate)).slice(0, 200);
-      const cleaningDate = formatDate(startDate);
+      const cleaningDate = formatDate(endDate);
       const stayCheckout = formatDate(endDate);
       const dedupeKey = `${ref}|${cleaningDate}`;
       if (!seenRefs.has(dedupeKey)) {
@@ -197,7 +198,7 @@ async function syncSource(
           external_source: source,
           external_ref: ref,
           cleaning_date: cleaningDate,
-          checkin_date: cleaningDate,
+          checkin_date: formatDate(startDate),
           stay_checkout_date: stayCheckout,
           guest_name: note,
           num_guests: null,

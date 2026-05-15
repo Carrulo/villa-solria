@@ -257,10 +257,11 @@ export async function POST(req: Request) {
     .maybeSingle();
   const baseFee = Number(feeRow?.value ?? 50) || 50;
 
-  // Cleaning task at check-in (the "arrival prep" task — unique per booking).
+  // Cleaning task at check-out (guests leave by 11h, cleaner has the
+  // 11h-16h window before new arrivals — villa stays ready, no wait).
   await supabase.from('cleaning_tasks').insert({
     booking_id: bookingId,
-    cleaning_date: checkin_date,
+    cleaning_date: checkout_date,
     checkin_date,
     stay_checkout_date: checkout_date,
     guest_name,

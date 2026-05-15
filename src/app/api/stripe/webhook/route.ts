@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
         await supabase.from('cleaning_tasks').upsert(
           {
             booking_id: bookingId,
-            cleaning_date: booking.checkin_date,
+            cleaning_date: booking.checkout_date,
             checkin_date: booking.checkin_date,
             stay_checkout_date: booking.checkout_date,
             guest_name: booking.guest_name || null,
