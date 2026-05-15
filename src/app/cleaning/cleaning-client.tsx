@@ -260,7 +260,6 @@ function TaskCard({
   // Shown only as a hint ("preparar Q1") — not enforced via checklist.
   const effective = effectiveRoomsToPrepare(roomsToPrepareRaw, task.num_guests, 3);
   const roomsToPrepare = effective.rooms;
-  const roomsSource = effective.source;
 
   const editable = !completed && !task.cleaning_paid;
 
@@ -287,9 +286,6 @@ function TaskCard({
             {roomsToPrepare && (
               <span className="ml-1 text-amber-300">
                 · só Q{roomsToPrepare.join(', Q')}
-                {roomsSource === 'inferred' && (
-                  <span className="ml-1 text-[10px] text-amber-400/70">(auto)</span>
-                )}
               </span>
             )}
           </p>
@@ -315,11 +311,10 @@ function TaskCard({
 
         {/* Lembrete geral */}
         <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-gray-200">
-          ✨ Limpar e organizar <strong>todas as divisões</strong> da casa.
+          ✨ Limpar <strong>todos os quartos</strong> e não esquecer de organizar e limpar o <strong>terraço</strong> e <strong>varanda</strong>.
           {roomsToPrepare && (
-            <div className="mt-1 text-amber-300 text-xs">
-              ↳ Quartos a preparar: <strong>Q{roomsToPrepare.join(', Q')}</strong>
-              {roomsSource === 'inferred' && <span className="ml-1 text-amber-400/70">(automático pelo nº de hóspedes)</span>}
+            <div className="mt-2 rounded-xl bg-amber-400/15 border border-amber-400/40 px-3 py-2 text-amber-100">
+              ⚠️ Esta reserva é só para <strong>Q{roomsToPrepare.join(', Q')}</strong> — não preparar os outros quartos.
             </div>
           )}
         </div>

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking, CleaningTask } from '@/lib/supabase';
-import { inferRoomsByGuests } from '@/lib/cleaning-rooms';
 import {
   CheckCircle2,
   Circle,
@@ -1347,10 +1346,6 @@ function OwnerInstructions({
   const initialNotes = (t.owner_notes || '').trim();
   // null/empty = "prepare every room" (default).
   const initialRooms = Array.isArray(t.rooms_to_prepare) ? [...t.rooms_to_prepare].sort() : null;
-  // Auto-suggested rooms based on num_guests, used both for the "(auto)"
-  // hint badge and for pre-filling the modal so the host sees what the
-  // cleaner will see by default and can confirm or override in one step.
-  const inferredRooms = inferRoomsByGuests(task.num_guests, villaRooms);
 
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
@@ -1359,7 +1354,6 @@ function OwnerInstructions({
   const allOptions = Array.from({ length: villaRooms }, (_, i) => i + 1);
   const isAll = rooms === null || rooms.length === 0 || rooms.length === villaRooms;
   const hasExplicitRooms = !!(initialRooms && initialRooms.length > 0 && initialRooms.length < villaRooms);
-  const hasAutoSuggestion = !hasExplicitRooms && !!inferredRooms;
   const hasInstructions = initialNotes.length > 0 || hasExplicitRooms;
 
   function toggleRoom(n: number) {
@@ -1391,9 +1385,7 @@ function OwnerInstructions({
         type="button"
         onClick={() => {
           setNotes(initialNotes);
-          // Pre-fill modal with inferred rooms when no explicit override
-          // exists, so opening the modal shows what the cleaner will see.
-          setRooms(initialRooms ?? inferredRooms);
+          setRooms(initialRooms);
           setOpen(true);
         }}
         className={`mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition-colors ${
@@ -1403,14 +1395,9 @@ function OwnerInstructions({
         }`}
         title="Instruções para a equipa de limpeza"
       >
-        📝 {hasInstructions ? 'Instruções' : hasAutoSuggestion ? 'Confirmar' : 'Adicionar nota'}
+        📝 {hasInstructions ? 'Instruções' : 'Adicionar nota'}
         {hasExplicitRooms && initialRooms && (
           <span className="font-mono">· Q{initialRooms.join(',Q')}</span>
-        )}
-        {hasAutoSuggestion && inferredRooms && (
-          <span className="font-mono opacity-70">
-            · Q{inferredRooms.join(',Q')} <span className="text-[10px]">(auto)</span>
-          </span>
         )}
       </button>
 
