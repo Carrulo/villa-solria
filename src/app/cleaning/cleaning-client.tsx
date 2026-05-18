@@ -117,6 +117,18 @@ export default function CleaningClient({
     return s;
   }, [tasks]);
 
+  // Days where new guests check in. Highlighted in the month grid with
+  // a bigger, bolder, green day-number so the cleaner can spot at a
+  // glance "someone is arriving here" — useful for prioritising the
+  // turnover and confirming the villa is ready by check-in time (16h).
+  const arrivalDates = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of tasks) {
+      if (t.checkin_date) s.add(t.checkin_date);
+    }
+    return s;
+  }, [tasks]);
+
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   function jumpToDate(date: string) {
@@ -149,6 +161,7 @@ export default function CleaningClient({
         <MonthCalendar
           dateIndex={dateIndex}
           occupiedDates={occupiedDates}
+          arrivalDates={arrivalDates}
           todayStr={todayStr}
           onPickDate={jumpToDate}
         />
@@ -481,11 +494,13 @@ function formatShortDate(iso: string): string {
 function MonthCalendar({
   dateIndex,
   occupiedDates,
+  arrivalDates,
   todayStr,
   onPickDate,
 }: {
   dateIndex: Map<string, { id: string; tab: 'today' | 'upcoming' | 'done' }>;
   occupiedDates: Set<string>;
+  arrivalDates: Set<string>;
   todayStr: string;
   onPickDate: (date: string) => void;
 }) {
@@ -563,6 +578,10 @@ function MonthCalendar({
           const isDone = tab === 'done';
           const isOccupied = !has && occupiedDates.has(c.iso);
           const isFreeFuture = c.inMonth && !has && !isOccupied && c.iso >= todayStr;
+          // Arrival day = a new guest checks in here. We render the day
+          // number bigger and bold-green on top of whatever the base
+          // background is, so the cleaner spots arrivals at a glance.
+          const isArrival = c.inMonth && arrivalDates.has(c.iso);
           return (
             <button
               key={c.iso}
@@ -571,8 +590,10 @@ function MonthCalendar({
               title={
                 has
                   ? isDone
-                    ? 'Limpeza feita'
-                    : 'Dia de limpeza'
+                    ? isArrival ? 'Limpeza feita · entrada de hóspede' : 'Limpeza feita'
+                    : isArrival ? 'Dia de limpeza · entrada de hóspede' : 'Dia de limpeza'
+                  : isArrival
+                  ? 'Entrada de hóspede'
                   : isOccupied
                   ? 'Casa ocupada (hóspedes)'
                   : isFreeFuture
@@ -593,7 +614,20 @@ function MonthCalendar({
                   : 'text-gray-500'
               } ${isToday ? 'ring-2 ring-blue-400/60' : ''}`}
             >
-              {c.day}
+              {isArrival && !has && !isOccupied ? (
+                // Free-future / standalone arrival day: show the number
+                // big and green so it visibly says "new guest arrives".
+                <span className="text-base font-extrabold text-green-300">{c.day}</span>
+              ) : isArrival ? (
+                // Cleaning + arrival on the same day (turnover): keep
+                // the yellow/green background but punch the digit out
+                // a bit and add a green underline ring.
+                <span className="text-base font-extrabold underline decoration-green-500 decoration-[3px] underline-offset-2">
+                  {c.day}
+                </span>
+              ) : (
+                c.day
+              )}
             </button>
           );
         })}
@@ -611,6 +645,9 @@ function MonthCalendar({
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="line-through decoration-gray-400 decoration-[1.5px]">00</span> Ocupada
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-base font-extrabold text-green-300">00</span> Entrada
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded ring-2 ring-blue-400/60" /> Hoje
