@@ -259,17 +259,37 @@ export async function POST(req: Request) {
 
   // Cleaning task at check-out (guests leave by 11h, cleaner has the
   // 11h-16h window before new arrivals — villa stays ready, no wait).
-  await supabase.from('cleaning_tasks').insert({
-    booking_id: bookingId,
-    cleaning_date: checkout_date,
-    checkin_date,
-    stay_checkout_date: checkout_date,
-    guest_name,
-    num_guests,
-    cleaning_fee_snapshot: baseFee,
-    laundry_fee_snapshot: 0,
-    rooms_with_laundry: 0,
-  });
+  //
+  // When enriching an external iCal entry, the cleaning_task ALREADY
+  // exists (created by iCal sync with guest_name="CLOSED - Not avail..."
+  // / "Reserved"). Inserting a second row here produced duplicate
+  // entries on /admin/cleaning ("ANGEL" + "CLOSED" on the same day).
+  // Instead, UPDATE the existing iCal cleaning_task with the proper
+  // guest_name + booking_id, and let the link block below finish wiring.
+  if (isEnrichingExternal) {
+    await supabase
+      .from('cleaning_tasks')
+      .update({
+        booking_id: bookingId,
+        guest_name,
+        num_guests,
+        cleaning_fee_snapshot: baseFee,
+      })
+      .eq('external_source', body.link_external!.external_source!)
+      .eq('external_ref', body.link_external!.external_ref!);
+  } else {
+    await supabase.from('cleaning_tasks').insert({
+      booking_id: bookingId,
+      cleaning_date: checkout_date,
+      checkin_date,
+      stay_checkout_date: checkout_date,
+      guest_name,
+      num_guests,
+      cleaning_fee_snapshot: baseFee,
+      laundry_fee_snapshot: 0,
+      rooms_with_laundry: 0,
+    });
+  }
 
   // Additional mid-stay cleanings (not linked via booking_id because of
   // the unique partial index — rely on admin to not duplicate).
