@@ -101,14 +101,19 @@ export default function CleaningClient({
     return m;
   }, [tabs]);
 
-  // Set of days the villa is occupied (checkin → day before checkout).
-  // Informative shade in the calendar so the cleaner can plan her own
-  // schedule around occupied stretches without expecting work mid-stay.
+  // Set of days the villa is mid-stay (strictly between check-in and
+  // check-out, not including either). Used as the strikethrough "ocupada"
+  // shade. We deliberately exclude the check-in day because that day
+  // already has its own "Entrada" marker (bold green underline) and
+  // doubling up was visually confusing on the public calendar.
   const occupiedDates = useMemo(() => {
     const s = new Set<string>();
     for (const t of tasks) {
       if (!t.checkin_date || !t.stay_checkout_date) continue;
       const start = new Date(t.checkin_date + 'T00:00:00Z');
+      // Skip the check-in day itself — it's an "Entrada" day, not a
+      // strictly-occupied day.
+      start.setUTCDate(start.getUTCDate() + 1);
       const end = new Date(t.stay_checkout_date + 'T00:00:00Z');
       for (let d = new Date(start); d < end; d.setUTCDate(d.getUTCDate() + 1)) {
         s.add(d.toISOString().slice(0, 10));
@@ -647,7 +652,10 @@ function MonthCalendar({
           <span className="line-through decoration-gray-400 decoration-[1.5px]">00</span> Ocupada
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="text-base font-extrabold text-green-300">00</span> Entrada
+          <span className="text-base font-extrabold text-green-300 underline decoration-green-500 decoration-[3px] underline-offset-2">
+            00
+          </span>
+          Entrada
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block w-3 h-3 rounded ring-2 ring-blue-400/60" /> Hoje
