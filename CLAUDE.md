@@ -2,11 +2,28 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-05-15 22:10)
+## 📍 Current State (updated 2026-09-01 21:15)
+- **🔴 CAUSA RAIZ ENCONTRADA (2026-09-01)**: o GitHub **desativou os 5 workflows agendados por inatividade** (`disabled_inactivity`). GitHub desliga crons em repos sem commits há 60 dias — último commit 18 Mai + 60 = **17 Jul**. Último `iCal Sync` automático: `2026-07-17T21:29Z`. Desde aí **nenhuma reserva Booking/Airbnb entrou no site** (risco de overbooking: as datas apareciam livres em villasolria.com).
+- **Reserva Booking de Setembro recuperada**: sync manual às 2026-09-01 20:06Z criou a task em falta — check-in **16 Set**, checkout **24 Set** (`CLOSED - Not available`, sem nome, normal no Booking). Foi a única reserva perdida no intervalo.
+- **iCal Sync reativado** (`gh workflow enable 259514419`) — está `active` e a correr de 15 em 15 min.
+- **Workflows reativados (2026-09-01)**: `iCal Sync`, `Pre-arrival emails`, `Review requests`, `Invoice Reminder` estão `active`. Usam igualdade exata de data, por isso não houve catch-up de emails para estadias antigas. Hóspedes entre 17 Jul e 1 Set não receberam pré-chegada nem pedido de review — perdido, não recuperável.
+- **🧹 App da empregada REMOVIDA (2026-09-01)**: branch `chore/remove-cleaner-app`. Bruno vai substituir o link/token por **envio de mensagem WhatsApp**. Removidos: `src/app/cleaning/*`, `src/app/api/cleaning/*` (update, photo-upload, daily-email), `src/lib/cleaning-checklist.ts`, `src/lib/cleaning-rooms.ts`, workflow `cleaning-daily-email.yml`, botões "Partilhar"/rotate token em `/admin/cleaning`, e `/cleaning` do `middleware.ts`. **Mantidos**: tabela `cleaning_tasks`, ledger `/admin/cleaning` (pagamentos limpeza+roupa), criação de tasks no sync/webhook/manual, e a `cleaning_fee` cobrada ao hóspede (nada disso foi tocado).
+- **Sobras a limpar quando o WhatsApp existir**: linhas `cleaner_token` e `cleaner_email` na tabela `settings` (órfãs, inofensivas) e o secret `CLEANING_EMAIL_SECRET` no GitHub.
+- **Prevenção pendente**: enquanto o repo estiver sem commits 60 dias, o GitHub volta a desligar tudo. Opção recomendada: mover o trigger do sync para o crontab do `vps-kontrolsat` (`curl https://villasolria.com/api/ical/sync`), independente da atividade do repo.
+
+## 📍 Previous State (updated 2026-09-01 21:05)
+- **Active branch**: main — working tree limpo, sincronizado com `origin/main` (`5b6eb30`). Sem trabalho em curso desde 18 Mai.
+- **Open PRs**: none
+- **Último trabalho (18 Mai)**: calendário do `/cleaning` — dias de chegada destacados, range "ocupado" já exclui o dia de check-in, legenda corrigida (`9c88efb`, `5b6eb30`); fim de `cleaning_task` duplicada ao enriquecer reserva iCal em `src/app/api/bookings/manual/route.ts` (`a6057eb`).
+- **Blockers**: campanhas Meta continuam PAUSADAS desde 6 Mai (ver Previous State) — validação CAPI nunca foi feita.
+- **⚠️ Sessões abertas em subpastas**: abrir o Claude Code dentro de `villa-solria/docs` cria um projeto separado (`~/.claude/projects/-Users-kontrolsat-Projects-villa-solria-docs`) e o histórico/memória não se junta ao do projeto. Abrir sempre na raiz `~/Projects/villa-solria`.
+- **⚠️ claude-mem parado**: última observação gravada em `~/.claude-mem/claude-mem.db` é de 2026-04-28 e nunca existiu projeto `villa-solria` lá. O handoff fiável é este CLAUDE.md.
+
+## 📍 Previous State (updated 2026-05-15 22:10)
 - **Cleaning model change (2026-05-15)**: `cleaning_date` agora = checkout day (não check-in). Hóspede sai ≤11h, empregada limpa 11h-16h, nova entrada ≥16h. Aplicado em iCal sync + Stripe webhook + manual bookings + admin backfill. 17 tarefas futuras unlinked migradas via UPDATE. Commit `8d9334c`.
 - **Cleaner mobile UI simplified (2026-05-15)**: `/cleaning` perdeu checklist de 14 itens + upload de fotos. Fica só lembrete + Roupas + Notas + botão Fechar. Fotos pedidas via WhatsApp. Commit `2846d7a`.
 
-## 📍 Previous State (updated 2026-05-06 21:30)
+## 📍 Previous State (updated 2026-05-06 21:30) — Meta Ads
 - **Active branch**: main (clean — commit `96965c7` em prod)
 - **Open PRs**: none
 - **In-flight work**: Campanhas Meta **PAUSADAS** desde 6 Mai 21:25 para validar CAPI ponta-a-ponta antes de relançar. Próximos passos:
@@ -54,12 +71,11 @@
 - **Supabase** Postgres + auth. Project ref: `esqkhahcifdtthnvlyos`.
 - **Vercel** auto-deploy from `main`. Public domain: `villasolria.com`.
 - **Stripe** for website bookings + refunds.
-- **Resend** for transactional emails (pre-arrival, daily cleaning).
+- **Resend** for transactional emails (pre-arrival, review requests). O email diário de limpeza foi removido em 2026-09-01.
 
 ## 📂 File map
 - `src/app/admin/bookings/page.tsx` — unified reservations list + grouping UI
-- `src/app/admin/cleaning/page.tsx` — cleaning task ledger
-- `src/app/cleaning/page.tsx` — public cleaner view (token-gated)
+- `src/app/admin/cleaning/page.tsx` — cleaning task ledger (única UI de limpezas desde 2026-09-01)
 - `src/app/api/ical/sync/route.ts` — Booking + Airbnb iCal pull
 - `src/app/api/bookings/link-external/route.ts` — set/clear cleaning_task links
 - `src/app/api/bookings/manual/route.ts` — admin-created bookings
