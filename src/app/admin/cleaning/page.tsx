@@ -50,6 +50,7 @@ const DEFAULT_PRICES: PriceSettings = {
 type FilterState = 'pending' | 'closed' | 'all';
 
 interface OwnerInstructionsPatch {
+  kind: 'turnover' | 'midstay';
   owner_notes: string | null;
   rooms_to_prepare: number[] | null;
   room_plan: Record<string, number> | null;
@@ -387,6 +388,7 @@ export default function AdminCleaningPage() {
           rooms_to_prepare: t.rooms_to_prepare ?? null,
           room_plan: t.room_plan ?? null,
           towels_override: t.towels_override ?? null,
+          kind: t.kind ?? 'turnover',
           owner_notes: t.owner_notes ?? null,
           num_guests: t.num_guests,
         },
@@ -1494,6 +1496,7 @@ function OwnerInstructions({
   const [towels, setTowels] = useState<string>(
     task.towels_override != null ? String(task.towels_override) : ''
   );
+  const [kind, setKind] = useState<'turnover' | 'midstay'>(task.kind ?? 'turnover');
 
   const guests = allOptions.reduce((sum, n) => sum + (plan[n] || 0), 0);
   const usedRooms = allOptions.filter((n) => (plan[n] || 0) > 0);
@@ -1525,6 +1528,7 @@ function OwnerInstructions({
     for (const n of usedRooms) cleanPlan[String(n)] = plan[n];
     const parsedTowels = towels.trim() === '' ? null : Number(towels);
     onSave({
+      kind,
       owner_notes: trimmed.length > 0 ? trimmed : null,
       // Kept in step with room_plan so anything still reading the older
       // column sees the same rooms.
@@ -1542,7 +1546,9 @@ function OwnerInstructions({
     setNotes('');
     setPlan({});
     setTowels('');
+    setKind('turnover');
     onSave({
+      kind: 'turnover',
       owner_notes: null,
       rooms_to_prepare: null,
       room_plan: null,
@@ -1559,6 +1565,7 @@ function OwnerInstructions({
           setNotes(initialNotes);
           setPlan(initialPlan);
           setTowels(task.towels_override != null ? String(task.towels_override) : '');
+          setKind(task.kind ?? 'turnover');
           setOpen(true);
         }}
         className={`mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition-colors ${
@@ -1568,7 +1575,8 @@ function OwnerInstructions({
         }`}
         title="Quem dorme onde, toalhas e notas para a limpeza"
       >
-        📝 {hasInstructions ? 'Instruções' : 'Definir quartos'}
+        {task.kind === 'midstay' ? '🧼 A meio da estadia' : '📝'}{' '}
+        {task.kind === 'midstay' ? '' : hasInstructions ? 'Instruções' : 'Definir quartos'}
         {savedRooms.length > 0 && (
           <span>· {savedRooms.map((n) => shortRoom(n)).join(' + ')}</span>
         )}
@@ -1584,7 +1592,38 @@ function OwnerInstructions({
               {task.guest_name ? ` · ${task.guest_name}` : ''}
             </p>
 
-            <span className="block text-xs text-gray-400 mb-2">Quem dorme em cada quarto</span>
+            <span className="block text-xs text-gray-400 mb-2">Tipo de limpeza</span>
+            <div className="flex items-center gap-2 mb-4">
+              {(
+                [
+                  ['turnover', 'Completa (saída)'],
+                  ['midstay', 'A meio da estadia'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setKind(value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                    kind === value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {kind === 'midstay' && (
+              <p className="text-[11px] text-gray-500 mb-4">
+                Só lençóis, toalhas e casas de banho. A mensagem avisa que os hóspedes
+                estão na casa e que a hora é combinada com eles.
+              </p>
+            )}
+
+            <span className="block text-xs text-gray-400 mb-2">
+              {kind === 'midstay' ? 'Quartos onde trocar lençóis' : 'Quem dorme em cada quarto'}
+            </span>
             <div className="space-y-2 mb-4">
               {allOptions.map((n) => {
                 const profile = roomProfile(n);
@@ -1657,15 +1696,15 @@ function OwnerInstructions({
                   &quot;não mexer, fica só a coberta&quot;.
                 </p>
                 <p className="text-[11px] text-gray-500 mt-1">
-                  {formatHours(personHours(usedRooms.length))}-pessoa ·{' '}
-                  {formatHours(wallClockHours(usedRooms.length))} com {CLEANERS} pessoas
+                  {formatHours(personHours(usedRooms.length, kind))}-pessoa ·{' '}
+                  {formatHours(wallClockHours(usedRooms.length, kind))} com {CLEANERS} pessoas
                 </p>
                 <p className="text-[11px] text-gray-300 mt-1">
-                  Limpeza {labourCost(usedRooms.length, hourlyRate).toFixed(2)} € + lavandaria{' '}
+                  Limpeza {labourCost(usedRooms.length, hourlyRate, kind).toFixed(2)} € + lavandaria{' '}
                   {laundryCost(usedRooms.length, laundryTable).toFixed(2)} € ={' '}
                   <span className="font-semibold">
                     {(
-                      labourCost(usedRooms.length, hourlyRate) +
+                      labourCost(usedRooms.length, hourlyRate, kind) +
                       laundryCost(usedRooms.length, laundryTable)
                     ).toFixed(2)}{' '}
                     €
@@ -1675,13 +1714,13 @@ function OwnerInstructions({
                   <p className="text-[11px] text-emerald-300 mt-0.5">
                     Casa toda seriam{' '}
                     {(
-                      labourCost(villaRooms, hourlyRate) + laundryCost(villaRooms, laundryTable)
+                      labourCost(villaRooms, hourlyRate, kind) + laundryCost(villaRooms, laundryTable)
                     ).toFixed(2)}{' '}
                     € — poupas{' '}
                     {(
-                      labourCost(villaRooms, hourlyRate) +
+                      labourCost(villaRooms, hourlyRate, kind) +
                       laundryCost(villaRooms, laundryTable) -
-                      labourCost(usedRooms.length, hourlyRate) -
+                      labourCost(usedRooms.length, hourlyRate, kind) -
                       laundryCost(usedRooms.length, laundryTable)
                     ).toFixed(2)}{' '}
                     €

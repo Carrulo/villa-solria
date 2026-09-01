@@ -90,6 +90,8 @@ export interface CleaningTask {
   towels_override: number | null;
   /** Person-hours the cleaner reported for this job; drives the payment. */
   hours_worked: number | null;
+  /** 'turnover' = full reset between stays · 'midstay' = linen+bathrooms mid-stay. */
+  kind: 'turnover' | 'midstay';
   linked_to_booking_id: string | null;
   linked_to_external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
   linked_to_external_ref: string | null;

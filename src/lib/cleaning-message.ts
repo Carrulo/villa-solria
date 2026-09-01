@@ -9,7 +9,7 @@
 // House rule: guests leave by 11h, new guests arrive from 16h, so a
 // same-day turnover must happen inside that window.
 
-import { describeRoom, shortRoom, roomProfile, MAX_GUESTS } from './villa-rooms';
+import { describeRoom, shortRoom, roomProfile, BATHROOMS, MAX_GUESTS } from './villa-rooms';
 
 export const CHECKOUT_HOUR = '11h';
 export const CHECKIN_HOUR = '16h';
@@ -23,6 +23,8 @@ export interface CleaningMessageTask {
   towels_override: number | null;
   owner_notes: string | null;
   num_guests: number | null;
+  /** A mid-stay intervention is a different job to a turnover. */
+  kind?: 'turnover' | 'midstay';
 }
 
 /** Rooms with at least one person, in order. */
@@ -115,6 +117,10 @@ export function buildCleaningMessage({
   villaRooms: number;
 }): string {
   const lines: string[] = [];
+
+  if (task.kind === 'midstay') {
+    return buildMidstayMessage(task, villaRooms);
+  }
 
   lines.push(`🧹 *Limpeza — ${formatPtDate(task.cleaning_date)}*`);
   lines.push('');
@@ -232,5 +238,48 @@ export function buildUpcomingMessage(upcoming: UpcomingCleaning[]): string {
   }
   lines.push('');
   lines.push('_Mando os quartos e as toalhas de cada uma mais perto do dia. Podem aparecer mais reservas._');
+  return lines.join('\n');
+}
+
+/**
+ * Mid-stay intervention on a long booking: swap the linen and towels,
+ * clean the bathrooms, leave everything else exactly as the guests left
+ * it. No checkout window applies — the hour is agreed with them.
+ */
+function buildMidstayMessage(task: CleaningMessageTask, villaRooms: number): string {
+  const lines: string[] = [];
+  lines.push(`🧼 *Limpeza a meio da estadia — ${formatPtDate(task.cleaning_date)}*`);
+  lines.push('');
+  lines.push(
+    'Os hóspedes continuam na casa e as coisas deles estão espalhadas — *não arrumar nem mexer nos pertences*.'
+  );
+  lines.push('');
+
+  const planned = occupiedRooms(task.room_plan);
+  const rooms =
+    planned.length > 0
+      ? planned
+      : Array.isArray(task.rooms_to_prepare) && task.rooms_to_prepare.length > 0
+      ? [...task.rooms_to_prepare].sort((a, b) => a - b)
+      : Array.from({ length: villaRooms }, (_, i) => i + 1);
+
+  lines.push('*O que é preciso:*');
+  lines.push(`• Trocar lençóis: ${listRooms(rooms)}`);
+
+  const guests = totalGuests(task.room_plan);
+  const towels = task.towels_override ?? (guests > 0 ? guests : task.num_guests);
+  lines.push(towels ? `• Toalhas lavadas: ${towels}` : '• Trocar as toalhas');
+  lines.push(`• Limpar as ${BATHROOMS} casas de banho`);
+  lines.push('');
+  lines.push('O resto da casa fica como está.');
+
+  const note = (task.owner_notes || '').trim();
+  if (note) {
+    lines.push('');
+    lines.push(`📝 ${note}`);
+  }
+
+  lines.push('');
+  lines.push('⏰ *A hora tem de ser combinada com os hóspedes.*');
   return lines.join('\n');
 }

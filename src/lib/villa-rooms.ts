@@ -47,6 +47,9 @@ export const ROOM_PROFILES: RoomProfile[] = [
   },
 ];
 
+/** Two bathrooms, and they are the bulk of a mid-stay intervention. */
+export const BATHROOMS = 2;
+
 /** Max occupancy: 6 people plus a baby in the cot. */
 export const MAX_GUESTS = ROOM_PROFILES.reduce((sum, r) => sum + r.sleeps, 0);
 export const HAS_COT = true;

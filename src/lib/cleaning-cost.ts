@@ -12,13 +12,29 @@ export const CLEANERS = 2;
 export const COMMON_AREA_PERSON_HOURS = 2.5;
 export const PER_ROOM_PERSON_HOURS = 0.5;
 
-export function personHours(roomsPrepared: number): number {
-  return COMMON_AREA_PERSON_HOURS + PER_ROOM_PERSON_HOURS * Math.max(0, roomsPrepared);
+// A mid-stay intervention is a different job: linen and towels swapped,
+// the two bathrooms cleaned, nothing else — the guests' things stay put.
+// First guess until the cleaner's own reported hours say otherwise.
+export const MIDSTAY_BATHROOMS_PERSON_HOURS = 0.75;
+export const MIDSTAY_PER_ROOM_PERSON_HOURS = 0.25;
+
+export function personHours(
+  roomsPrepared: number,
+  kind: 'turnover' | 'midstay' = 'turnover'
+): number {
+  const rooms = Math.max(0, roomsPrepared);
+  if (kind === 'midstay') {
+    return MIDSTAY_BATHROOMS_PERSON_HOURS + MIDSTAY_PER_ROOM_PERSON_HOURS * rooms;
+  }
+  return COMMON_AREA_PERSON_HOURS + PER_ROOM_PERSON_HOURS * rooms;
 }
 
 /** Wall-clock time with the usual pair working together. */
-export function wallClockHours(roomsPrepared: number): number {
-  return personHours(roomsPrepared) / CLEANERS;
+export function wallClockHours(
+  roomsPrepared: number,
+  kind: 'turnover' | 'midstay' = 'turnover'
+): number {
+  return personHours(roomsPrepared, kind) / CLEANERS;
 }
 
 /** 3.5 → "3h30" · 2 → "2h" */
@@ -33,8 +49,12 @@ export function formatHours(hours: number): string {
  * Labour at the agreed hourly rate. The rate is per cleaner, so the pair
  * working 2h bills 4 person-hours.
  */
-export function labourCost(roomsPrepared: number, hourlyRate: number): number {
-  return personHours(roomsPrepared) * hourlyRate;
+export function labourCost(
+  roomsPrepared: number,
+  hourlyRate: number,
+  kind: 'turnover' | 'midstay' = 'turnover'
+): number {
+  return personHours(roomsPrepared, kind) * hourlyRate;
 }
 
 /** The host's laundry table is keyed by how many rooms were used. */
