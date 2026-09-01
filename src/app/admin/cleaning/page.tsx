@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import type { Booking, CleaningTask } from '@/lib/supabase';
 import { buildCleaningMessage, type UpcomingCleaning } from '@/lib/cleaning-message';
 import { whatsAppLink } from '@/lib/whatsapp';
+import { roomProfile, shortRoom } from '@/lib/villa-rooms';
 import {
   CheckCircle2,
   Circle,
@@ -1413,7 +1414,7 @@ function OwnerInstructions({
       >
         📝 {hasInstructions ? 'Instruções' : 'Adicionar nota'}
         {hasExplicitRooms && initialRooms && (
-          <span className="font-mono">· Q{initialRooms.join(',Q')}</span>
+          <span>· {initialRooms.map((n) => shortRoom(n)).join(' + ')}</span>
         )}
       </button>
 
@@ -1442,24 +1443,30 @@ function OwnerInstructions({
                 </button>
                 {allOptions.map((n) => {
                   const active = !isAll && (rooms || []).includes(n);
+                  const profile = roomProfile(n);
                   return (
                     <button
                       key={n}
                       type="button"
                       onClick={() => toggleRoom(n)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                      title={`${profile.floor} · ${profile.beds}`}
+                      className={`px-3 py-1.5 rounded-lg text-left ${
                         active
                           ? 'bg-amber-500/30 text-amber-100 border border-amber-400/50'
                           : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
                       }`}
                     >
-                      Q{n}
+                      <span className="block text-xs font-medium">
+                        Q{n} {profile.name}
+                      </span>
+                      <span className="block text-[10px] opacity-70">{profile.beds}</span>
                     </button>
                   );
                 })}
               </div>
               <p className="text-[11px] text-gray-500 mt-1">
-                Quartos não escolhidos aparecem à equipa como &quot;só cobertor&quot;.
+                Quartos não escolhidos vão na mensagem como &quot;não mexer, fica só o
+                cobertor&quot; — poupa lavar roupa de camas onde ninguém dormiu.
               </p>
             </label>
 
@@ -1469,7 +1476,7 @@ function OwnerInstructions({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
-                placeholder="ex: Casal apenas — deixar Q2/Q3 com cobertor. Levar toalhas extra para o Q1."
+                placeholder="ex: 2 adultos + 1 criança. Preparar berço no Principal. Toalhas extra."
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none"
               />
             </label>

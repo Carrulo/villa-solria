@@ -9,6 +9,8 @@
 // House rule: guests leave by 11h, new guests arrive from 16h, so a
 // same-day turnover must happen inside that window.
 
+import { describeRoom, shortRoom, MAX_GUESTS } from './villa-rooms';
+
 export const CHECKOUT_HOUR = '11h';
 export const CHECKIN_HOUR = '16h';
 
@@ -58,9 +60,9 @@ export function formatPtDate(iso: string): string {
   return `${WEEKDAYS[date.getUTCDay()]}, ${d} ${MONTHS[m - 1]}`;
 }
 
-/** [1, 2] → "Q1 e Q2" · [1, 2, 3] → "Q1, Q2 e Q3" */
+/** [1, 2] → "Q1 Principal e Q2 Queen" */
 function listRooms(rooms: number[]): string {
-  const labels = rooms.map((n) => `Q${n}`);
+  const labels = rooms.map((n) => shortRoom(n));
   if (labels.length === 1) return labels[0];
   return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`;
 }
@@ -106,14 +108,20 @@ export function buildCleaningMessage({
     const rest = Array.from({ length: villaRooms }, (_, i) => i + 1).filter(
       (n) => !explicit.includes(n)
     );
-    lines.push(`🛏 Preparar só: *${listRooms(explicit)}*`);
-    lines.push(`${listRooms(rest)}: não mexer, fica só o cobertor (não é preciso lavar a roupa).`);
+    lines.push('🛏 *Preparar só estes quartos:*');
+    for (const n of explicit) lines.push(`• ${describeRoom(n)}`);
+    if (rest.length > 0) {
+      lines.push('');
+      lines.push(`❌ Não mexer: ${listRooms(rest)} — fica só o cobertor, sem lavar roupa.`);
+    }
   } else {
-    lines.push(`🛏 Preparar *todos os quartos* (${villaRooms}).`);
+    lines.push(`🛏 *Preparar os ${villaRooms} quartos:*`);
+    for (let n = 1; n <= villaRooms; n++) lines.push(`• ${describeRoom(n)}`);
   }
 
   if (task.num_guests != null) {
-    lines.push(`Hóspedes: ${task.num_guests}`);
+    lines.push('');
+    lines.push(`Hóspedes: ${task.num_guests}${task.num_guests >= MAX_GUESTS ? ' (casa cheia)' : ''}`);
   }
 
   // 3. Anything the host typed for this specific stay.
