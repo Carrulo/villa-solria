@@ -104,23 +104,31 @@ function listRooms(rooms: number[]): string {
   return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`;
 }
 
+/** "Olá Leonor 👋" — skipped when no name is on file. */
+function greeting(cleanerName?: string | null): string[] {
+  const name = (cleanerName || '').trim();
+  return name ? [`Olá ${name} 👋`, ''] : [];
+}
+
 export function buildCleaningMessage({
   task,
   isTurn,
   upcoming,
   villaRooms,
+  cleanerName,
 }: {
   task: CleaningMessageTask;
   /** Another stay checks in on this cleaning day. */
   isTurn: boolean;
   upcoming: UpcomingCleaning[];
   villaRooms: number;
+  cleanerName?: string | null;
 }): string {
-  const lines: string[] = [];
-
   if (task.kind === 'midstay') {
-    return buildMidstayMessage(task, villaRooms);
+    return buildMidstayMessage(task, villaRooms, cleanerName);
   }
+
+  const lines: string[] = greeting(cleanerName);
 
   lines.push(`🧹 *Limpeza — ${formatPtDate(task.cleaning_date)}*`);
   lines.push('');
@@ -224,11 +232,19 @@ export function buildCleaningMessage({
  * is pinned to the 11h-16h window. Details of each job (rooms, towels)
  * still go out per cleaning, closer to the day.
  */
-export function buildUpcomingMessage(upcoming: UpcomingCleaning[]): string {
+export function buildUpcomingMessage(
+  upcoming: UpcomingCleaning[],
+  cleanerName?: string | null
+): string {
+  const name = (cleanerName || '').trim();
   if (upcoming.length === 0) {
-    return 'Olá! Para já não há limpezas marcadas. Aviso assim que entrar alguma reserva.';
+    return `Olá${name ? ` ${name}` : ''}! Para já não há limpezas marcadas. Aviso assim que entrar alguma reserva.`;
   }
-  const lines: string[] = ['🧹 *Próximas limpezas — Villa Solria*', ''];
+  const lines: string[] = [
+    ...greeting(cleanerName),
+    '🧹 *Próximas limpezas — Villa Solria*',
+    '',
+  ];
   for (const u of upcoming) {
     lines.push(
       u.isTurn
@@ -246,8 +262,12 @@ export function buildUpcomingMessage(upcoming: UpcomingCleaning[]): string {
  * clean the bathrooms, leave everything else exactly as the guests left
  * it. No checkout window applies — the hour is agreed with them.
  */
-function buildMidstayMessage(task: CleaningMessageTask, villaRooms: number): string {
-  const lines: string[] = [];
+function buildMidstayMessage(
+  task: CleaningMessageTask,
+  villaRooms: number,
+  cleanerName?: string | null
+): string {
+  const lines: string[] = greeting(cleanerName);
   lines.push(`🧼 *Limpeza a meio da estadia — ${formatPtDate(task.cleaning_date)}*`);
   lines.push('');
   lines.push(

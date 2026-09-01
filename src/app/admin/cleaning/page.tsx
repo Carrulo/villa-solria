@@ -70,6 +70,8 @@ export default function AdminCleaningPage() {
   const [showAvulsa, setShowAvulsa] = useState(false);
   const [cleanerPhone, setCleanerPhone] = useState('');
   const [phoneDraft, setPhoneDraft] = useState('');
+  const [cleanerName, setCleanerName] = useState('');
+  const [nameDraft, setNameDraft] = useState('');
 
   useEffect(() => {
     void load();
@@ -99,7 +101,7 @@ export default function AdminCleaningPage() {
       supabase
         .from('settings')
         .select('key, value')
-        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room', 'cleaner_phone', 'cleaner_hourly_rate']),
+        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room', 'cleaner_phone', 'cleaner_hourly_rate', 'cleaner_name']),
     ]);
 
     const rawTasks = (tasksRes.data || []) as CleaningTask[];
@@ -169,6 +171,9 @@ export default function AdminCleaningPage() {
     const phone = byKey.cleaner_phone ?? '';
     setCleanerPhone(phone);
     setPhoneDraft(phone);
+    const name = byKey.cleaner_name ?? '';
+    setCleanerName(name);
+    setNameDraft(name);
     setLoading(false);
   }
 
@@ -202,6 +207,7 @@ export default function AdminCleaningPage() {
         value: JSON.stringify(priceDraft.laundry_fee_per_room),
       },
       { key: 'cleaner_phone', value: phoneDraft.trim() },
+      { key: 'cleaner_name', value: nameDraft.trim() },
     ];
     const { error } = await supabase.from('settings').upsert(rows, { onConflict: 'key' });
     setSavingPrices(false);
@@ -211,6 +217,7 @@ export default function AdminCleaningPage() {
     }
     setPrices(priceDraft);
     setCleanerPhone(phoneDraft.trim());
+    setCleanerName(nameDraft.trim());
     showToast('Definições guardadas');
   }
 
@@ -395,11 +402,12 @@ export default function AdminCleaningPage() {
         isTurn: !!sequenceInfo[t.id]?.isTurn,
         upcoming,
         villaRooms: prices.villa_rooms,
+        cleanerName,
       });
       out[t.id] = whatsAppLink(cleanerPhone, text);
     }
     return out;
-  }, [tasks, sequenceInfo, prices.villa_rooms, cleanerPhone]);
+  }, [tasks, sequenceInfo, prices.villa_rooms, cleanerPhone, cleanerName]);
 
   // One message with every cleaning still ahead, for when she asks
   // "what have I got coming up?".
@@ -410,8 +418,8 @@ export default function AdminCleaningPage() {
       .sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date))
       .slice(0, 8)
       .map((t) => ({ cleaning_date: t.cleaning_date, isTurn: !!sequenceInfo[t.id]?.isTurn }));
-    return whatsAppLink(cleanerPhone, buildUpcomingMessage(upcoming));
-  }, [tasks, sequenceInfo, cleanerPhone]);
+    return whatsAppLink(cleanerPhone, buildUpcomingMessage(upcoming, cleanerName));
+  }, [tasks, sequenceInfo, cleanerPhone, cleanerName]);
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
@@ -539,6 +547,16 @@ export default function AdminCleaningPage() {
             value={priceDraft.cleaning_base_fee}
             onChange={(v) => setPriceDraft((p) => ({ ...p, cleaning_base_fee: v }))}
           />
+          <label className="block">
+            <span className="block text-xs text-gray-400 mb-1">Nome da empregada</span>
+            <input
+              type="text"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="ex: Leonor"
+              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+            />
+          </label>
           <label className="block">
             <span className="block text-xs text-gray-400 mb-1">
               WhatsApp da empregada
