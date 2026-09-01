@@ -57,7 +57,30 @@ export function labourCost(
   return personHours(roomsPrepared, kind) * hourlyRate;
 }
 
-/** The host's laundry table is keyed by how many rooms were used. */
+// The laundry charges by weight, so the bill follows what actually goes
+// in the bag: bed linen for the rooms that were slept in, plus towels.
+// Only sheets and towels go out — duvets, pillows and blankets stay.
+//
+// Calibrated against the host's own figure: the whole house (3 rooms of
+// linen + towels for 6) comes to about 25 € with VAT at 3,50 €/kg.
+export const LINEN_KG_PER_ROOM = 1.4;
+export const KG_PER_TOWEL = 0.25;
+
+export function laundryKg(roomsWashed: number, towels: number): number {
+  return LINEN_KG_PER_ROOM * Math.max(0, roomsWashed) + KG_PER_TOWEL * Math.max(0, towels);
+}
+
+/** Estimated laundry bill, VAT included. */
+export function laundryByWeight(
+  roomsWashed: number,
+  towels: number,
+  pricePerKg: number,
+  vatPercent: number
+): number {
+  return laundryKg(roomsWashed, towels) * pricePerKg * (1 + vatPercent / 100);
+}
+
+/** Legacy: flat table keyed by rooms, from when the cleaner did the washing. */
 export function laundryCost(
   roomsPrepared: number,
   table: Record<string, number>
