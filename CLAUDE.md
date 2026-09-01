@@ -17,14 +17,12 @@
   - **Conflito VRBO 1-2 Set 2026**: dois calendários importados na mesma noite (Kiko via site + bloqueio 1-2 Set que existe no Airbnb). Provavelmente benigno. O Airbnb tem bloqueios manuais órfãos em 1-2 Set 2026 e 1-2 Set 2027 sem reserva correspondente — remover se não fizerem falta.
 - **`Invoice Reminder` continua só no GitHub** — o endpoint `/api/invoices/check-pending` exige `INVOICE_REMINDER_TOKEN` quando essa env existe na Vercel. Para o mover, criar `/opt/cronjobs/villa-solria/.env` (chmod 600) com o token e passar o header no `call.sh`. Nunca inline no crontab.
 
-## 🔴 Open incident — site → VRBO iCal import não funciona
-- **Sintoma**: reservas do site não aparecem no calendário do VRBO. Prova (2026-09-01): reserva **Raquel 12-13 Set** (criada 29 Jul, `bookings`, `status=confirmed`) está no feed (`DTSTART:20260912/DTEND:20260913/SUMMARY:Reserved`) e **está** bloqueada no Airbnb, mas o VRBO mostra 12 e 13 à venda (212 €/207 €).
-- **O feed está bom**: `content-type: text/calendar; charset=utf-8`, CRLF, `VERSION:2.0`, `PRODID`, `UID`+`DTSTAMP` por evento, datas `VALUE=DATE`. O Airbnb ingere-o sem problemas. O problema é do importador do VRBO ou da subscrição configurada lá.
-- **Histórico**: já se tentou contornar em 2026-04-28 — `e8fd2c3` (expor em `/api/ical/villa-solria.ics` para importadores estritos) e `e7b752b` (export minimal estilo Airbnb). Não resolveu.
-- **Workaround em uso**: bloqueio manual no VRBO. O bloco `8 Ago → 5 Set` no feed do VRBO é isso mesmo — cobre Patricia+Bruno+Kiko. A Raquel escapou.
-- **Próximo passo**: abrir no VRBO a secção de **importar/sincronizar** calendários (não "Opções de exportação") e ler o estado/erro da subscrição do villasolria.com. Sem essa mensagem, qualquer alteração ao feed é adivinhação.
-- **site → Airbnb FUNCIONA** (confirmado 2026-09-01 pelo multicalendar): a noite 12 Set está fechada no Airbnb = reserva Raquel 12-13 importada do nosso feed. Não é "dia de preparação" do Airbnb — se fosse, as noites 15 e 24 (à volta da estadia Booking 16-24) também estariam fechadas, e estão abertas. Ou seja o feed é aceite por Airbnb e recusado só pelo VRBO.
-- **Não é automatizável**: o VRBO não reexporta blocos importados, por isso o site não consegue verificar sozinho se a reserva lá chegou. Verificação só a olho no calendário do VRBO.
+## ✅ Resolvido — site → VRBO iCal import (2026-09-01)
+- **Causa**: no VRBO, em *Configurações → Disponibilidade → Sincronização do calendário → Calendários importados*, só existiam `Airbnb` e `Booking.com`. **O villasolria.com nunca lá foi adicionado.** Não era o feed nem o parser — as tentativas de Abril (`e8fd2c3`, `e7b752b`) atacaram o problema errado.
+- **Correção**: adicionado `Villa Solria Website` → `https://villasolria.com/api/ical/villa-solria.ics`. VRBO confirmou "Operação concluída" e sincronizou logo — o dia 3 Set passou de `Bloqueado` a `Bloqueado + Importado` (estadia do Kiko a chegar pelo feed). VRBO ressincroniza a cada ~30 min.
+- **Pendente (cosmético)**: o bloqueio manual `8 Ago → 5 Set` que o Bruno tinha posto no VRBO sobrepõe-se agora ao mesmo período importado e gera o marcador `Conflito` em 1-5 Set. Apagar esse bloqueio manual limpa o aviso; as datas continuam fechadas pelo feed.
+- **Booking também estava OK**: calendário do Booking com 12 Set `Fechado` e barra `Villa Solria W…`, 1-4 Set `Fechado` (Kiko). As três ligações do painel *Sincronizar calendários* do Booking estão `OK`.
+- **Mapa final**: site→Airbnb ✅ · site→Booking ✅ · site→VRBO ✅ (desde hoje) · Booking→Airbnb/VRBO ✅.
 
 ## 📍 Previous State (updated 2026-09-01 21:05)
 - **Active branch**: main — working tree limpo, sincronizado com `origin/main` (`5b6eb30`). Sem trabalho em curso desde 18 Mai.
