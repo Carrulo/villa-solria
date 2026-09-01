@@ -202,10 +202,6 @@ export default function AdminCleaningPage() {
     }
   }
 
-  function laundryFee(rooms: number, table: LaundryTable): number {
-    if (rooms <= 0) return 0;
-    return Number(table[String(rooms)] ?? 0);
-  }
 
   async function saveSettings() {
     setSavingPrices(true);
@@ -323,7 +319,14 @@ export default function AdminCleaningPage() {
   }
 
   async function markLaundryTaken(t: CleaningTask, rooms: number) {
-    const fee = laundryFee(rooms, prices.laundry_fee_per_room);
+    // What the laundry will charge for this bag, by weight.
+    const towels = t.towels_override ?? t.num_guests ?? rooms * 2;
+    const fee = laundryByWeight(
+      rooms,
+      towels,
+      prices.laundry_price_per_kg,
+      prices.laundry_vat_percent
+    );
     await updateTask(t.id, {
       laundry_taken: true,
       laundry_taken_at: new Date().toISOString(),
@@ -436,14 +439,13 @@ export default function AdminCleaningPage() {
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
-      // A task is only closed when BOTH parts are resolved:
-      // - cleaning: done + paid
-      // - laundry: explicitly marked (taken=true), and if rooms>0 also paid.
-      //   laundry_taken=false means "not yet decided" — keep in pending.
-      const cleaningClosed = t.cleaning_done && t.cleaning_paid;
-      const laundryClosed =
-        t.laundry_taken && (t.rooms_with_laundry === 0 || t.laundry_paid);
-      const isClosed = cleaningClosed && laundryClosed;
+      // Closing follows the money owed, and the only person owed is the
+      // cleaner: done + paid. Laundry used to block this too, back when
+      // she did the washing and was paid per room. It now goes to a
+      // laundry that bills the host directly, so the row is a cost
+      // record, not a pending payment — it must not keep a settled job
+      // sitting in "Por fechar" forever.
+      const isClosed = t.cleaning_done && t.cleaning_paid;
       if (filter === 'pending') return !isClosed;
       if (filter === 'closed') return isClosed;
       return true;
