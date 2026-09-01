@@ -20,7 +20,8 @@
 ## ✅ Resolvido — site → VRBO iCal import (2026-09-01)
 - **Causa**: no VRBO, em *Configurações → Disponibilidade → Sincronização do calendário → Calendários importados*, só existiam `Airbnb` e `Booking.com`. **O villasolria.com nunca lá foi adicionado.** Não era o feed nem o parser — as tentativas de Abril (`e8fd2c3`, `e7b752b`) atacaram o problema errado.
 - **Correção**: adicionado `Villa Solria Website` → `https://villasolria.com/api/ical/villa-solria.ics`. VRBO confirmou "Operação concluída" e sincronizou logo — o dia 3 Set passou de `Bloqueado` a `Bloqueado + Importado` (estadia do Kiko a chegar pelo feed). VRBO ressincroniza a cada ~30 min.
-- **Pendente (cosmético)**: o bloqueio manual `8 Ago → 5 Set` que o Bruno tinha posto no VRBO sobrepõe-se agora ao mesmo período importado e gera o marcador `Conflito` em 1-5 Set. Apagar esse bloqueio manual limpa o aviso; as datas continuam fechadas pelo feed.
+- **Bloqueio manual do VRBO apagado (2026-09-01)**: o `Bloquear 8/08 → 5/09` (28 noites) foi eliminado — já era redundante com o import. Agosto ficou com as barras `Villa Solria Website` (8-15, 15-22, 22-29) e 1-4 Set continuam fechados via `Importado, 29 Ago → 5 Set`. Nenhuma data abriu.
+- **Conflito residual 1-2 Set (cosmético)**: dois calendários *importados* na mesma noite — site (Kiko 29 Ago→5 Set) + Airbnb (1→2 Set). A origem é um **bloqueio órfão no Airbnb em 1-2 Set 2026 e 1-2 Set 2027**, sem reserva associada. Apagá-lo no Airbnb limpa o aviso.
 - **Booking também estava OK**: calendário do Booking com 12 Set `Fechado` e barra `Villa Solria W…`, 1-4 Set `Fechado` (Kiko). As três ligações do painel *Sincronizar calendários* do Booking estão `OK`.
 - **Mapa final**: site→Airbnb ✅ · site→Booking ✅ · site→VRBO ✅ (desde hoje) · Booking→Airbnb/VRBO ✅.
 
