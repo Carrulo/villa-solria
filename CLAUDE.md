@@ -23,6 +23,7 @@
 - **Histórico**: já se tentou contornar em 2026-04-28 — `e8fd2c3` (expor em `/api/ical/villa-solria.ics` para importadores estritos) e `e7b752b` (export minimal estilo Airbnb). Não resolveu.
 - **Workaround em uso**: bloqueio manual no VRBO. O bloco `8 Ago → 5 Set` no feed do VRBO é isso mesmo — cobre Patricia+Bruno+Kiko. A Raquel escapou.
 - **Próximo passo**: abrir no VRBO a secção de **importar/sincronizar** calendários (não "Opções de exportação") e ler o estado/erro da subscrição do villasolria.com. Sem essa mensagem, qualquer alteração ao feed é adivinhação.
+- **site → Airbnb FUNCIONA** (confirmado 2026-09-01 pelo multicalendar): a noite 12 Set está fechada no Airbnb = reserva Raquel 12-13 importada do nosso feed. Não é "dia de preparação" do Airbnb — se fosse, as noites 15 e 24 (à volta da estadia Booking 16-24) também estariam fechadas, e estão abertas. Ou seja o feed é aceite por Airbnb e recusado só pelo VRBO.
 - **Não é automatizável**: o VRBO não reexporta blocos importados, por isso o site não consegue verificar sozinho se a reserva lá chegou. Verificação só a olho no calendário do VRBO.
 
 ## 📍 Previous State (updated 2026-09-01 21:05)
