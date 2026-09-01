@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking, CleaningTask } from '@/lib/supabase';
+import { buildCleaningMessage, type UpcomingCleaning } from '@/lib/cleaning-message';
+import { whatsAppLink } from '@/lib/whatsapp';
 import {
   CheckCircle2,
   Circle,
@@ -13,6 +15,7 @@ import {
   Shirt,
   Lock,
   Plus,
+  MessageCircle,
 } from 'lucide-react';
 
 type LaundryTable = Record<string, number>;
@@ -42,6 +45,8 @@ export default function AdminCleaningPage() {
   const [filter, setFilter] = useState<FilterState>('pending');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showAvulsa, setShowAvulsa] = useState(false);
+  const [cleanerPhone, setCleanerPhone] = useState('');
+  const [phoneDraft, setPhoneDraft] = useState('');
 
   useEffect(() => {
     void load();
@@ -71,7 +76,7 @@ export default function AdminCleaningPage() {
       supabase
         .from('settings')
         .select('key, value')
-        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room']),
+        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room', 'cleaner_phone']),
     ]);
 
     const rawTasks = (tasksRes.data || []) as CleaningTask[];
@@ -137,6 +142,9 @@ export default function AdminCleaningPage() {
     };
     setPrices(loaded);
     setPriceDraft(loaded);
+    const phone = byKey.cleaner_phone ?? '';
+    setCleanerPhone(phone);
+    setPhoneDraft(phone);
     setLoading(false);
   }
 
@@ -168,6 +176,7 @@ export default function AdminCleaningPage() {
         key: 'laundry_fee_per_room',
         value: JSON.stringify(priceDraft.laundry_fee_per_room),
       },
+      { key: 'cleaner_phone', value: phoneDraft.trim() },
     ];
     const { error } = await supabase.from('settings').upsert(rows, { onConflict: 'key' });
     setSavingPrices(false);
@@ -176,7 +185,8 @@ export default function AdminCleaningPage() {
       return;
     }
     setPrices(priceDraft);
-    showToast('Preços guardados');
+    setCleanerPhone(phoneDraft.trim());
+    showToast('Definições guardadas');
   }
 
   async function createAvulsaTask(date: string, note: string | null) {
@@ -306,19 +316,51 @@ export default function AdminCleaningPage() {
     });
   }
 
-  // For each task, is there any OTHER task where the previous guest
-  // checks out on the SAME day this cleaning happens? That's a same-day
-  // turnover — the cleaner has only a few hours between departure and
-  // arrival.
+  // A same-day turnover is a cleaning day on which another stay CHECKS
+  // IN — guests out by 11h, new guests from 16h, so the clean has a hard
+  // window. Comparing against checkout days (as this once did) matched
+  // every task against itself, because since the May-2026 model change
+  // `cleaning_date` IS the checkout day.
   const sequenceInfo = useMemo(() => {
-    const checkoutDays = new Set<string>();
-    for (const t of tasks) if (t.stay_checkout_date) checkoutDays.add(t.stay_checkout_date);
+    const arrivalDays = new Set<string>();
+    for (const t of tasks) if (t.checkin_date) arrivalDays.add(t.checkin_date);
     const info: Record<string, { isTurn: boolean }> = {};
     for (const t of tasks) {
-      info[t.id] = { isTurn: checkoutDays.has(t.cleaning_date) };
+      info[t.id] = { isTurn: arrivalDays.has(t.cleaning_date) };
     }
     return info;
   }, [tasks]);
+
+  // The message the host sends the cleaner: this cleaning day, its
+  // window, which rooms get fresh linen, plus the next few cleanings so
+  // she can plan her week.
+  const whatsAppByTask = useMemo(() => {
+    const ordered = [...tasks].sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date));
+    const out: Record<string, string | null> = {};
+    for (const t of ordered) {
+      const upcoming: UpcomingCleaning[] = ordered
+        .filter((u) => u.cleaning_date > t.cleaning_date && !u.cleaning_done)
+        .slice(0, 5)
+        .map((u) => ({
+          cleaning_date: u.cleaning_date,
+          isTurn: !!sequenceInfo[u.id]?.isTurn,
+        }));
+      const text = buildCleaningMessage({
+        task: {
+          cleaning_date: t.cleaning_date,
+          guest_name: t.guest_name,
+          rooms_to_prepare: t.rooms_to_prepare ?? null,
+          owner_notes: t.owner_notes ?? null,
+          num_guests: t.num_guests,
+        },
+        isTurn: !!sequenceInfo[t.id]?.isTurn,
+        upcoming,
+        villaRooms: prices.villa_rooms,
+      });
+      out[t.id] = whatsAppLink(cleanerPhone, text);
+    }
+    return out;
+  }, [tasks, sequenceInfo, prices.villa_rooms, cleanerPhone]);
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
@@ -411,7 +453,7 @@ export default function AdminCleaningPage() {
       <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-            <Euro size={14} /> Preços (internos — pagamento à equipa)
+            <Euro size={14} /> Preços e contactos (internos)
           </h2>
           <button
             onClick={saveSettings}
@@ -429,6 +471,18 @@ export default function AdminCleaningPage() {
             value={priceDraft.cleaning_base_fee}
             onChange={(v) => setPriceDraft((p) => ({ ...p, cleaning_base_fee: v }))}
           />
+          <label className="block">
+            <span className="block text-xs text-gray-400 mb-1">
+              WhatsApp da empregada
+            </span>
+            <input
+              type="tel"
+              value={phoneDraft}
+              onChange={(e) => setPhoneDraft(e.target.value)}
+              placeholder="+351 9xx xxx xxx"
+              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500/50"
+            />
+          </label>
           <PriceInput
             label="Nº de quartos da villa"
             value={priceDraft.villa_rooms}
@@ -498,6 +552,7 @@ export default function AdminCleaningPage() {
               task={t}
               reference={t.booking_id ? bookingRefs[t.booking_id] : null}
               seq={sequenceInfo[t.id] || { isTurn: false }}
+              whatsAppHref={whatsAppByTask[t.id] || null}
               roomOptions={roomOptions}
               onToggleDone={() => toggleCleaningDone(t)}
               onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
@@ -542,6 +597,7 @@ export default function AdminCleaningPage() {
                     task={t}
                     reference={t.booking_id ? bookingRefs[t.booking_id] : null}
                     seq={sequenceInfo[t.id] || { isTurn: false }}
+                    whatsAppHref={whatsAppByTask[t.id] || null}
                     roomOptions={roomOptions}
                     onToggleDone={() => toggleCleaningDone(t)}
                     onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
@@ -675,6 +731,7 @@ function TaskRow({
   task,
   reference,
   seq,
+  whatsAppHref,
   roomOptions,
   onToggleDone,
   onMarkLaundry,
@@ -688,6 +745,7 @@ function TaskRow({
   task: CleaningTask;
   reference: string | null;
   seq: { isTurn: boolean };
+  whatsAppHref: string | null;
   roomOptions: number[];
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
@@ -807,6 +865,7 @@ function TaskRow({
           <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
         )}
         <OwnerInstructions task={task} villaRooms={roomOptions.length} onSave={onSaveOwnerInstructions} />
+        <WhatsAppSendButton href={whatsAppHref} />
         <CleanerNote task={task} />
         <PhotoStrip task={task} />
       </td>
@@ -926,6 +985,7 @@ function TaskCard({
   task,
   reference,
   seq,
+  whatsAppHref,
   roomOptions,
   onToggleDone,
   onMarkLaundry,
@@ -939,6 +999,7 @@ function TaskCard({
   task: CleaningTask;
   reference: string | null;
   seq: { isTurn: boolean };
+  whatsAppHref: string | null;
   roomOptions: number[];
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
@@ -1058,6 +1119,7 @@ function TaskCard({
       </div>
 
       <OwnerInstructions task={task} villaRooms={roomOptions.length} onSave={onSaveOwnerInstructions} />
+      <WhatsAppSendButton href={whatsAppHref} />
 
       <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
         <button
@@ -1259,6 +1321,28 @@ function EditableFee({
       }}
       className="w-16 px-1 py-0.5 rounded bg-white/10 border border-white/20 text-yellow-200 text-xs focus:outline-none focus:border-yellow-400/60"
     />
+  );
+}
+
+function WhatsAppSendButton({ href }: { href: string | null }) {
+  if (!href) {
+    return (
+      <p className="mt-1 text-[11px] text-gray-600" title="Definir em Preços e contactos">
+        Sem nº da empregada
+      </p>
+    );
+  }
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border bg-emerald-500/10 border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/20 transition-colors"
+      title="Abre o WhatsApp com a mensagem já escrita — só tens de enviar"
+    >
+      <MessageCircle size={12} />
+      Enviar por WhatsApp
+    </a>
   );
 }
 
