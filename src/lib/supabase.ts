@@ -84,6 +84,10 @@ export interface CleaningTask {
   notes: string | null;
   owner_notes: string | null;
   rooms_to_prepare: number[] | null;
+  /** People per room number, e.g. {"1": 2, "3": 1}. Rooms absent = not prepared. */
+  room_plan: Record<string, number> | null;
+  /** Total towels when it isn't one per guest. NULL = derive from room_plan. */
+  towels_override: number | null;
   linked_to_booking_id: string | null;
   linked_to_external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
   linked_to_external_ref: string | null;

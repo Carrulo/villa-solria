@@ -9,7 +9,7 @@
 // House rule: guests leave by 11h, new guests arrive from 16h, so a
 // same-day turnover must happen inside that window.
 
-import { describeRoom, shortRoom, MAX_GUESTS } from './villa-rooms';
+import { describeRoom, shortRoom, roomProfile, MAX_GUESTS } from './villa-rooms';
 
 export const CHECKOUT_HOUR = '11h';
 export const CHECKIN_HOUR = '16h';
@@ -18,8 +18,43 @@ export interface CleaningMessageTask {
   cleaning_date: string; // YYYY-MM-DD — the checkout day
   guest_name: string | null;
   rooms_to_prepare: number[] | null; // null/empty = every room
+  /** People per room, e.g. {"1": 2, "3": 1}. Takes precedence when set. */
+  room_plan: Record<string, number> | null;
+  towels_override: number | null;
   owner_notes: string | null;
   num_guests: number | null;
+}
+
+/** Rooms with at least one person, in order. */
+export function occupiedRooms(plan: Record<string, number> | null | undefined): number[] {
+  if (!plan) return [];
+  return Object.entries(plan)
+    .filter(([, people]) => Number(people) > 0)
+    .map(([n]) => Number(n))
+    .sort((a, b) => a - b);
+}
+
+export function totalGuests(plan: Record<string, number> | null | undefined): number {
+  if (!plan) return 0;
+  return Object.values(plan).reduce((sum, n) => sum + (Number(n) || 0), 0);
+}
+
+/**
+ * One line per room saying how many beds to make. The twin room is why
+ * this is needed: one child in there means one bed made, not two.
+ */
+function roomLine(n: number, people: number): string {
+  const r = roomProfile(n);
+  const head = `• ${describeRoom(n)}`;
+  if (r.bedCount > 1) {
+    if (people >= r.bedCount) return `${head}\n   → fazer as ${r.bedCount} camas (${people} pessoas)`;
+    const spare = r.bedCount - people;
+    return `${head}\n   → ${people} pessoa${people === 1 ? '' : 's'}: fazer só ${people} cama${
+      people === 1 ? '' : 's'
+    }, ${spare === 1 ? 'a outra fica' : 'as outras ficam'} só com cobertor`;
+  }
+  if (people >= 2) return `${head}\n   → casal (2 pessoas)`;
+  return `${head}\n   → 1 pessoa`;
 }
 
 export interface UpcomingCleaning {
@@ -97,31 +132,59 @@ export function buildCleaningMessage({
   // 2. Rooms + linen. Skipping unused rooms is the point: no need to
   //    wash linen for bedrooms nobody slept in.
   lines.push('');
-  const explicit =
-    Array.isArray(task.rooms_to_prepare) &&
-    task.rooms_to_prepare.length > 0 &&
-    task.rooms_to_prepare.length < villaRooms
-      ? [...task.rooms_to_prepare].sort((a, b) => a - b)
-      : null;
+  const planned = occupiedRooms(task.room_plan);
+  const allRooms = Array.from({ length: villaRooms }, (_, i) => i + 1);
 
-  if (explicit) {
-    const rest = Array.from({ length: villaRooms }, (_, i) => i + 1).filter(
-      (n) => !explicit.includes(n)
-    );
-    lines.push('🛏 *Preparar só estes quartos:*');
-    for (const n of explicit) lines.push(`• ${describeRoom(n)}`);
-    if (rest.length > 0) {
+  if (planned.length > 0) {
+    // Best case: the host said who sleeps where.
+    const guests = totalGuests(task.room_plan);
+    lines.push('🛏 *Preparar:*');
+    for (const n of planned) lines.push(roomLine(n, Number(task.room_plan?.[String(n)]) || 0));
+
+    const untouched = allRooms.filter((n) => !planned.includes(n));
+    if (untouched.length > 0) {
       lines.push('');
-      lines.push(`❌ Não mexer: ${listRooms(rest)} — fica só o cobertor, sem lavar roupa.`);
+      lines.push(`❌ Não mexer: ${listRooms(untouched)} — fica só o cobertor, sem lavar roupa.`);
     }
-  } else {
-    lines.push(`🛏 *Preparar os ${villaRooms} quartos:*`);
-    for (let n = 1; n <= villaRooms; n++) lines.push(`• ${describeRoom(n)}`);
-  }
 
-  if (task.num_guests != null) {
+    const towels = task.towels_override ?? guests;
     lines.push('');
-    lines.push(`Hóspedes: ${task.num_guests}${task.num_guests >= MAX_GUESTS ? ' (casa cheia)' : ''}`);
+    lines.push(`🧺 *Toalhas: ${towels}* (${guests} hóspede${guests === 1 ? '' : 's'}${
+      guests >= MAX_GUESTS ? ', casa cheia' : ''
+    })`);
+  } else {
+    // Fallback: only a room list, or nothing at all.
+    const explicit =
+      Array.isArray(task.rooms_to_prepare) &&
+      task.rooms_to_prepare.length > 0 &&
+      task.rooms_to_prepare.length < villaRooms
+        ? [...task.rooms_to_prepare].sort((a, b) => a - b)
+        : null;
+
+    if (explicit) {
+      lines.push('🛏 *Preparar só estes quartos:*');
+      for (const n of explicit) lines.push(`• ${describeRoom(n)}`);
+      const rest = allRooms.filter((n) => !explicit.includes(n));
+      if (rest.length > 0) {
+        lines.push('');
+        lines.push(`❌ Não mexer: ${listRooms(rest)} — fica só o cobertor, sem lavar roupa.`);
+      }
+    } else {
+      lines.push(`🛏 *Preparar os ${villaRooms} quartos:*`);
+      for (const n of allRooms) lines.push(`• ${describeRoom(n)}`);
+    }
+
+    if (task.towels_override != null) {
+      lines.push('');
+      lines.push(`🧺 *Toalhas: ${task.towels_override}*`);
+    } else if (task.num_guests != null) {
+      lines.push('');
+      lines.push(
+        `🧺 *Toalhas: ${task.num_guests}* (${task.num_guests} hóspede${
+          task.num_guests === 1 ? '' : 's'
+        }${task.num_guests >= MAX_GUESTS ? ', casa cheia' : ''})`
+      );
+    }
   }
 
   // 3. Anything the host typed for this specific stay.

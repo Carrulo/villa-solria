@@ -9,6 +9,10 @@ export interface RoomProfile {
   name: string;
   floor: string;
   beds: string;
+  /** What a single bed in here is called, for per-person instructions. */
+  bedLabel: string;
+  /** How many separate beds — the twin room is the reason this exists. */
+  bedCount: number;
   /** Adults/children it sleeps, excluding the cot. */
   sleeps: number;
 }
@@ -19,14 +23,26 @@ export const ROOM_PROFILES: RoomProfile[] = [
     name: 'Principal',
     floor: '1º andar',
     beds: 'cama queen + berço',
+    bedLabel: 'cama queen',
+    bedCount: 1,
     sleeps: 2,
   },
-  { n: 2, name: 'Casal', floor: '1º andar', beds: 'cama de casal 1,40 m', sleeps: 2 },
+  {
+    n: 2,
+    name: 'Casal',
+    floor: '1º andar',
+    beds: 'cama de casal 1,40 m',
+    bedLabel: 'cama de casal 1,40 m',
+    bedCount: 1,
+    sleeps: 2,
+  },
   {
     n: 3,
     name: 'Duplo',
     floor: 'rés-do-chão',
     beds: '2 camas individuais',
+    bedLabel: 'cama individual',
+    bedCount: 2,
     sleeps: 2,
   },
 ];
@@ -42,6 +58,8 @@ export function roomProfile(n: number): RoomProfile {
       name: `Quarto ${n}`,
       floor: '',
       beds: '',
+      bedLabel: 'cama',
+      bedCount: 1,
       sleeps: 2,
     }
   );

@@ -35,6 +35,13 @@ const DEFAULT_PRICES: PriceSettings = {
 
 type FilterState = 'pending' | 'closed' | 'all';
 
+interface OwnerInstructionsPatch {
+  owner_notes: string | null;
+  rooms_to_prepare: number[] | null;
+  room_plan: Record<string, number> | null;
+  towels_override: number | null;
+}
+
 export default function AdminCleaningPage() {
   const [tasks, setTasks] = useState<CleaningTask[]>([]);
   const [bookingRefs, setBookingRefs] = useState<Record<string, string>>({});
@@ -351,6 +358,8 @@ export default function AdminCleaningPage() {
           cleaning_date: t.cleaning_date,
           guest_name: t.guest_name,
           rooms_to_prepare: t.rooms_to_prepare ?? null,
+          room_plan: t.room_plan ?? null,
+          towels_override: t.towels_override ?? null,
           owner_notes: t.owner_notes ?? null,
           num_guests: t.num_guests,
         },
@@ -755,7 +764,7 @@ function TaskRow({
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
-  onSaveOwnerInstructions: (patch: { owner_notes: string | null; rooms_to_prepare: number[] | null }) => void;
+  onSaveOwnerInstructions: (patch: OwnerInstructionsPatch) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
@@ -1009,7 +1018,7 @@ function TaskCard({
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
-  onSaveOwnerInstructions: (patch: { owner_notes: string | null; rooms_to_prepare: number[] | null }) => void;
+  onSaveOwnerInstructions: (patch: OwnerInstructionsPatch) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(task.guest_name || '');
@@ -1354,45 +1363,91 @@ function OwnerInstructions({
 }: {
   task: CleaningTask;
   villaRooms: number;
-  onSave: (patch: { owner_notes: string | null; rooms_to_prepare: number[] | null }) => void;
+  onSave: (patch: OwnerInstructionsPatch) => void;
 }) {
-  const t = task as CleaningTask & {
-    owner_notes?: string | null;
-    rooms_to_prepare?: number[] | null;
-  };
-  const initialNotes = (t.owner_notes || '').trim();
-  // null/empty = "prepare every room" (default).
-  const initialRooms = Array.isArray(t.rooms_to_prepare) ? [...t.rooms_to_prepare].sort() : null;
+  const initialNotes = (task.owner_notes || '').trim();
+  const allOptions = useMemo(
+    () => Array.from({ length: villaRooms }, (_, i) => i + 1),
+    [villaRooms]
+  );
+
+  // The plan is people-per-room. Older tasks only carry rooms_to_prepare,
+  // so read those as "room full" and let the host refine from there.
+  const initialPlan = useMemo(() => {
+    const plan: Record<number, number> = {};
+    if (task.room_plan) {
+      for (const [k, v] of Object.entries(task.room_plan)) {
+        const n = Number(k);
+        if (allOptions.includes(n)) plan[n] = Number(v) || 0;
+      }
+      return plan;
+    }
+    const legacy = Array.isArray(task.rooms_to_prepare) ? task.rooms_to_prepare : null;
+    const rooms = legacy && legacy.length > 0 ? legacy : allOptions;
+    for (const n of rooms) plan[n] = roomProfile(n).sleeps;
+    return plan;
+  }, [task.room_plan, task.rooms_to_prepare, allOptions]);
 
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
-  const [rooms, setRooms] = useState<number[] | null>(initialRooms);
+  const [plan, setPlan] = useState<Record<number, number>>(initialPlan);
+  const [towels, setTowels] = useState<string>(
+    task.towels_override != null ? String(task.towels_override) : ''
+  );
 
-  const allOptions = Array.from({ length: villaRooms }, (_, i) => i + 1);
-  const isAll = rooms === null || rooms.length === 0 || rooms.length === villaRooms;
-  const hasExplicitRooms = !!(initialRooms && initialRooms.length > 0 && initialRooms.length < villaRooms);
-  const hasInstructions = initialNotes.length > 0 || hasExplicitRooms;
+  const guests = allOptions.reduce((sum, n) => sum + (plan[n] || 0), 0);
+  const usedRooms = allOptions.filter((n) => (plan[n] || 0) > 0);
+  const savedRooms = task.room_plan
+    ? Object.entries(task.room_plan)
+        .filter(([, v]) => Number(v) > 0)
+        .map(([k]) => Number(k))
+        .sort((a, b) => a - b)
+    : Array.isArray(task.rooms_to_prepare)
+    ? [...task.rooms_to_prepare].sort((a, b) => a - b)
+    : [];
+  const hasPartialRooms = savedRooms.length > 0 && savedRooms.length < villaRooms;
+  const hasInstructions =
+    initialNotes.length > 0 ||
+    hasPartialRooms ||
+    !!task.room_plan ||
+    task.towels_override != null;
 
-  function toggleRoom(n: number) {
-    const current = rooms === null ? allOptions : rooms;
-    const next = current.includes(n) ? current.filter((x) => x !== n) : [...current, n].sort();
-    // If user picks "all rooms", store null (default behaviour).
-    setRooms(next.length === villaRooms ? null : next);
+  function setRoom(n: number, people: number) {
+    setPlan((prev) => ({
+      ...prev,
+      [n]: Math.max(0, Math.min(roomProfile(n).sleeps, people)),
+    }));
   }
 
   function save() {
     const trimmed = notes.trim();
+    const cleanPlan: Record<string, number> = {};
+    for (const n of usedRooms) cleanPlan[String(n)] = plan[n];
+    const parsedTowels = towels.trim() === '' ? null : Number(towels);
     onSave({
       owner_notes: trimmed.length > 0 ? trimmed : null,
-      rooms_to_prepare: isAll ? null : rooms,
+      // Kept in step with room_plan so anything still reading the older
+      // column sees the same rooms.
+      rooms_to_prepare: usedRooms.length > 0 ? usedRooms : null,
+      room_plan: usedRooms.length > 0 ? cleanPlan : null,
+      towels_override:
+        parsedTowels != null && Number.isFinite(parsedTowels) && parsedTowels > 0
+          ? parsedTowels
+          : null,
     });
     setOpen(false);
   }
 
   function reset() {
     setNotes('');
-    setRooms(null);
-    onSave({ owner_notes: null, rooms_to_prepare: null });
+    setPlan({});
+    setTowels('');
+    onSave({
+      owner_notes: null,
+      rooms_to_prepare: null,
+      room_plan: null,
+      towels_override: null,
+    });
     setOpen(false);
   }
 
@@ -1402,7 +1457,8 @@ function OwnerInstructions({
         type="button"
         onClick={() => {
           setNotes(initialNotes);
-          setRooms(initialRooms);
+          setPlan(initialPlan);
+          setTowels(task.towels_override != null ? String(task.towels_override) : '');
           setOpen(true);
         }}
         className={`mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition-colors ${
@@ -1410,73 +1466,99 @@ function OwnerInstructions({
             ? 'bg-amber-400/10 border-amber-400/40 text-amber-200 hover:bg-amber-400/20'
             : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
         }`}
-        title="Instruções para a equipa de limpeza"
+        title="Quem dorme onde, toalhas e notas para a limpeza"
       >
-        📝 {hasInstructions ? 'Instruções' : 'Adicionar nota'}
-        {hasExplicitRooms && initialRooms && (
-          <span>· {initialRooms.map((n) => shortRoom(n)).join(' + ')}</span>
+        📝 {hasInstructions ? 'Instruções' : 'Definir quartos'}
+        {savedRooms.length > 0 && (
+          <span>· {savedRooms.map((n) => shortRoom(n)).join(' + ')}</span>
         )}
+        {task.towels_override != null && <span>· {task.towels_override} toalhas</span>}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div className="bg-[#16213e] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold text-white mb-1">Instruções p/ limpeza</h2>
             <p className="text-xs text-gray-400 mb-4">
               {task.cleaning_date}
               {task.guest_name ? ` · ${task.guest_name}` : ''}
             </p>
 
-            <label className="block mb-4">
-              <span className="block text-xs text-gray-400 mb-1">Quartos a preparar</span>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setRooms(null)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                    isAll
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  Todos ({villaRooms})
-                </button>
-                {allOptions.map((n) => {
-                  const active = !isAll && (rooms || []).includes(n);
-                  const profile = roomProfile(n);
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => toggleRoom(n)}
-                      title={`${profile.floor} · ${profile.beds}`}
-                      className={`px-3 py-1.5 rounded-lg text-left ${
-                        active
-                          ? 'bg-amber-500/30 text-amber-100 border border-amber-400/50'
-                          : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
-                      }`}
-                    >
-                      <span className="block text-xs font-medium">
+            <span className="block text-xs text-gray-400 mb-2">Quem dorme em cada quarto</span>
+            <div className="space-y-2 mb-4">
+              {allOptions.map((n) => {
+                const profile = roomProfile(n);
+                const people = plan[n] || 0;
+                return (
+                  <div
+                    key={n}
+                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg border ${
+                      people > 0
+                        ? 'bg-amber-500/10 border-amber-400/40'
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm text-white">
                         Q{n} {profile.name}
-                      </span>
-                      <span className="block text-[10px] opacity-70">{profile.beds}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1">
-                Quartos não escolhidos vão na mensagem como &quot;não mexer, fica só o
-                cobertor&quot; — poupa lavar roupa de camas onde ninguém dormiu.
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        {profile.floor} · {profile.beds}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {Array.from({ length: profile.sleeps + 1 }, (_, i) => i).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setRoom(n, v)}
+                          className={`w-8 h-8 rounded-lg text-xs font-semibold ${
+                            people === v
+                              ? 'bg-amber-500/40 text-amber-50 border border-amber-300/60'
+                              : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
+                          }`}
+                          title={v === 0 ? 'Não preparar este quarto' : `${v} pessoa(s)`}
+                        >
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex items-start gap-3 mb-3">
+              <label className="block w-28 shrink-0">
+                <span className="block text-xs text-gray-400 mb-1">Toalhas</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={towels}
+                  onChange={(e) => setTowels(e.target.value)}
+                  placeholder={String(guests)}
+                  className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50"
+                />
+              </label>
+              <p className="text-[11px] text-gray-500 pt-6">
+                Vazio = uma por hóspede ({guests}). Escreve um número quando for
+                diferente — ex.: 2 quartos e 4 toalhas.
               </p>
-            </label>
+            </div>
+
+            <p className="text-[11px] text-gray-500 mb-4">
+              {usedRooms.length === 0
+                ? 'Nenhum quarto escolhido — a mensagem pede a casa toda.'
+                : `${guests} hóspede(s) em ${usedRooms.length} quarto(s). Os outros vão como "não mexer, fica só o cobertor".`}
+            </p>
 
             <label className="block mb-4">
               <span className="block text-xs text-gray-400 mb-1">Nota (opcional)</span>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-                placeholder="ex: 2 adultos + 1 criança. Preparar berço no Principal. Toalhas extra."
+                rows={3}
+                placeholder="ex: Preparar berço no Principal. Chegam tarde."
                 className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-amber-500/50 resize-none"
               />
             </label>
@@ -1491,13 +1573,13 @@ function OwnerInstructions({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm font-medium"
+                  className="px-4 py-2 rounded-lg bg-white/5 text-gray-300 hover:bg-white/10 text-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={save}
-                  className="px-4 py-2 rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 text-sm font-semibold"
+                  className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 text-sm font-medium"
                 >
                   Guardar
                 </button>
