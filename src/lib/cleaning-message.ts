@@ -212,3 +212,25 @@ export function buildCleaningMessage({
 
   return lines.join('\n');
 }
+
+/**
+ * The week-ahead message: which days she has work, and whether each one
+ * is pinned to the 11h-16h window. Details of each job (rooms, towels)
+ * still go out per cleaning, closer to the day.
+ */
+export function buildUpcomingMessage(upcoming: UpcomingCleaning[]): string {
+  if (upcoming.length === 0) {
+    return 'Olá! Para já não há limpezas marcadas. Aviso assim que entrar alguma reserva.';
+  }
+  const lines: string[] = ['🧹 *Próximas limpezas — Villa Solria*', ''];
+  for (const u of upcoming) {
+    lines.push(
+      u.isTurn
+        ? `• ${formatPtDate(u.cleaning_date)} — entra gente no mesmo dia, tem de ficar feita entre as ${CHECKOUT_HOUR} e as ${CHECKIN_HOUR}`
+        : `• ${formatPtDate(u.cleaning_date)} — sem entrada a seguir, sem pressa de horário`
+    );
+  }
+  lines.push('');
+  lines.push('_Mando os quartos e as toalhas de cada uma mais perto do dia. Podem aparecer mais reservas._');
+  return lines.join('\n');
+}

@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Booking, CleaningTask } from '@/lib/supabase';
-import { buildCleaningMessage, type UpcomingCleaning } from '@/lib/cleaning-message';
+import {
+  buildCleaningMessage,
+  buildUpcomingMessage,
+  type UpcomingCleaning,
+} from '@/lib/cleaning-message';
 import { whatsAppLink } from '@/lib/whatsapp';
 import { roomProfile, shortRoom } from '@/lib/villa-rooms';
 import {
@@ -316,6 +320,17 @@ export default function AdminCleaningPage() {
     });
   }
 
+  // She tells us how long it took; that's what gets paid. The euro value
+  // is frozen on the task so a later rate change never rewrites history.
+  async function updateHoursWorked(t: CleaningTask, hours: number) {
+    if (t.cleaning_paid) return;
+    const safe = Math.max(0, Number.isFinite(hours) ? hours : 0);
+    await updateTask(t.id, {
+      hours_worked: safe > 0 ? safe : null,
+      cleaning_fee_snapshot: safe > 0 ? safe * prices.cleaner_hourly_rate : 0,
+    });
+  }
+
   async function updateCleaningFee(t: CleaningTask, fee: number) {
     if (t.cleaning_paid) return;
     const safe = Math.max(0, Number.isFinite(fee) ? fee : 0);
@@ -384,6 +399,18 @@ export default function AdminCleaningPage() {
     return out;
   }, [tasks, sequenceInfo, prices.villa_rooms, cleanerPhone]);
 
+  // One message with every cleaning still ahead, for when she asks
+  // "what have I got coming up?".
+  const upcomingWhatsAppHref = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming: UpcomingCleaning[] = [...tasks]
+      .filter((t) => t.cleaning_date >= today && !t.cleaning_done)
+      .sort((a, b) => a.cleaning_date.localeCompare(b.cleaning_date))
+      .slice(0, 8)
+      .map((t) => ({ cleaning_date: t.cleaning_date, isTurn: !!sequenceInfo[t.id]?.isTurn }));
+    return whatsAppLink(cleanerPhone, buildUpcomingMessage(upcoming));
+  }, [tasks, sequenceInfo, cleanerPhone]);
+
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
       // A task is only closed when BOTH parts are resolved:
@@ -432,6 +459,18 @@ export default function AdminCleaningPage() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-white">Limpezas</h1>
         <div className="flex items-center gap-2">
+          {upcomingWhatsAppHref && (
+            <a
+              href={upcomingWhatsAppHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors text-sm font-medium"
+              title="Manda à empregada a lista das próximas limpezas"
+            >
+              <MessageCircle size={14} />
+              Próximas limpezas
+            </a>
+          )}
           <button
             onClick={() => setShowAvulsa(true)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/15 transition-colors text-sm font-medium"
@@ -590,6 +629,7 @@ export default function AdminCleaningPage() {
               onCloseLaundry={() => closeLaundry(t)}
               onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
               onUpdateFee={(fee) => updateCleaningFee(t, fee)}
+              onUpdateHours={(h) => updateHoursWorked(t, h)}
               onSaveOwnerInstructions={(patch) => updateTask(t.id, patch)}
             />
           ))
@@ -637,6 +677,7 @@ export default function AdminCleaningPage() {
                     onCloseLaundry={() => closeLaundry(t)}
                     onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
                     onUpdateFee={(fee) => updateCleaningFee(t, fee)}
+                    onUpdateHours={(h) => updateHoursWorked(t, h)}
                     onSaveOwnerInstructions={(patch) => updateTask(t.id, patch)}
                   />
                 ))
@@ -773,6 +814,7 @@ function TaskRow({
   onCloseLaundry,
   onRenameGuest,
   onUpdateFee,
+  onUpdateHours,
   onSaveOwnerInstructions,
 }: {
   task: CleaningTask;
@@ -789,6 +831,7 @@ function TaskRow({
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
+  onUpdateHours: (hours: number) => void;
   onSaveOwnerInstructions: (patch: OwnerInstructionsPatch) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -933,6 +976,11 @@ function TaskRow({
             </p>
             <p className="text-gray-500">
               <EditableFee
+                value={Number(task.hours_worked ?? 0)}
+                disabled={task.cleaning_paid}
+                onSave={onUpdateHours}
+              />{' '}h ·{' '}
+              <EditableFee
                 value={Number(task.cleaning_fee_snapshot)}
                 disabled={task.cleaning_paid}
                 onSave={onUpdateFee}
@@ -1037,6 +1085,7 @@ function TaskCard({
   onCloseLaundry,
   onRenameGuest,
   onUpdateFee,
+  onUpdateHours,
   onSaveOwnerInstructions,
 }: {
   task: CleaningTask;
@@ -1053,6 +1102,7 @@ function TaskCard({
   onCloseLaundry: () => void;
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
+  onUpdateHours: (hours: number) => void;
   onSaveOwnerInstructions: (patch: OwnerInstructionsPatch) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -1188,6 +1238,11 @@ function TaskCard({
           </span>
         </button>
         <span className="text-xs text-gray-400">
+          <EditableFee
+            value={Number(task.hours_worked ?? 0)}
+            disabled={task.cleaning_paid}
+            onSave={onUpdateHours}
+          />{' '}h ·{' '}
           <EditableFee
             value={Number(task.cleaning_fee_snapshot)}
             disabled={task.cleaning_paid}

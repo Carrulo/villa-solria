@@ -88,6 +88,8 @@ export interface CleaningTask {
   room_plan: Record<string, number> | null;
   /** Total towels when it isn't one per guest. NULL = derive from room_plan. */
   towels_override: number | null;
+  /** Person-hours the cleaner reported for this job; drives the payment. */
+  hours_worked: number | null;
   linked_to_booking_id: string | null;
   linked_to_external_source: 'airbnb_ical' | 'booking_ical' | 'vrbo_ical' | null;
   linked_to_external_ref: string | null;
