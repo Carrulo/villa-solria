@@ -1549,7 +1549,7 @@ function OwnerInstructions({
             <p className="text-[11px] text-gray-500 mb-4">
               {usedRooms.length === 0
                 ? 'Nenhum quarto escolhido — a mensagem pede a casa toda.'
-                : `${guests} hóspede(s) em ${usedRooms.length} quarto(s). Os outros vão como "não mexer, fica só o cobertor".`}
+                : `${guests} hóspede(s) em ${usedRooms.length} quarto(s). Os outros vão como "não mexer, fica só a coberta".`}
             </p>
 
             <label className="block mb-4">

@@ -51,7 +51,7 @@ function roomLine(n: number, people: number): string {
     const spare = r.bedCount - people;
     return `${head}\n   → ${people} pessoa${people === 1 ? '' : 's'}: fazer só ${people} cama${
       people === 1 ? '' : 's'
-    }, ${spare === 1 ? 'a outra fica' : 'as outras ficam'} só com cobertor`;
+    }, ${spare === 1 ? 'a outra fica' : 'as outras ficam'} só com a coberta`;
   }
   if (people >= 2) return `${head}\n   → casal (2 pessoas)`;
   return `${head}\n   → 1 pessoa`;
@@ -144,7 +144,7 @@ export function buildCleaningMessage({
     const untouched = allRooms.filter((n) => !planned.includes(n));
     if (untouched.length > 0) {
       lines.push('');
-      lines.push(`❌ Não mexer: ${listRooms(untouched)} — fica só o cobertor, sem lavar roupa.`);
+      lines.push(`❌ Não mexer: ${listRooms(untouched)} — fica só a coberta, sem lavar roupa.`);
     }
 
     const towels = task.towels_override ?? guests;
@@ -167,7 +167,7 @@ export function buildCleaningMessage({
       const rest = allRooms.filter((n) => !explicit.includes(n));
       if (rest.length > 0) {
         lines.push('');
-        lines.push(`❌ Não mexer: ${listRooms(rest)} — fica só o cobertor, sem lavar roupa.`);
+        lines.push(`❌ Não mexer: ${listRooms(rest)} — fica só a coberta, sem lavar roupa.`);
       }
     } else {
       lines.push(`🛏 *Preparar os ${villaRooms} quartos:*`);
