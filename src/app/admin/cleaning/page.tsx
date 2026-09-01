@@ -7,6 +7,14 @@ import { buildCleaningMessage, type UpcomingCleaning } from '@/lib/cleaning-mess
 import { whatsAppLink } from '@/lib/whatsapp';
 import { roomProfile, shortRoom } from '@/lib/villa-rooms';
 import {
+  CLEANERS,
+  laundryCost,
+  labourCost,
+  personHours,
+  wallClockHours,
+  formatHours,
+} from '@/lib/cleaning-cost';
+import {
   CheckCircle2,
   Circle,
   Euro,
@@ -23,12 +31,14 @@ type LaundryTable = Record<string, number>;
 
 interface PriceSettings {
   cleaning_base_fee: number;
+  cleaner_hourly_rate: number;
   villa_rooms: number;
   laundry_fee_per_room: LaundryTable;
 }
 
 const DEFAULT_PRICES: PriceSettings = {
   cleaning_base_fee: 50,
+  cleaner_hourly_rate: 15,
   villa_rooms: 3,
   laundry_fee_per_room: { '1': 0, '2': 0, '3': 0 },
 };
@@ -84,7 +94,7 @@ export default function AdminCleaningPage() {
       supabase
         .from('settings')
         .select('key, value')
-        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room', 'cleaner_phone']),
+        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room', 'cleaner_phone', 'cleaner_hourly_rate']),
     ]);
 
     const rawTasks = (tasksRes.data || []) as CleaningTask[];
@@ -145,6 +155,7 @@ export default function AdminCleaningPage() {
 
     const loaded: PriceSettings = {
       cleaning_base_fee: Number(byKey.cleaning_base_fee ?? DEFAULT_PRICES.cleaning_base_fee),
+      cleaner_hourly_rate: Number(byKey.cleaner_hourly_rate ?? DEFAULT_PRICES.cleaner_hourly_rate),
       villa_rooms: Number(byKey.villa_rooms ?? DEFAULT_PRICES.villa_rooms),
       laundry_fee_per_room: parseLaundryTable(byKey.laundry_fee_per_room),
     };
@@ -179,6 +190,7 @@ export default function AdminCleaningPage() {
     setSavingPrices(true);
     const rows = [
       { key: 'cleaning_base_fee', value: String(priceDraft.cleaning_base_fee) },
+      { key: 'cleaner_hourly_rate', value: String(priceDraft.cleaner_hourly_rate) },
       { key: 'villa_rooms', value: String(priceDraft.villa_rooms) },
       {
         key: 'laundry_fee_per_room',
@@ -477,7 +489,12 @@ export default function AdminCleaningPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <PriceInput
-            label="Limpeza base (€)"
+            label="€/hora por pessoa (equipa de limpeza)"
+            value={priceDraft.cleaner_hourly_rate}
+            onChange={(v) => setPriceDraft((p) => ({ ...p, cleaner_hourly_rate: v }))}
+          />
+          <PriceInput
+            label="Limpeza base (€) — valor fixo antigo"
             value={priceDraft.cleaning_base_fee}
             onChange={(v) => setPriceDraft((p) => ({ ...p, cleaning_base_fee: v }))}
           />
@@ -509,7 +526,7 @@ export default function AdminCleaningPage() {
         </div>
 
         <div className="mt-4">
-          <p className="text-xs text-gray-400 mb-2">Preço das roupas por nº de quartos usados</p>
+          <p className="text-xs text-gray-400 mb-2">Lavandaria — € por nº de quartos usados</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Array.from({ length: priceDraft.villa_rooms }, (_, i) => i + 1).map((n) => (
               <PriceInput
@@ -564,6 +581,8 @@ export default function AdminCleaningPage() {
               seq={sequenceInfo[t.id] || { isTurn: false }}
               whatsAppHref={whatsAppByTask[t.id] || null}
               roomOptions={roomOptions}
+              laundryTable={prices.laundry_fee_per_room}
+                    hourlyRate={prices.cleaner_hourly_rate}
               onToggleDone={() => toggleCleaningDone(t)}
               onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
               onUnmarkLaundry={() => unmarkLaundry(t)}
@@ -609,6 +628,8 @@ export default function AdminCleaningPage() {
                     seq={sequenceInfo[t.id] || { isTurn: false }}
                     whatsAppHref={whatsAppByTask[t.id] || null}
                     roomOptions={roomOptions}
+                    laundryTable={prices.laundry_fee_per_room}
+                    hourlyRate={prices.cleaner_hourly_rate}
                     onToggleDone={() => toggleCleaningDone(t)}
                     onMarkLaundry={(rooms) => markLaundryTaken(t, rooms)}
                     onUnmarkLaundry={() => unmarkLaundry(t)}
@@ -743,6 +764,8 @@ function TaskRow({
   seq,
   whatsAppHref,
   roomOptions,
+  laundryTable,
+  hourlyRate,
   onToggleDone,
   onMarkLaundry,
   onUnmarkLaundry,
@@ -757,6 +780,8 @@ function TaskRow({
   seq: { isTurn: boolean };
   whatsAppHref: string | null;
   roomOptions: number[];
+  laundryTable: LaundryTable;
+  hourlyRate: number;
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
   onUnmarkLaundry: () => void;
@@ -874,7 +899,13 @@ function TaskRow({
         {task.num_guests != null && (
           <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
         )}
-        <OwnerInstructions task={task} villaRooms={roomOptions.length} onSave={onSaveOwnerInstructions} />
+        <OwnerInstructions
+          task={task}
+          villaRooms={roomOptions.length}
+          laundryTable={laundryTable}
+          hourlyRate={hourlyRate}
+          onSave={onSaveOwnerInstructions}
+        />
         <WhatsAppSendButton href={whatsAppHref} />
         <CleanerNote task={task} />
         <PhotoStrip task={task} />
@@ -997,6 +1028,8 @@ function TaskCard({
   seq,
   whatsAppHref,
   roomOptions,
+  laundryTable,
+  hourlyRate,
   onToggleDone,
   onMarkLaundry,
   onUnmarkLaundry,
@@ -1011,6 +1044,8 @@ function TaskCard({
   seq: { isTurn: boolean };
   whatsAppHref: string | null;
   roomOptions: number[];
+  laundryTable: LaundryTable;
+  hourlyRate: number;
   onToggleDone: () => void;
   onMarkLaundry: (rooms: number) => void;
   onUnmarkLaundry: () => void;
@@ -1128,7 +1163,13 @@ function TaskCard({
         </div>
       </div>
 
-      <OwnerInstructions task={task} villaRooms={roomOptions.length} onSave={onSaveOwnerInstructions} />
+      <OwnerInstructions
+          task={task}
+          villaRooms={roomOptions.length}
+          laundryTable={laundryTable}
+          hourlyRate={hourlyRate}
+          onSave={onSaveOwnerInstructions}
+        />
       <WhatsAppSendButton href={whatsAppHref} />
 
       <div className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
@@ -1359,10 +1400,14 @@ function WhatsAppSendButton({ href }: { href: string | null }) {
 function OwnerInstructions({
   task,
   villaRooms,
+  laundryTable,
+  hourlyRate,
   onSave,
 }: {
   task: CleaningTask;
   villaRooms: number;
+  laundryTable: LaundryTable;
+  hourlyRate: number;
   onSave: (patch: OwnerInstructionsPatch) => void;
 }) {
   const initialNotes = (task.owner_notes || '').trim();
@@ -1546,11 +1591,49 @@ function OwnerInstructions({
               </p>
             </div>
 
-            <p className="text-[11px] text-gray-500 mb-4">
-              {usedRooms.length === 0
-                ? 'Nenhum quarto escolhido — a mensagem pede a casa toda.'
-                : `${guests} hóspede(s) em ${usedRooms.length} quarto(s). Os outros vão como "não mexer, fica só a coberta".`}
-            </p>
+            {usedRooms.length === 0 ? (
+              <p className="text-[11px] text-gray-500 mb-4">
+                Nenhum quarto escolhido — a mensagem pede a casa toda.
+              </p>
+            ) : (
+              <div className="mb-4 rounded-lg bg-white/5 border border-white/10 px-3 py-2">
+                <p className="text-[11px] text-gray-400">
+                  {guests} hóspede(s) em {usedRooms.length} quarto(s). Os outros vão como
+                  &quot;não mexer, fica só a coberta&quot;.
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  {formatHours(personHours(usedRooms.length))}-pessoa ·{' '}
+                  {formatHours(wallClockHours(usedRooms.length))} com {CLEANERS} pessoas
+                </p>
+                <p className="text-[11px] text-gray-300 mt-1">
+                  Limpeza {labourCost(usedRooms.length, hourlyRate).toFixed(2)} € + lavandaria{' '}
+                  {laundryCost(usedRooms.length, laundryTable).toFixed(2)} € ={' '}
+                  <span className="font-semibold">
+                    {(
+                      labourCost(usedRooms.length, hourlyRate) +
+                      laundryCost(usedRooms.length, laundryTable)
+                    ).toFixed(2)}{' '}
+                    €
+                  </span>
+                </p>
+                {usedRooms.length < villaRooms && (
+                  <p className="text-[11px] text-emerald-300 mt-0.5">
+                    Casa toda seriam{' '}
+                    {(
+                      labourCost(villaRooms, hourlyRate) + laundryCost(villaRooms, laundryTable)
+                    ).toFixed(2)}{' '}
+                    € — poupas{' '}
+                    {(
+                      labourCost(villaRooms, hourlyRate) +
+                      laundryCost(villaRooms, laundryTable) -
+                      labourCost(usedRooms.length, hourlyRate) -
+                      laundryCost(usedRooms.length, laundryTable)
+                    ).toFixed(2)}{' '}
+                    €
+                  </p>
+                )}
+              </div>
+            )}
 
             <label className="block mb-4">
               <span className="block text-xs text-gray-400 mb-1">Nota (opcional)</span>
