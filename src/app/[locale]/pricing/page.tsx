@@ -91,11 +91,15 @@ export default async function PricingPage({ params }: Props) {
     .select('*')
     .order('price_per_night', { ascending: true });
 
-  const rawSeasons: Season[] = dbSeasons || [];
+  // Seasons that have already ended still price past stays and must stay
+  // in the table, but showing a guest last spring's rate alongside next
+  // year's is just noise — by September the page was listing twelve.
+  const today = new Date().toISOString().slice(0, 10);
+  const rawSeasons: Season[] = (dbSeasons || []).filter(
+    (s: Season) => s.end_date >= today
+  );
   const hasSeasons = rawSeasons.length > 0;
 
-  // Current season price (active season) -- fallback to lowest
-  const today = new Date().toISOString().slice(0, 10);
   const activeSeason = rawSeasons.find(
     (s) => today >= s.start_date && today <= s.end_date
   );
