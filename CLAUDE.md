@@ -2,16 +2,20 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-02 22:00)
-- **Active branch**: main, limpo e em produção (`3245e0a`). Sem trabalho a meio.
-- **Sistema de limpezas reconstruído à volta do WhatsApp** (2026-09-01/02). A app da empregada com link+token foi removida; a informação passa por mensagem que o Bruno envia do seu próprio número via `wa.me`. Empregada actual: **Leonor**, `+351 919 891 565`, **15 €/hora por pessoa** (settings `cleaner_name`, `cleaner_phone`, `cleaner_hourly_rate` — todos editáveis no admin, trocar de empregada é mudar três campos).
-- **Modelo de dados das limpezas** (migrações 010-012, todas aplicadas):
-  - `room_plan jsonb` — pessoas por quarto, ex. `{"1":2,"2":1}`. É o que decide quantas camas fazer no Duplo.
-  - `towels_override int` — quando não é uma toalha por hóspede (ex.: 2 quartos e 4 toalhas).
-  - `hours_worked numeric` — horas reais que a Leonor reporta; o pagamento é `horas × 15 €`, congelado em `cleaning_fee_snapshot`.
-  - `kind text` — `turnover` (saída) ou `midstay` (estadias longas: só lençóis, toalhas e as 2 casas de banho, hora combinada com os hóspedes).
-- **Custos**: limpeza paga à Leonor por hora; **lavandaria paga directamente à lavandaria**, 3,50 €/kg + 23% IVA (settings `laundry_price_per_kg`, `laundry_vat_percent`). Casa toda ≈ 5,7 kg ≈ 24,50 € c/IVA. Pesos em `src/lib/cleaning-cost.ts`. Uma tarefa fecha só com a limpeza paga — a lavandaria é custo, não pagamento a ela.
-- **Sincronização de calendários: toda verde.** O `iCal Sync` estava parado desde 17 Jul (GitHub desactiva crons por inactividade); crons movidos para `vps-kontrolsat`. O feed do site nunca tinha sido adicionado ao VRBO — foi adicionado a 1 Set.
+## 📍 Current State (updated 2026-09-02 23:45)
+- **Active branch**: main, limpo, tudo em produção (`e21d7df`).
+- **Preços e regras de venda (2026-09-02)** — trabalho grande, tudo novo:
+  - **Épocas 2027 criadas**: Baixa 140 · Média 185 · Alta 265 (15/6-15/7) · **Pico Agosto 285** (16/7-31/8) · Alta Set 250 · Outono 160 · Inverno 139. Agosto foi separado do resto do pico de propósito.
+  - **Horizonte de venda**: setting `booking_open_until` = **2027-06-30** (igual ao aberto no Booking). O calendário acinzenta o que está para lá e `/api/booking` recusa com 409. Editável em `/admin/settings` → Reservas. O Bruno mantém o verão 2027 fechado **de propósito**, à espera de ver preços de mercado.
+  - **Regras de estadia agora no servidor** (`src/lib/stay-rules.ts`): mínimo de noites, dias de check-in e — quando os dias estão limitados — saída no mesmo dia da semana, que é o que faz a Alta ser **sábado a sábado**. Toggle por época `enforce_stay_rules` (migração 014) com checkbox em `/admin/pricing` e selo `regras off` na lista.
+  - **Preço noite-a-noite**: cada noite ao preço da sua época; noite sem época é recusada (409) em vez de cair num valor inventado.
+- **Bugs corrigidos hoje (todos silenciosos e caros)**:
+  1. Sem época para a data, o site cotava a **Época Baixa** e o servidor gravava a **100 €/noite** — 2027 inteiro estava assim.
+  2. Estadia a atravessar duas épocas não correspondia a nenhuma e caía no mesmo 100 €.
+  3. `/api/booking` **não validava** mínimo de noites nem dia de check-in: aceitou 1 noite à sexta em época de 7 noites/sábado.
+  4. Fecho longo do Booking (horizonte de venda deles) bloqueava o nosso site — Nov 2026 a Mar 2028, 486 dias.
+  5. `/api/settings` servia **51 chaves publicamente**, incluindo `cleaner_phone`/`cleaner_name`/`cleaner_hourly_rate` (migração 013 apertou a RLS).
+  6. Nomes de épocas com ano (`Low Season 2027`) não batiam no mapa de tradução e chegavam em inglês às páginas PT/ES/DE.
 - **Blockers**: nenhum.
 
 ## 🏠 A casa (fonte de verdade: `src/lib/villa-rooms.ts`)
