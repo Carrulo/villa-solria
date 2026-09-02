@@ -65,10 +65,12 @@ function translateSeasonName(name: string, locale: string): string {
   return localeMap[name] || name;
 }
 
-function formatDate(dateStr: string, locale: string) {
+function formatDate(dateStr: string, locale: string, withYear = false) {
   return new Date(dateStr).toLocaleDateString(
     locale === 'pt' ? 'pt-PT' : locale === 'es' ? 'es-ES' : locale === 'de' ? 'de-DE' : 'en-GB',
-    { day: 'numeric', month: 'short' },
+    withYear
+      ? { day: 'numeric', month: 'short', year: 'numeric' }
+      : { day: 'numeric', month: 'short' },
   );
 }
 
@@ -134,6 +136,9 @@ export default async function PricingPage({ params }: Props) {
       return aStart - bStart;
     });
 
+    const spansYears =
+      new Set(sorted.map((s) => s.start_date.slice(0, 4))).size > 1;
+
     const minPrice = Math.min(...sorted.map((s) => s.price_per_night));
     const maxPrice = Math.max(...sorted.map((s) => s.price_per_night));
 
@@ -145,7 +150,14 @@ export default async function PricingPage({ params }: Props) {
       else tier = 'mid';
 
       const translatedName = translateSeasonName(s.name, locale);
-      const period = `${formatDate(s.start_date, locale)} - ${formatDate(s.end_date, locale)}`;
+      // With next year's rates alongside this year's, "16 set - 31 out"
+      // shows up twice and means two different things. Years only appear
+      // once the list actually spans more than one.
+      const period = `${formatDate(s.start_date, locale, spansYears)} - ${formatDate(
+        s.end_date,
+        locale,
+        spansYears
+      )}`;
 
       displaySeasons.push({
         id: s.id,
