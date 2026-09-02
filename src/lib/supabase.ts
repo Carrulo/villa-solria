@@ -21,6 +21,8 @@ export interface Season {
   mid_stay_cleaning_fee: number;
   mid_stay_cleaning_auto_threshold: number;
   created_at: string;
+  /** Off = take any stay in this season, whatever the length or day. */
+  enforce_stay_rules: boolean;
 }
 
 export interface Review {

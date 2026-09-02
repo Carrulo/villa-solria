@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
+import { checkStayRules, describeViolation } from '@/lib/stay-rules';
 import { COUNTRIES } from '@/lib/countries';
 import { useEffect, useMemo, useState } from 'react';
 import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
@@ -15,6 +16,8 @@ type Season = {
   end_date: string;
   price_per_night: number;
   min_nights: number;
+  allowed_checkin_days: number[] | null;
+  enforce_stay_rules?: boolean | null;
   cleaning_fee: number;
   weekly_discount: number;
   biweekly_discount: number;
@@ -183,8 +186,20 @@ export default function BookingForm() {
   const datesComplete = Boolean(range.checkIn && range.checkOut);
   // No season covering the check-in means the dates have no price yet.
   const unpriced = datesComplete && (!activeSeason || unpricedNights > 0);
+  // Same rules the API enforces: minimum nights, and Saturday-to-Saturday
+  // when the season limits check-in days.
+  const stayViolation = useMemo(() => {
+    if (!datesComplete || !activeSeason || !range.checkIn || !range.checkOut) return null;
+    return checkStayRules(activeSeason, range.checkIn, range.checkOut, nights);
+  }, [datesComplete, activeSeason, range.checkIn, range.checkOut, nights]);
+
   const canSubmit =
-    datesComplete && !unpriced && !minNightsViolated && termsAccepted && !loading;
+    datesComplete &&
+    !unpriced &&
+    !stayViolation &&
+    !minNightsViolated &&
+    termsAccepted &&
+    !loading;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -360,6 +375,13 @@ export default function BookingForm() {
                 Ainda não temos tarifa publicada para estas datas. Contacte-nos e
                 respondemos com um orçamento.
               </p>
+            </div>
+          )}
+
+          {stayViolation && stayViolation.code !== 'min_nights' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 mb-4">
+              <AlertCircle size={16} className="text-amber-600 shrink-0" />
+              <p className="text-amber-800 text-sm">{describeViolation(stayViolation)}</p>
             </div>
           )}
 

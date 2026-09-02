@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
 import { countryToLanguage } from '@/lib/countries';
+import { checkStayRules, describeViolation } from '@/lib/stay-rules';
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,15 +69,19 @@ export async function POST(request: NextRequest) {
     const { data: seasons } = await supabase
       .from('seasons')
       .select(
-        'start_date, end_date, price_per_night, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount'
+        'name, start_date, end_date, price_per_night, min_nights, allowed_checkin_days, enforce_stay_rules, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount'
       )
       .lte('start_date', checkOut)
       .gte('end_date', checkIn);
 
     type SeasonRow = {
+      name: string | null;
       start_date: string;
       end_date: string;
       price_per_night: number;
+      min_nights: number | null;
+      allowed_checkin_days: number[] | null;
+      enforce_stay_rules: boolean | null;
       cleaning_fee: number | null;
       weekly_discount: number | null;
       biweekly_discount: number | null;
@@ -109,6 +114,17 @@ export async function POST(request: NextRequest) {
 
     // Fees and discount tiers follow the season the guest checks in on.
     const arrivalSeason = seasonFor(checkIn)!;
+
+    // High season runs Saturday to Saturday, seven nights. The form knows
+    // that; until now the API did not, so a request posted directly to it
+    // booked a single Friday night at the peak rate.
+    const violation = checkStayRules(arrivalSeason, checkIn, checkOut, nights);
+    if (violation) {
+      return NextResponse.json(
+        { error: 'Stay rules not met', reason: describeViolation(violation), violation },
+        { status: 409 }
+      );
+    }
     let cleaningFee = 50;
     let weeklyDiscount = 0;
     let biweeklyDiscount = 0;

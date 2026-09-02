@@ -24,6 +24,7 @@ const emptySeason: Omit<Season, 'id' | 'created_at'> = {
   monthly_discount: 25,
   mid_stay_cleaning_fee: 50,
   mid_stay_cleaning_auto_threshold: 14,
+  enforce_stay_rules: true,
 };
 
 export default function AdminPricingPage() {
@@ -67,6 +68,7 @@ export default function AdminPricingPage() {
       monthly_discount: editing.monthly_discount,
       mid_stay_cleaning_fee: editing.mid_stay_cleaning_fee,
       mid_stay_cleaning_auto_threshold: editing.mid_stay_cleaning_auto_threshold,
+      enforce_stay_rules: editing.enforce_stay_rules ?? true,
     };
 
     if (editing.id) {
@@ -171,7 +173,17 @@ export default function AdminPricingPage() {
                       {season.start_date} - {season.end_date}
                     </td>
                     <td className="px-6 py-4 text-sm text-white font-medium">{season.price_per_night}EUR</td>
-                    <td className="px-6 py-4 text-sm text-gray-300">{season.min_nights}</td>
+                    <td className="px-6 py-4 text-sm text-gray-300">
+                      {season.min_nights}
+                      {season.enforce_stay_rules === false && (
+                        <span
+                          className="ml-2 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-semibold uppercase"
+                          title="As regras desta época não estão a ser aplicadas"
+                        >
+                          regras off
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-1 flex-wrap">
                         {((season.allowed_checkin_days || ALL_DAYS) as number[]).map((d) => (
@@ -344,6 +356,30 @@ export default function AdminPricingPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editing.enforce_stay_rules ?? true}
+                    onChange={(e) =>
+                      setEditing({ ...editing, enforce_stay_rules: e.target.checked })
+                    }
+                    className="mt-1 w-4 h-4 accent-blue-600"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-200">
+                      Aplicar regras de estadia
+                    </span>
+                    <span className="block text-xs text-gray-400 mt-0.5">
+                      Exige o mínimo de noites e, quando os dias de check-in estão
+                      limitados, obriga a saída no mesmo dia da semana — é isto que faz
+                      a época alta ser sábado a sábado. Desliga para vender um buraco
+                      entre reservas ou aceitar estadias curtas nesta época.
+                    </span>
+                  </span>
+                </label>
               </div>
 
               <div>
