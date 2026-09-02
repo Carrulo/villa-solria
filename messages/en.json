@@ -427,7 +427,8 @@
     "proceedBooking": "Proceed with booking",
     "discount": "Discount ({percent}%)",
     "midStayCleaning": "Mid-stay cleaning",
-    "longStayDiscount": "Long-stay discount"
+    "longStayDiscount": "Long-stay discount",
+    "included": "Included"
   },
   "host": {
     "title": "Your host",

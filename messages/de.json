@@ -427,7 +427,8 @@
     "proceedBooking": "Mit Buchung fortfahren",
     "discount": "Rabatt ({percent}%)",
     "midStayCleaning": "Zwischenreinigung",
-    "longStayDiscount": "Langzeitrabatt"
+    "longStayDiscount": "Langzeitrabatt",
+    "included": "Inklusive"
   },
   "host": {
     "title": "Ihr Gastgeber",

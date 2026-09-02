@@ -175,10 +175,15 @@ export default function BookingForm() {
   }, [nights, pricePerNight, weeklyDiscount, biweeklyDiscount, monthlyDiscount, discountPercent, discountAmount]);
 
   // Mid-stay cleaning logic
+  // Mid-stay cleaning is the direct-booking perk: the pricing page has
+  // always promised it "included" on 14+ night stays, and now the
+  // checkout honours that instead of adding 75 EUR a week on top. The
+  // guest can still decline having anyone in the house.
   const midStayCount = Math.floor(nights / 7);
-  const midStayEligible = nights >= midStayThreshold && midStayCount > 0 && midStayFee > 0;
+  const midStayEligible = nights >= midStayThreshold && midStayCount > 0;
   const midStayEnabled = midStayEligible && (midStayOptIn ?? true);
-  const midStayTotal = midStayEnabled ? midStayCount * midStayFee : 0;
+  const midStayIncluded = midStayEligible;
+  const midStayTotal = midStayEnabled && !midStayIncluded ? midStayCount * midStayFee : 0;
 
   const total = subTotal - discountAmount + cleaningFee + midStayTotal;
 
@@ -435,7 +440,13 @@ export default function BookingForm() {
                     {tp('midStayCleaning')} ({midStayCount}×)
                   </span>
                 </label>
-                <span>{midStayEnabled ? `+${midStayTotal.toFixed(0)}` : '0'}&euro;</span>
+                <span className={midStayEnabled && midStayIncluded ? 'text-green-600 font-medium' : ''}>
+                  {midStayEnabled
+                    ? midStayIncluded
+                      ? tp('included')
+                      : `+${midStayTotal.toFixed(0)}€`
+                    : '0€'}
+                </span>
               </div>
             )}
             <div className="border-t border-gray-200 my-2" />

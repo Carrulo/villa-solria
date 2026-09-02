@@ -427,7 +427,8 @@
     "proceedBooking": "Prosseguir reserva",
     "discount": "Desconto ({percent}%)",
     "midStayCleaning": "Limpeza intermédia",
-    "longStayDiscount": "Desconto estadia longa"
+    "longStayDiscount": "Desconto estadia longa",
+    "included": "Incluída"
   },
   "host": {
     "title": "O seu anfitrião",
