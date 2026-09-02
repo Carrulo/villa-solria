@@ -6,6 +6,7 @@ import type { Booking, CleaningTask } from '@/lib/supabase';
 import {
   buildCleaningMessage,
   buildUpcomingMessage,
+  displayGuestName,
   type UpcomingCleaning,
 } from '@/lib/cleaning-message';
 import { whatsAppLink } from '@/lib/whatsapp';
@@ -53,6 +54,11 @@ const DEFAULT_PRICES: PriceSettings = {
 };
 
 type FilterState = 'pending' | 'closed' | 'all';
+
+interface TurnInfo {
+  isTurn: boolean;
+  nextGuest: { name: string | null; checkoutDate: string | null } | null;
+}
 
 interface OwnerInstructionsPatch {
   kind: 'turnover' | 'midstay';
@@ -381,11 +387,19 @@ export default function AdminCleaningPage() {
   // every task against itself, because since the May-2026 model change
   // `cleaning_date` IS the checkout day.
   const sequenceInfo = useMemo(() => {
-    const arrivalDays = new Set<string>();
-    for (const t of tasks) if (t.checkin_date) arrivalDays.add(t.checkin_date);
-    const info: Record<string, { isTurn: boolean }> = {};
+    // Who arrives on each date, so a turnover can name both sides: the
+    // guest whose mess this is, and the guest it's being made ready for.
+    const arrivals = new Map<string, CleaningTask>();
+    for (const t of tasks) if (t.checkin_date) arrivals.set(t.checkin_date, t);
+    const info: Record<string, TurnInfo> = {};
     for (const t of tasks) {
-      info[t.id] = { isTurn: arrivalDays.has(t.cleaning_date) };
+      const next = arrivals.get(t.cleaning_date);
+      info[t.id] = {
+        isTurn: !!next,
+        nextGuest: next
+          ? { name: next.guest_name, checkoutDate: next.stay_checkout_date }
+          : null,
+      };
     }
     return info;
   }, [tasks]);
@@ -419,6 +433,7 @@ export default function AdminCleaningPage() {
         upcoming,
         villaRooms: prices.villa_rooms,
         cleanerName,
+        nextGuest: sequenceInfo[t.id]?.nextGuest ?? null,
       });
       out[t.id] = whatsAppLink(cleanerPhone, text);
     }
@@ -665,7 +680,7 @@ export default function AdminCleaningPage() {
               key={t.id}
               task={t}
               reference={t.booking_id ? bookingRefs[t.booking_id] : null}
-              seq={sequenceInfo[t.id] || { isTurn: false }}
+              seq={sequenceInfo[t.id] || { isTurn: false, nextGuest: null }}
               whatsAppHref={whatsAppByTask[t.id] || null}
               roomOptions={roomOptions}
               laundryPricePerKg={prices.laundry_price_per_kg}
@@ -714,7 +729,7 @@ export default function AdminCleaningPage() {
                     key={t.id}
                     task={t}
                     reference={t.booking_id ? bookingRefs[t.booking_id] : null}
-                    seq={sequenceInfo[t.id] || { isTurn: false }}
+                    seq={sequenceInfo[t.id] || { isTurn: false, nextGuest: null }}
                     whatsAppHref={whatsAppByTask[t.id] || null}
                     roomOptions={roomOptions}
                     laundryPricePerKg={prices.laundry_price_per_kg}
@@ -870,7 +885,7 @@ function TaskRow({
 }: {
   task: CleaningTask;
   reference: string | null;
-  seq: { isTurn: boolean };
+  seq: TurnInfo;
   whatsAppHref: string | null;
   roomOptions: number[];
   laundryPricePerKg: number;
@@ -992,9 +1007,16 @@ function TaskRow({
             </p>
           </button>
         )}
-        {task.num_guests != null && (
-          <p className="text-xs text-gray-500">{task.num_guests} hóspede(s)</p>
-        )}
+        <p className="text-xs text-gray-500">
+          {task.num_guests != null ? `${task.num_guests} hóspede(s) · ` : ''}
+          {seq.isTurn ? (
+            <span className="text-amber-300">
+              entra {displayGuestName(seq.nextGuest?.name) || 'hóspede novo'} às 16h
+            </span>
+          ) : (
+            'ninguém entra a seguir'
+          )}
+        </p>
         <OwnerInstructions
           task={task}
           villaRooms={roomOptions.length}
@@ -1145,7 +1167,7 @@ function TaskCard({
 }: {
   task: CleaningTask;
   reference: string | null;
-  seq: { isTurn: boolean };
+  seq: TurnInfo;
   whatsAppHref: string | null;
   roomOptions: number[];
   laundryPricePerKg: number;
@@ -1266,6 +1288,15 @@ function TaskCard({
           <p className="text-[11px] text-gray-500">
             {task.num_guests != null ? `${task.num_guests} hóspede(s) · ` : ''}
             {sourceLabel}
+          </p>
+          <p className="text-[11px]">
+            {seq.isTurn ? (
+              <span className="text-amber-300">
+                entra {displayGuestName(seq.nextGuest?.name) || 'hóspede novo'} às 16h
+              </span>
+            ) : (
+              <span className="text-gray-500">ninguém entra a seguir</span>
+            )}
           </p>
         </div>
       </div>

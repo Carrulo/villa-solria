@@ -104,6 +104,19 @@ function listRooms(rooms: number[]): string {
   return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`;
 }
 
+/**
+ * Booking.com sends every reservation as "CLOSED - Not available" with
+ * no guest name, and Airbnb sends "Reserved". Neither is a person.
+ */
+export function displayGuestName(raw: string | null | undefined): string | null {
+  const name = (raw || '').trim();
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  if (lower.startsWith('closed') || lower.includes('not available')) return null;
+  if (lower === 'reserved') return null;
+  return name;
+}
+
 /** "Olá Leonor 👋" — skipped when no name is on file. */
 function greeting(cleanerName?: string | null): string[] {
   const name = (cleanerName || '').trim();
@@ -116,6 +129,7 @@ export function buildCleaningMessage({
   upcoming,
   villaRooms,
   cleanerName,
+  nextGuest,
 }: {
   task: CleaningMessageTask;
   /** Another stay checks in on this cleaning day. */
@@ -123,6 +137,8 @@ export function buildCleaningMessage({
   upcoming: UpcomingCleaning[];
   villaRooms: number;
   cleanerName?: string | null;
+  /** Who arrives on this same day, when it's a turnover. */
+  nextGuest?: { name: string | null; checkoutDate: string | null } | null;
 }): string {
   if (task.kind === 'midstay') {
     return buildMidstayMessage(task, villaRooms, cleanerName);
@@ -133,13 +149,17 @@ export function buildCleaningMessage({
   lines.push(`🧹 *Limpeza — ${formatPtDate(task.cleaning_date)}*`);
   lines.push('');
 
-  // 1. The window. This is the part that changes how she plans the day.
-  lines.push(`Saída dos hóspedes: ${CHECKOUT_HOUR}`);
+  // 1. The window, and who is on each side of it. Naming both makes it
+  //    obvious this is not the departing guest's own cleaning.
+  const leaving = displayGuestName(task.guest_name);
+  lines.push(`Sai: ${leaving ? `${leaving}, ` : ''}até às ${CHECKOUT_HOUR}`);
   if (isTurn) {
-    lines.push(`Entrada dos próximos: ${CHECKIN_HOUR}, no mesmo dia`);
+    const arriving = displayGuestName(nextGuest?.name);
+    const until = nextGuest?.checkoutDate ? `, fica até ${formatPtDate(nextGuest.checkoutDate)}` : '';
+    lines.push(`Entra: ${arriving ? arriving : 'hóspede novo'}, a partir das ${CHECKIN_HOUR}${until}`);
     lines.push(`⏱ *A limpeza tem de ficar feita entre as ${CHECKOUT_HOUR} e as ${CHECKIN_HOUR}.*`);
   } else {
-    lines.push('Sem entrada marcada a seguir.');
+    lines.push('Não entra ninguém a seguir.');
     lines.push('Mesmo assim deixamos a casa pronta — pode ser sem pressa de horário.');
   }
 
