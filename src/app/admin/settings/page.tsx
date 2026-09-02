@@ -52,6 +52,11 @@ const SECTIONS: SettingSection[] = [
           { value: 'instant', label: 'Instantâneo' },
         ],
       },
+      {
+        key: 'booking_open_until',
+        label: 'Aceitar reservas até (AAAA-MM-DD)',
+        placeholder: '2027-06-30',
+      },
       { key: 'ical_airbnb', label: 'URL iCal Airbnb', placeholder: 'https://...' },
       { key: 'ical_booking', label: 'URL iCal Booking.com', placeholder: 'https://...' },
       { key: 'ical_vrbo', label: 'URL iCal VRBO', placeholder: 'https://www.vrbo.com/icalendar/{listing_id}.ics' },

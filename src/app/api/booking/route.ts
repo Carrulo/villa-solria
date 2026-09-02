@@ -13,6 +13,27 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient();
 
+    // Dates past the sales horizon are not on the market yet: peak
+    // months are held back until the next season's prices are set, and
+    // the same window is kept closed on Booking/Airbnb/VRBO. The
+    // calendar hides them, but the API is what actually decides.
+    const { data: horizonRow } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'booking_open_until')
+      .maybeSingle();
+    const horizonRaw = horizonRow?.value;
+    const openUntil =
+      typeof horizonRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(horizonRaw.trim())
+        ? horizonRaw.trim()
+        : null;
+    if (openUntil && checkOut > openUntil) {
+      return NextResponse.json(
+        { error: 'Dates not open yet', openUntil },
+        { status: 409 }
+      );
+    }
+
     // Check for overlapping bookings that legitimately hold dates.
     // Only confirmed bookings and Multibanco vouchers in pending_payment
     // block the calendar — plain 'pending' means the form was submitted

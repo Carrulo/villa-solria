@@ -92,6 +92,9 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
   const todayISO = toISO(today);
   const [viewMonth, setViewMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
   const [blocked, setBlocked] = useState<BlockedDate[]>([]);
+  // Nothing past this date is for sale yet — peak seasons are released
+  // once the following year's prices are set.
+  const [openUntil, setOpenUntil] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hoverDate, setHoverDate] = useState<string | null>(null);
 
@@ -105,7 +108,14 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
       .then((r) => r.json())
       .then((data) => {
         if (!active) return;
-        if (Array.isArray(data)) setBlocked(data);
+        // The endpoint used to return a bare array; it now carries the
+        // sales horizon alongside the dates.
+        if (Array.isArray(data)) {
+          setBlocked(data);
+        } else if (data && Array.isArray(data.dates)) {
+          setBlocked(data.dates);
+          setOpenUntil(typeof data.openUntil === 'string' ? data.openUntil : null);
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -207,7 +217,8 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
               inRange = iso > checkIn && iso < hoverDate;
             }
 
-            const disabled = isPast || isBlocked;
+            const beyondHorizon = !!openUntil && iso > openUntil;
+            const disabled = isPast || isBlocked || beyondHorizon;
 
             // Build classes
             let bgClass = 'bg-white';
@@ -215,7 +226,7 @@ export default function AvailabilityCalendar({ value, onChange, minNights = 3 }:
             let extraClass = 'hover:bg-blue-50 cursor-pointer';
 
             if (disabled) {
-              if (isBlocked) {
+              if (isBlocked && !beyondHorizon) {
                 bgClass = 'bg-red-50/80';
                 textClass = 'text-red-300 line-through';
                 extraClass = 'cursor-not-allowed';
