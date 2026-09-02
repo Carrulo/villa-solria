@@ -30,12 +30,14 @@ function diffNights(checkIn: string, checkOut: string): number {
 }
 
 function findSeasonForDate(seasons: Season[], date: string): Season | null {
-  // Use the season whose range contains the date
+  // Use the season whose range contains the date. Dates no season covers
+  // — next year, before the seasons are set — have no price, and falling
+  // back to seasons[0] quoted them at the cheapest rate of the year with
+  // none of its minimum-stay rules.
   for (const s of seasons) {
     if (date >= s.start_date && date <= s.end_date) return s;
   }
-  // Fallback: closest season
-  return seasons[0] || null;
+  return null;
 }
 
 function formatDateDisplay(iso: string, locale: string): string {
@@ -114,7 +116,31 @@ export default function BookingForm() {
   const midStayFee = activeSeason?.mid_stay_cleaning_fee ?? 0;
   const midStayThreshold = activeSeason?.mid_stay_cleaning_auto_threshold ?? 14;
 
-  const subTotal = pricePerNight * nights;
+  // Each night is billed at its own season's rate: a stay that starts in
+  // Mid Season and runs into High Season costs more than the arrival
+  // rate, and this is what the server charges. `unpricedNights` catches
+  // any night no season covers.
+  const { subTotal, unpricedNights } = useMemo(() => {
+    if (!range.checkIn || nights <= 0) return { subTotal: 0, unpricedNights: 0 };
+    let sum = 0;
+    let missing = 0;
+    for (let i = 0; i < nights; i++) {
+      const night = new Date(range.checkIn);
+      night.setDate(night.getDate() + i);
+      const iso = `${night.getFullYear()}-${String(night.getMonth() + 1).padStart(2, '0')}-${String(
+        night.getDate()
+      ).padStart(2, '0')}`;
+      const season = findSeasonForDate(seasons, iso);
+      if (!season) {
+        missing += 1;
+        continue;
+      }
+      sum += Number(season.price_per_night) || 0;
+    }
+    return { subTotal: sum, unpricedNights: missing };
+  }, [range.checkIn, nights, seasons]);
+
+  const averageNightly = nights > 0 ? Math.round(subTotal / nights) : pricePerNight;
 
   // Long-stay discount tier
   const discountPercent = useMemo(() => {
@@ -155,7 +181,10 @@ export default function BookingForm() {
 
   const minNightsViolated = nights > 0 && nights < minNights;
   const datesComplete = Boolean(range.checkIn && range.checkOut);
-  const canSubmit = datesComplete && !minNightsViolated && termsAccepted && !loading;
+  // No season covering the check-in means the dates have no price yet.
+  const unpriced = datesComplete && (!activeSeason || unpricedNights > 0);
+  const canSubmit =
+    datesComplete && !unpriced && !minNightsViolated && termsAccepted && !loading;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -324,6 +353,16 @@ export default function BookingForm() {
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">{tp('title')}</h3>
 
+          {unpriced && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 mb-4">
+              <AlertCircle size={16} className="text-amber-600 shrink-0" />
+              <p className="text-amber-800 text-sm">
+                Ainda não temos tarifa publicada para estas datas. Contacte-nos e
+                respondemos com um orçamento.
+              </p>
+            </div>
+          )}
+
           {minNightsViolated && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 mb-4">
               <AlertCircle size={16} className="text-amber-600 shrink-0" />
@@ -336,7 +375,7 @@ export default function BookingForm() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-600">
               <span>
-                {nights} × {pricePerNight}&euro; {tp('perNight')}
+                {nights} × {averageNightly}&euro; {tp('perNight')}
               </span>
               <span>{subTotal.toFixed(0)}&euro;</span>
             </div>

@@ -59,27 +59,65 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid dates' }, { status: 400 });
     }
 
-    // Get applicable season price
+    // Price the stay night by night. A stay that straddles two seasons
+    // used to match no row at all (the query demanded one season cover
+    // the whole range), and dates with no season — next year, before the
+    // rates are set — fell through to a hardcoded 100 EUR. Both quietly
+    // sold nights below their worth, so an unpriced night is now refused
+    // rather than guessed.
     const { data: seasons } = await supabase
       .from('seasons')
-      .select('price_per_night, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount')
-      .lte('start_date', checkIn)
-      .gte('end_date', checkOut)
-      .limit(1);
+      .select(
+        'start_date, end_date, price_per_night, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount'
+      )
+      .lte('start_date', checkOut)
+      .gte('end_date', checkIn);
 
-    let pricePerNight = 100;
+    type SeasonRow = {
+      start_date: string;
+      end_date: string;
+      price_per_night: number;
+      cleaning_fee: number | null;
+      weekly_discount: number | null;
+      biweekly_discount: number | null;
+      monthly_discount: number | null;
+    };
+    const seasonRows = (seasons || []) as SeasonRow[];
+    const seasonFor = (iso: string) =>
+      seasonRows.find((s) => iso >= s.start_date && iso <= s.end_date) || null;
+
+    let subTotalNights = 0;
+    const unpriced: string[] = [];
+    for (let i = 0; i < nights; i++) {
+      const night = new Date(checkInDate);
+      night.setUTCDate(night.getUTCDate() + i);
+      const iso = night.toISOString().slice(0, 10);
+      const season = seasonFor(iso);
+      if (!season) {
+        unpriced.push(iso);
+        continue;
+      }
+      subTotalNights += Number(season.price_per_night) || 0;
+    }
+
+    if (unpriced.length > 0) {
+      return NextResponse.json(
+        { error: 'Dates not priced yet', unpriced: unpriced.slice(0, 5) },
+        { status: 409 }
+      );
+    }
+
+    // Fees and discount tiers follow the season the guest checks in on.
+    const arrivalSeason = seasonFor(checkIn)!;
     let cleaningFee = 50;
     let weeklyDiscount = 0;
     let biweeklyDiscount = 0;
     let monthlyDiscount = 0;
 
-    if (seasons && seasons.length > 0) {
-      pricePerNight = seasons[0].price_per_night;
-      cleaningFee = seasons[0].cleaning_fee || 50;
-      weeklyDiscount = seasons[0].weekly_discount || 0;
-      biweeklyDiscount = seasons[0].biweekly_discount || 0;
-      monthlyDiscount = seasons[0].monthly_discount || 0;
-    }
+    cleaningFee = arrivalSeason.cleaning_fee || 50;
+    weeklyDiscount = arrivalSeason.weekly_discount || 0;
+    biweeklyDiscount = arrivalSeason.biweekly_discount || 0;
+    monthlyDiscount = arrivalSeason.monthly_discount || 0;
 
     // Long-stay discount tier (matches frontend BookingForm logic)
     let discountPercent = 0;
@@ -91,7 +129,7 @@ export async function POST(request: NextRequest) {
       discountPercent = weeklyDiscount;
     }
 
-    const subTotal = pricePerNight * nights;
+    const subTotal = subTotalNights;
     const discountAmount = Math.round(subTotal * (discountPercent / 100));
     let totalPrice = subTotal - discountAmount + cleaningFee;
 
@@ -116,7 +154,8 @@ export async function POST(request: NextRequest) {
         num_guests: parseInt(guests),
         message: message || null,
         num_nights: nights,
-        price_per_night: pricePerNight,
+        // Blended nightly rate when the stay crosses seasons.
+        price_per_night: nights > 0 ? Math.round(subTotalNights / nights) : 0,
         cleaning_fee: cleaningFee,
         total_price: Math.round(totalPrice * 100) / 100,
         status: 'pending',
