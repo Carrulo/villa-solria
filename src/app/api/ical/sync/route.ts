@@ -174,8 +174,23 @@ async function syncSource(
       eventCount += 1;
 
       const note = event.summary;
-      for (const date of datesInRange(startDate, endDate)) {
-        blockedRows.push({ date, source, note });
+
+      // Booking.com only keeps a rolling window of dates open and exports
+      // everything beyond it as one enormous "CLOSED - Not available"
+      // event — 2026-11-01 to 2027-09-01, for instance. That is their
+      // sales horizon, not the villa being unavailable, and mirroring it
+      // would shut our own site for months at a time. Real host blocks
+      // are short; anything longer than a month is a calendar window.
+      const nights = Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000);
+      const isPlatformHorizon =
+        source === 'booking_ical' &&
+        !event.isReservation &&
+        nights > BOOKING_MAX_RESERVATION_NIGHTS;
+
+      if (!isPlatformHorizon) {
+        for (const date of datesInRange(startDate, endDate)) {
+          blockedRows.push({ date, source, note });
+        }
       }
 
       // Skip availability blocks — they block the calendar but are not
