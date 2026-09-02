@@ -36,6 +36,8 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'High Season': 'Epoca Alta',
     'Low Season Winter': 'Epoca Baixa (Inverno)',
     'Mid Season Autumn': 'Epoca Media (Outono)',
+    'Peak August': 'Epoca Alta (Agosto)',
+    'High Season September': 'Epoca Alta (Setembro)',
   },
   en: {
     'Low Season': 'Low Season',
@@ -43,6 +45,8 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'High Season': 'High Season',
     'Low Season Winter': 'Low Season (Winter)',
     'Mid Season Autumn': 'Mid Season (Autumn)',
+    'Peak August': 'Peak Season (August)',
+    'High Season September': 'High Season (September)',
   },
   es: {
     'Low Season': 'Temporada Baja',
@@ -50,6 +54,8 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'High Season': 'Temporada Alta',
     'Low Season Winter': 'Temporada Baja (Invierno)',
     'Mid Season Autumn': 'Temporada Media (Otono)',
+    'Peak August': 'Temporada Alta (Agosto)',
+    'High Season September': 'Temporada Alta (Septiembre)',
   },
   de: {
     'Low Season': 'Nebensaison',
@@ -57,12 +63,18 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'High Season': 'Hauptsaison',
     'Low Season Winter': 'Nebensaison (Winter)',
     'Mid Season Autumn': 'Zwischensaison (Herbst)',
+    'Peak August': 'Hauptsaison (August)',
+    'High Season September': 'Hauptsaison (September)',
   },
 };
 
 function translateSeasonName(name: string, locale: string): string {
   const localeMap = seasonNameTranslations[locale] || seasonNameTranslations.en;
-  return localeMap[name] || name;
+  // A season named "High Season 2027" in the admin is still High Season:
+  // an untranslated name would otherwise reach the guest in English on
+  // the Portuguese, Spanish and German pages.
+  const base = (name || '').replace(/\s*(19|20)\d{2}\s*$/, '').trim();
+  return localeMap[name] || localeMap[base] || base || name;
 }
 
 function formatDate(dateStr: string, locale: string, withYear = false) {
