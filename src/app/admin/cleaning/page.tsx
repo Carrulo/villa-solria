@@ -33,15 +33,12 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
-type LaundryTable = Record<string, number>;
-
 interface PriceSettings {
   cleaning_base_fee: number;
   cleaner_hourly_rate: number;
   laundry_price_per_kg: number;
   laundry_vat_percent: number;
   villa_rooms: number;
-  laundry_fee_per_room: LaundryTable;
 }
 
 const DEFAULT_PRICES: PriceSettings = {
@@ -50,7 +47,6 @@ const DEFAULT_PRICES: PriceSettings = {
   laundry_price_per_kg: 3.5,
   laundry_vat_percent: 23,
   villa_rooms: 3,
-  laundry_fee_per_room: { '1': 0, '2': 0, '3': 0 },
 };
 
 type FilterState = 'pending' | 'closed' | 'all';
@@ -112,7 +108,7 @@ export default function AdminCleaningPage() {
       supabase
         .from('settings')
         .select('key, value')
-        .in('key', ['cleaning_base_fee', 'villa_rooms', 'laundry_fee_per_room', 'cleaner_phone', 'cleaner_hourly_rate', 'cleaner_name', 'laundry_price_per_kg', 'laundry_vat_percent']),
+        .in('key', ['cleaning_base_fee', 'villa_rooms', 'cleaner_phone', 'cleaner_hourly_rate', 'cleaner_name', 'laundry_price_per_kg', 'laundry_vat_percent']),
     ]);
 
     const rawTasks = (tasksRes.data || []) as CleaningTask[];
@@ -181,7 +177,6 @@ export default function AdminCleaningPage() {
         byKey.laundry_vat_percent ?? DEFAULT_PRICES.laundry_vat_percent
       ),
       villa_rooms: Number(byKey.villa_rooms ?? DEFAULT_PRICES.villa_rooms),
-      laundry_fee_per_room: parseLaundryTable(byKey.laundry_fee_per_room),
     };
     setPrices(loaded);
     setPriceDraft(loaded);
@@ -194,21 +189,6 @@ export default function AdminCleaningPage() {
     setLoading(false);
   }
 
-  function parseLaundryTable(raw: string | undefined): LaundryTable {
-    if (!raw) return { ...DEFAULT_PRICES.laundry_fee_per_room };
-    try {
-      const parsed = JSON.parse(raw);
-      const out: LaundryTable = {};
-      Object.entries(parsed).forEach(([k, v]) => {
-        out[k] = Number(v) || 0;
-      });
-      return out;
-    } catch {
-      return { ...DEFAULT_PRICES.laundry_fee_per_room };
-    }
-  }
-
-
   async function saveSettings() {
     setSavingPrices(true);
     const rows = [
@@ -217,10 +197,6 @@ export default function AdminCleaningPage() {
       { key: 'laundry_price_per_kg', value: String(priceDraft.laundry_price_per_kg) },
       { key: 'laundry_vat_percent', value: String(priceDraft.laundry_vat_percent) },
       { key: 'villa_rooms', value: String(priceDraft.villa_rooms) },
-      {
-        key: 'laundry_fee_per_room',
-        value: JSON.stringify(priceDraft.laundry_fee_per_room),
-      },
       { key: 'cleaner_phone', value: phoneDraft.trim() },
       { key: 'cleaner_name', value: nameDraft.trim() },
     ];
@@ -358,6 +334,15 @@ export default function AdminCleaningPage() {
     await updateTask(t.id, {
       hours_worked: safe > 0 ? safe : null,
       cleaning_fee_snapshot: safe > 0 ? safe * prices.cleaner_hourly_rate : 0,
+    });
+  }
+
+  // The estimate gets you a number before the bag goes out; this is
+  // where the laundry's actual invoice lands.
+  async function updateLaundryFee(t: CleaningTask, fee: number) {
+    if (t.laundry_paid) return;
+    await updateTask(t.id, {
+      laundry_fee_snapshot: Math.max(0, Number.isFinite(fee) ? fee : 0),
     });
   }
 
@@ -613,38 +598,10 @@ export default function AdminCleaningPage() {
           <PriceInput
             label="Nº de quartos da villa"
             value={priceDraft.villa_rooms}
-            onChange={(v) =>
-              setPriceDraft((p) => {
-                const nextTable: LaundryTable = {};
-                for (let i = 1; i <= v; i++) {
-                  nextTable[String(i)] = p.laundry_fee_per_room[String(i)] ?? 0;
-                }
-                return { ...p, villa_rooms: v, laundry_fee_per_room: nextTable };
-              })
-            }
+            onChange={(v) => setPriceDraft((p) => ({ ...p, villa_rooms: v }))}
           />
         </div>
 
-        <div className="mt-4">
-          <p className="text-xs text-gray-400 mb-2">
-            Tabela antiga (pagamento à empregada por lavar) — usada só no histórico
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Array.from({ length: priceDraft.villa_rooms }, (_, i) => i + 1).map((n) => (
-              <PriceInput
-                key={n}
-                label={`${n} quarto${n > 1 ? 's' : ''} (€)`}
-                value={priceDraft.laundry_fee_per_room[String(n)] ?? 0}
-                onChange={(v) =>
-                  setPriceDraft((p) => ({
-                    ...p,
-                    laundry_fee_per_room: { ...p.laundry_fee_per_room, [String(n)]: v },
-                  }))
-                }
-              />
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Filter */}
@@ -694,6 +651,7 @@ export default function AdminCleaningPage() {
               onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
               onUpdateFee={(fee) => updateCleaningFee(t, fee)}
               onUpdateHours={(h) => updateHoursWorked(t, h)}
+              onUpdateLaundryFee={(fee) => updateLaundryFee(t, fee)}
               onSaveOwnerInstructions={(patch) => updateTask(t.id, patch)}
             />
           ))
@@ -743,6 +701,7 @@ export default function AdminCleaningPage() {
                     onRenameGuest={(name) => updateTask(t.id, { guest_name: name })}
                     onUpdateFee={(fee) => updateCleaningFee(t, fee)}
                     onUpdateHours={(h) => updateHoursWorked(t, h)}
+                    onUpdateLaundryFee={(fee) => updateLaundryFee(t, fee)}
                     onSaveOwnerInstructions={(patch) => updateTask(t.id, patch)}
                   />
                 ))
@@ -881,6 +840,7 @@ function TaskRow({
   onRenameGuest,
   onUpdateFee,
   onUpdateHours,
+  onUpdateLaundryFee,
   onSaveOwnerInstructions,
 }: {
   task: CleaningTask;
@@ -899,6 +859,7 @@ function TaskRow({
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
   onUpdateHours: (hours: number) => void;
+  onUpdateLaundryFee: (fee: number) => void;
   onSaveOwnerInstructions: (patch: OwnerInstructionsPatch) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -1077,7 +1038,11 @@ function TaskRow({
                 {task.rooms_with_laundry} quarto{task.rooms_with_laundry !== 1 ? 's' : ''}
               </p>
               <p className="text-gray-500">
-                {Number(task.laundry_fee_snapshot).toFixed(2)} €
+                <EditableFee
+                  value={Number(task.laundry_fee_snapshot)}
+                  disabled={task.laundry_paid}
+                  onSave={onUpdateLaundryFee}
+                />{' '}€
                 {task.laundry_paid && <span className="text-gray-500"> · paga</span>}
               </p>
             </div>
@@ -1163,6 +1128,7 @@ function TaskCard({
   onRenameGuest,
   onUpdateFee,
   onUpdateHours,
+  onUpdateLaundryFee,
   onSaveOwnerInstructions,
 }: {
   task: CleaningTask;
@@ -1181,6 +1147,7 @@ function TaskCard({
   onRenameGuest: (name: string | null) => void;
   onUpdateFee: (fee: number) => void;
   onUpdateHours: (hours: number) => void;
+  onUpdateLaundryFee: (fee: number) => void;
   onSaveOwnerInstructions: (patch: OwnerInstructionsPatch) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -1349,8 +1316,12 @@ function TaskCard({
           {task.laundry_taken && (
             <span className="text-xs text-blue-300">
               {task.rooms_with_laundry} q ·{' '}
-              {Number(task.laundry_fee_snapshot).toFixed(2)} €
-              {task.laundry_paid && <span className="text-gray-500"> · paga</span>}
+              <EditableFee
+                value={Number(task.laundry_fee_snapshot)}
+                disabled={task.laundry_paid}
+                onSave={onUpdateLaundryFee}
+              />{' '}
+              €{task.laundry_paid && <span className="text-gray-500"> · paga</span>}
             </span>
           )}
         </div>
