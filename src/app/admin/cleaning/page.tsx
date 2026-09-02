@@ -454,6 +454,7 @@ export default function AdminCleaningPage() {
 
   const summary = useMemo(() => {
     let owedCleaning = 0;
+    // Owed to the laundry, not to the cleaner — two different payees.
     let owedLaundry = 0;
     tasks.forEach((t) => {
       if (t.cleaning_done && !t.cleaning_paid) owedCleaning += Number(t.cleaning_fee_snapshot);
@@ -525,12 +526,12 @@ export default function AdminCleaningPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SummaryCard
           icon={<Sparkles size={18} />}
-          label="A pagar em limpeza"
+          label="A pagar à empregada"
           value={`${summary.owedCleaning.toFixed(2)} €`}
         />
         <SummaryCard
           icon={<Shirt size={18} />}
-          label="A pagar em roupas"
+          label="Lavandaria por pagar"
           value={`${summary.owedLaundry.toFixed(2)} €`}
         />
       </div>
@@ -539,7 +540,7 @@ export default function AdminCleaningPage() {
       <div className="bg-[#16213e] rounded-2xl border border-white/5 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-            <Euro size={14} /> Preços e contactos (internos)
+            <Euro size={14} /> Pagamentos e contactos
           </h2>
           <button
             onClick={saveSettings}
@@ -695,7 +696,7 @@ export default function AdminCleaningPage() {
                 <th className="px-4 py-3">Hóspede</th>
                 <th className="px-4 py-3">Origem</th>
                 <th className="px-4 py-3">Limpeza</th>
-                <th className="px-4 py-3">Roupas</th>
+                <th className="px-4 py-3">Lavandaria</th>
                 <th className="px-4 py-3 text-right">A pagar</th>
                 <th className="px-4 py-3"></th>
               </tr>
@@ -905,9 +906,10 @@ function TaskRow({
     }
     return '—';
   })();
+  // Only the cleaner is paid from here; the laundry invoices the host
+  // directly, so its cost never lands in what she is owed.
   const amount =
-    (!task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0) +
-    (!task.laundry_paid && task.laundry_taken ? Number(task.laundry_fee_snapshot) : 0);
+    !task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0;
 
   const sourceLabel = task.booking_id
     ? 'Site'
@@ -1072,7 +1074,7 @@ function TaskRow({
             <button
               onClick={() => onMarkLaundry(0)}
               className="px-2 py-0.5 rounded bg-white/5 hover:bg-gray-500/30 text-gray-300 hover:text-white text-xs"
-              title="Marcar como sem roupa (0€)"
+              title="Não foi roupa para a lavandaria"
             >
               sem
             </button>
@@ -1081,7 +1083,7 @@ function TaskRow({
                 key={n}
                 onClick={() => onMarkLaundry(n)}
                 className="px-2 py-0.5 rounded bg-white/5 hover:bg-blue-500/30 text-gray-300 hover:text-white text-xs"
-                title={`Marcar ${n} quarto(s) de roupa`}
+                title={`Roupa de ${n} quarto(s) entregue na lavandaria`}
               >
                 {n}q
               </button>
@@ -1111,9 +1113,9 @@ function TaskRow({
             <button
               onClick={onCloseLaundry}
               className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-xs font-medium"
-              title="Fechar pagamento das roupas"
+              title="Marcar a fatura da lavandaria como paga"
             >
-              <Lock size={11} /> roupas
+              <Lock size={11} /> lavandaria
             </button>
           )}
         </div>
@@ -1177,9 +1179,10 @@ function TaskCard({
     return '—';
   })();
 
+  // Only the cleaner is paid from here; the laundry invoices the host
+  // directly, so its cost never lands in what she is owed.
   const amount =
-    (!task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0) +
-    (!task.laundry_paid && task.laundry_taken ? Number(task.laundry_fee_snapshot) : 0);
+    !task.cleaning_paid && task.cleaning_done ? Number(task.cleaning_fee_snapshot) : 0;
 
   const sourceLabel = task.booking_id
     ? 'Site'
@@ -1310,7 +1313,7 @@ function TaskCard({
       <div className="bg-white/5 rounded-lg px-3 py-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-sm text-white flex items-center gap-2">
-            <Shirt size={16} className="text-blue-300" /> Roupas
+            <Shirt size={16} className="text-blue-300" /> Lavandaria
           </span>
           {task.laundry_taken && (
             <span className="text-xs text-blue-300">
@@ -1371,7 +1374,7 @@ function TaskCard({
               onClick={onCloseLaundry}
               className="inline-flex items-center gap-1 px-2 py-1.5 rounded bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 text-xs font-medium"
             >
-              <Lock size={11} /> roupas
+              <Lock size={11} /> lavandaria
             </button>
           )}
         </div>
