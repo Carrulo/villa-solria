@@ -2,20 +2,25 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-01 21:15)
-- **🔴 CAUSA RAIZ ENCONTRADA (2026-09-01)**: o GitHub **desativou os 5 workflows agendados por inatividade** (`disabled_inactivity`). GitHub desliga crons em repos sem commits há 60 dias — último commit 18 Mai + 60 = **17 Jul**. Último `iCal Sync` automático: `2026-07-17T21:29Z`. Desde aí **nenhuma reserva Booking/Airbnb entrou no site** (risco de overbooking: as datas apareciam livres em villasolria.com).
-- **Reserva Booking de Setembro recuperada**: sync manual às 2026-09-01 20:06Z criou a task em falta — check-in **16 Set**, checkout **24 Set** (`CLOSED - Not available`, sem nome, normal no Booking). Foi a única reserva perdida no intervalo.
-- **iCal Sync reativado** (`gh workflow enable 259514419`) — está `active` e a correr de 15 em 15 min.
-- **Workflows reativados (2026-09-01)**: `iCal Sync`, `Pre-arrival emails`, `Review requests`, `Invoice Reminder` estão `active`. Usam igualdade exata de data, por isso não houve catch-up de emails para estadias antigas. Hóspedes entre 17 Jul e 1 Set não receberam pré-chegada nem pedido de review — perdido, não recuperável.
-- **🧹 App da empregada REMOVIDA (2026-09-01)**: branch `chore/remove-cleaner-app`. Bruno vai substituir o link/token por **envio de mensagem WhatsApp**. Removidos: `src/app/cleaning/*`, `src/app/api/cleaning/*` (update, photo-upload, daily-email), `src/lib/cleaning-checklist.ts`, `src/lib/cleaning-rooms.ts`, workflow `cleaning-daily-email.yml`, botões "Partilhar"/rotate token em `/admin/cleaning`, e `/cleaning` do `middleware.ts`. **Mantidos**: tabela `cleaning_tasks`, ledger `/admin/cleaning` (pagamentos limpeza+roupa), criação de tasks no sync/webhook/manual, e a `cleaning_fee` cobrada ao hóspede (nada disso foi tocado).
-- **Sobras a limpar quando o WhatsApp existir**: linhas `cleaner_token` e `cleaner_email` na tabela `settings` (órfãs, inofensivas) e o secret `CLEANING_EMAIL_SECRET` no GitHub.
-- **✅ Crons movidos para o VPS (2026-09-01)**: `ssh vps-kontrolsat` → `/opt/cronjobs/villa-solria/call.sh <endpoint> <log>`, logs em `/var/log/villa-solria/*.log` (auto-truncados aos 5000 linhas). Entradas: `*/15` iCal sync (com `flock`), `0 9` pre-arrival, `0 8` review requests. Imune à inatividade do repo. Os workflows GitHub ficam ativos como redundância — os endpoints de email são idempotentes (`pre_arrival_sent_at` / `review_requested_at` com guarda `.is(null)`), por isso correr em duplicado **não** duplica emails.
-- **✅ Verificado em produção (2026-09-01 21:35)**: `main` = `a40c86b` deployed. `/cleaning` → 404, `/admin/cleaning` → 200, homepage → 200. Cron do VPS disparou sozinho às 20:30Z (`OK /api/ical/sync`). `/api/blocked-dates` já devolve 16-23 Set como `booking_ical` — o site deixou de vender essas datas.
-- **Propagação entre canais — TODOS OK (verificado visualmente 2026-09-01)**: a reserva Booking 16-24 Set aparece no Airbnb (riscada) e no VRBO (barra "Importado"). As ligações plataforma-a-plataforma do Bruno funcionam.
-  - **Nem o Airbnb nem o VRBO reexportam blocos importados** no seu `.ics` (anti-loop). Por isso `blocked_dates` só vê 2 dias `airbnb_ical` e 1 bloco `vrbo_ical` — **isto é normal, não é sintoma de avaria**. Nunca diagnosticar sincronização olhando só para os feeds: confirmar no calendário da plataforma.
-  - O feed de saída do site (`/api/ical/villa-solria.ics`, `/api/ical/export`) exporta **só a tabela `bookings`**. Reservas de outros canais não saem — hoje isso é compensado pelas ligações directas entre plataformas. Se alguma dessas ligações cair, a correcção estrutural é feed por canal (`?exclude=<source>`) incluindo `blocked_dates` de outras origens.
-  - **Conflito VRBO 1-2 Set 2026**: dois calendários importados na mesma noite (Kiko via site + bloqueio 1-2 Set que existe no Airbnb). Provavelmente benigno. O Airbnb tem bloqueios manuais órfãos em 1-2 Set 2026 e 1-2 Set 2027 sem reserva correspondente — remover se não fizerem falta.
-- **`Invoice Reminder` continua só no GitHub** — o endpoint `/api/invoices/check-pending` exige `INVOICE_REMINDER_TOKEN` quando essa env existe na Vercel. Para o mover, criar `/opt/cronjobs/villa-solria/.env` (chmod 600) com o token e passar o header no `call.sh`. Nunca inline no crontab.
+## 📍 Current State (updated 2026-09-02 22:00)
+- **Active branch**: main, limpo e em produção (`3245e0a`). Sem trabalho a meio.
+- **Sistema de limpezas reconstruído à volta do WhatsApp** (2026-09-01/02). A app da empregada com link+token foi removida; a informação passa por mensagem que o Bruno envia do seu próprio número via `wa.me`. Empregada actual: **Leonor**, `+351 919 891 565`, **15 €/hora por pessoa** (settings `cleaner_name`, `cleaner_phone`, `cleaner_hourly_rate` — todos editáveis no admin, trocar de empregada é mudar três campos).
+- **Modelo de dados das limpezas** (migrações 010-012, todas aplicadas):
+  - `room_plan jsonb` — pessoas por quarto, ex. `{"1":2,"2":1}`. É o que decide quantas camas fazer no Duplo.
+  - `towels_override int` — quando não é uma toalha por hóspede (ex.: 2 quartos e 4 toalhas).
+  - `hours_worked numeric` — horas reais que a Leonor reporta; o pagamento é `horas × 15 €`, congelado em `cleaning_fee_snapshot`.
+  - `kind text` — `turnover` (saída) ou `midstay` (estadias longas: só lençóis, toalhas e as 2 casas de banho, hora combinada com os hóspedes).
+- **Custos**: limpeza paga à Leonor por hora; **lavandaria paga directamente à lavandaria**, 3,50 €/kg + 23% IVA (settings `laundry_price_per_kg`, `laundry_vat_percent`). Casa toda ≈ 5,7 kg ≈ 24,50 € c/IVA. Pesos em `src/lib/cleaning-cost.ts`. Uma tarefa fecha só com a limpeza paga — a lavandaria é custo, não pagamento a ela.
+- **Sincronização de calendários: toda verde.** O `iCal Sync` estava parado desde 17 Jul (GitHub desactiva crons por inactividade); crons movidos para `vps-kontrolsat`. O feed do site nunca tinha sido adicionado ao VRBO — foi adicionado a 1 Set.
+- **Blockers**: nenhum.
+
+## 🏠 A casa (fonte de verdade: `src/lib/villa-rooms.ts`)
+- Q1 **Principal** — 1º andar, cama queen + berço
+- Q2 **Casal** — 1º andar, cama de casal 1,40 m
+- Q3 **Duplo** — rés-do-chão, 2 camas individuais
+- Lotação 6 pessoas + bebé · 2 casas de banho, cozinha pequena, sala, sala de jantar, varanda, terraço
+- Saída ≤11h · limpeza 11h-16h quando há entrada no mesmo dia · entrada ≥16h
+- Casa toda = 2 pessoas × 2h = 4 h-pessoa (número dela). Estimativa: 2,5 h-pessoa de áreas comuns + 0,5 h por quarto. **A estimativa é só para o Bruno, nunca vai na mensagem** — mostrá-la ancorava as horas que ela reporta.
 
 ## ✅ Resolvido — site → VRBO iCal import (2026-09-01)
 - **Causa**: no VRBO, em *Configurações → Disponibilidade → Sincronização do calendário → Calendários importados*, só existiam `Airbnb` e `Booking.com`. **O villasolria.com nunca lá foi adicionado.** Não era o feed nem o parser — as tentativas de Abril (`e8fd2c3`, `e7b752b`) atacaram o problema errado.
@@ -89,7 +94,11 @@
 
 ## 📂 File map
 - `src/app/admin/bookings/page.tsx` — unified reservations list + grouping UI
-- `src/app/admin/cleaning/page.tsx` — cleaning task ledger (única UI de limpezas desde 2026-09-01)
+- `src/app/admin/cleaning/page.tsx` — ledger + plano de quartos + botões de WhatsApp (única UI de limpezas)
+- `src/lib/villa-rooms.ts` — quartos, camas, lotação (mudar aqui se a casa mudar)
+- `src/lib/cleaning-message.ts` — texto das mensagens (turnover, midstay, próximas limpezas)
+- `src/lib/cleaning-cost.ts` — estimativa de horas e peso da roupa
+- `src/lib/whatsapp.ts` — links `wa.me`
 - `src/app/api/ical/sync/route.ts` — Booking + Airbnb iCal pull
 - `src/app/api/bookings/link-external/route.ts` — set/clear cleaning_task links
 - `src/app/api/bookings/manual/route.ts` — admin-created bookings
@@ -100,10 +109,10 @@
 - Lint: `npx eslint src/app/admin/bookings/page.tsx`
 - Deploy: push to `main` → Vercel builds automatically (~60-90s)
 - iCal manual resync: `curl -s https://villasolria.com/api/ical/sync`
-- DDL via Supabase Management API: `POST https://api.supabase.com/v1/projects/esqkhahcifdtthnvlyos/database/query` with PAT from `~/prestashop-mcp-server/.secrets/supabase-pat`. Always run `NOTIFY pgrst, 'reload schema'` after ALTER TABLE so the JS client sees the new columns.
+- DDL via Supabase Management API: `POST https://api.supabase.com/v1/projects/esqkhahcifdtthnvlyos/database/query` with PAT from `~/Projects/kontrolsat/prestashop-mcp-server/.secrets/supabase-pat`. Always run `NOTIFY pgrst, 'reload schema'` after ALTER TABLE so the JS client sees the new columns.
 
 ## 🔐 Secrets location
-- Supabase PAT: `~/prestashop-mcp-server/.secrets/supabase-pat`
+- Supabase PAT: `~/Projects/kontrolsat/prestashop-mcp-server/.secrets/supabase-pat`
 - Other env: in Vercel project settings (`SUPABASE_*`, `STRIPE_*`, `RESEND_*`, etc.)
 
 ## 🧠 Domain notes
