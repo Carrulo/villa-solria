@@ -23,14 +23,14 @@ Preço do site é a base. Cada canal sobe a tabela o suficiente para absorver o 
 - **Site**: `weekly_discount = 0` nas 5 épocas altas (High Season 2026, High Season 15-30 Jun 2027, Peak July, Peak August, High Season September). Quinzenal 10% e mensal 15% mantidos.
 - **VRBO**: tabela subida e desconto semanal reposto a 10% — 15 Jun-15 Jul **295** (→265,50) · 16 Jul-31 Ago **317** (→285,30) · 1-15 Set **278** (→250,20). Fora da época alta: Out 2026 150 · Nov-Dez 2026 129 · Jan-Mai 2027 140 · 1-14 Jun 185 · 16 Set-31 Out 160 · Nov-Dez 2027 139.
 - **VRBO**: reserva antecipada 12 → **24 meses** (era isto que punha tudo depois de 3 Set 2027 como "Unbookable", não o Booking). MarketMaker desligado.
-- **Booking**: aberto **1 Out → 31 Dez 2027** (o fecho longo do feed caiu de 519 para 62 noites; só resta 1 Jan-3 Mar 2028, que o site também não vende). Mínimo 7 noites em 1 Jul-31 Ago 2027 nos 3 planos. Tarifas 2026 alinhadas: Out **165**, Nov-Dez **140**.
+- **Booking**: tabela do Standard Rate subida na época alta para a *Weekly Rate* (−5%) aterrar no preço-alvo — 15 Jun-15 Jul **305** (→289,75) · 16 Jul-31 Ago **330** (→313,50) · 1-15 Set **290** (→275,50). Fora da época alta mantém-se site × 1,10: 1-14 Jun 205 · Fev 155 · 16 Set-31 Out 175 · Nov-Dez 2027 155 · Out 2026 165 · Nov-Dez 2026 140.
+- **Booking**: aberto **1 Out → 31 Dez 2027** (o fecho longo do feed caiu de 519 para 62 noites; só resta 1 Jan-3 Mar 2028, que o site também não vende). Mínimo 7 noites em 1 Jul-31 Ago 2027 nos 3 planos.
 
 ## 📋 Por fazer
-1. **Booking — subir tabelas da época alta** (pede login): 15-30 Jun 290→**305** · 1-15 Jul 290→**305** · 16 Jul-31 Ago 315→**330** · 1-15 Set 275→**290**. A Weekly Rate (−5%) leva o hóspede ao preço actual, com desconto visível.
-2. **Airbnb — subir tabelas da época alta ~8,7%** (÷0,92) para absorver o desconto semanal global de 8%, que não dá para limitar a datas.
-3. **Airbnb — 13 Out 2026**: subir todas as tarifas ~18,3% (÷0,845) quando entrar a comissão host-only de 15,5%.
-4. **Airbnb**: decidir se a restrição **global** de check-in ao sábado fica ligada (com o âmbito reduzido a Jul/Ago faz menos sentido).
-5. **⚠️ Booking, vigiar**: a *Dynamic restriction rule* "For unsold nights, next 60 days, min. length of stay 1 night" está ligada e vai **anular o mínimo de 7 noites** quando Jul/Ago 2027 entrar na janela dos 60 dias. Desligar em Maio 2027 ou aceitar noites soltas de última hora.
+1. **Airbnb — absorver o desconto semanal na época alta**. O desconto por duração (8%) é **global**, não dá por datas, por isso a única via é subir a tabela de Jul/Ago ~8,7% (÷0,92). **Decisão pendente do Bruno**: fazer já, ou juntar à subida de 13 Out (ver 2) e fazer uma só — evita duas subidas seguidas no mesmo anúncio em seis semanas.
+2. **Airbnb — 13 Out 2026**: subir todas as tarifas ~18,3% (÷0,845) quando entrar a comissão host-only de 15,5%. Se se juntar o ponto 1, a época alta sobe ~28,5% composto e o resto 18,3%.
+3. **Airbnb**: decidir se a restrição **global** de check-in ao sábado fica ligada (com o âmbito reduzido a Jul/Ago faz menos sentido).
+4. **⚠️ Booking, vigiar**: a *Dynamic restriction rule* "For unsold nights, next 60 days, min. length of stay 1 night" está ligada e vai **anular o mínimo de 7 noites** quando Jul/Ago 2027 entrar na janela dos 60 dias. Desligar em Maio 2027 ou aceitar noites soltas de última hora.
 
 ## 🧰 Notas de extranet (poupam tempo)
 - **VRBO**: usar sempre a UI **em inglês** (`vrbo.com/p/...`, sem `/pt-pt/`) — em pt-PT há um bug de i18n que rejeita preços com "Introduza um preço entre e NaN". Selecção com preços diferentes liga sozinha o *Customize by night of week*: desligar primeiro. Tarifa e desconto semanal editam-se no mesmo painel *Rates and discounts*, por intervalo de datas.
