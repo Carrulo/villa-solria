@@ -2,21 +2,21 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-02 23:45)
-- **Active branch**: main, limpo, tudo em produção (`e21d7df`).
-- **Preços e regras de venda (2026-09-02)** — trabalho grande, tudo novo:
-  - **Épocas 2027 criadas**: Baixa 140 · Média 185 · Alta 265 (15/6-15/7) · **Pico Agosto 285** (16/7-31/8) · Alta Set 250 · Outono 160 · Inverno 139. Agosto foi separado do resto do pico de propósito.
-  - **Horizonte de venda**: setting `booking_open_until` = **2027-06-30** (igual ao aberto no Booking). O calendário acinzenta o que está para lá e `/api/booking` recusa com 409. Editável em `/admin/settings` → Reservas. O Bruno mantém o verão 2027 fechado **de propósito**, à espera de ver preços de mercado.
-  - **Regras de estadia agora no servidor** (`src/lib/stay-rules.ts`): mínimo de noites, dias de check-in e — quando os dias estão limitados — saída no mesmo dia da semana, que é o que faz a Alta ser **sábado a sábado**. Toggle por época `enforce_stay_rules` (migração 014) com checkbox em `/admin/pricing` e selo `regras off` na lista.
-  - **Preço noite-a-noite**: cada noite ao preço da sua época; noite sem época é recusada (409) em vez de cair num valor inventado.
-- **Bugs corrigidos hoje (todos silenciosos e caros)**:
-  1. Sem época para a data, o site cotava a **Época Baixa** e o servidor gravava a **100 €/noite** — 2027 inteiro estava assim.
-  2. Estadia a atravessar duas épocas não correspondia a nenhuma e caía no mesmo 100 €.
-  3. `/api/booking` **não validava** mínimo de noites nem dia de check-in: aceitou 1 noite à sexta em época de 7 noites/sábado.
-  4. Fecho longo do Booking (horizonte de venda deles) bloqueava o nosso site — Nov 2026 a Mar 2028, 486 dias.
-  5. `/api/settings` servia **51 chaves publicamente**, incluindo `cleaner_phone`/`cleaner_name`/`cleaner_hourly_rate` (migração 013 apertou a RLS).
-  6. Nomes de épocas com ano (`Low Season 2027`) não batiam no mapa de tradução e chegavam em inglês às páginas PT/ES/DE.
-- **Blockers**: nenhum.
+## 📍 Current State (updated 2026-09-03 12:40)
+- **Active branch**: main, limpo, tudo em produção (`da9ed8b`).
+- **Sábado-a-sábado só em Julho e Agosto** (decisão do Bruno): época `Peak July` (1-15 Jul 2027, 265 €) separada da `High Season` de Junho. Só `Peak July` e `Peak August` têm `min_nights 7` + `allowed_checkin_days {6}`. Junho 15-30 e Setembro 1-15 voltaram a `enforce_stay_rules=false` / dias livres — no site, no Airbnb e no VRBO.
+- **VRBO alinhado ao site, Out 2026 → Dez 2027** (feito à mão no extranet, ver secção abaixo).
+- **Blockers — ambos precisam do Bruno**:
+  1. **Booking.com exporta `1 Out 2027 → 3 Mar 2028` como `CLOSED - Not available`** (519 noites). É o horizonte de venda deles. O VRBO e o Airbnb importam isso como bloqueio real, por isso Out 2027-Mar 2028 está fechado nesses canais. Fix: no extranet do Booking, abrir o calendário para lá de 30 Set 2027. O nosso site já filtra este fecho (`BOOKING_MAX_RESERVATION_NIGHTS` em `src/app/api/ical/sync/route.ts`), os outros canais não.
+  2. **Booking**: falta aplicar mínimo 7 noites + chegada/saída ao sábado **só de 1 Jul a 31 Ago 2027** (Restrições nos planos tarifários). A sessão do extranet expirou e não se introduzem credenciais.
+- **Airbnb pendente**: decidir se a restrição **global** de check-in ao sábado fica ligada (é global, não dá por datas — com o âmbito reduzido a Jul/Ago faz menos sentido); e a **13 Out 2026** subir todas as tarifas ~18,3% (÷0,845) quando entra a comissão host-only de 15,5%.
+
+## 📅 VRBO — estado depois de 2026-09-03
+- **MarketMaker desligado** (estava a reescrever as tarifas manuais). Os limites min 130/máx 260 dele já **não** bloqueiam preços manuais — o erro "Introduza um preço entre e NaN" era um **bug de i18n do pt-PT**; no extranet em inglês (`vrbo.com/p/...`, sem `/pt-pt/`) grava sem problema. **Usar sempre a UI em inglês.**
+- **Reserva antecipada: 12 → 24 meses.** Era isto que punha tudo a partir de 3 Set 2027 (365 dias) como "Unbookable", não o Booking.
+- **Tarifas aplicadas** (= preço do site): Out 2026 150 · Nov-Dez 2026 129 · Jan-Mai 2027 140 · 1-14 Jun 185 · 15-30 Jun 265 · **1-15 Jul 265** (estava com um erro de digitação a **2 260 €/noite**) · 16 Jul-31 Ago 285 · 1-15 Set 250 · 16 Set-31 Out 160 · Nov-Dez 2027 139.
+- **Setembro 2026 não foi tocado** — está quase todo reservado e o resto são datas de última hora com preços antigos do MarketMaker (177-260 €); mexer agora não traz nada.
+- Selecção de intervalo com preços diferentes activa sozinha o *Customize by night of week* e bloqueia o campo único: **desligar o toggle primeiro**, depois escrever o valor.
 
 ## 🏠 A casa (fonte de verdade: `src/lib/villa-rooms.ts`)
 - Q1 **Principal** — 1º andar, cama queen + berço
