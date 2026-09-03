@@ -22,8 +22,9 @@ Preço do site é a base. Cada canal sobe a tabela o suficiente para absorver o 
 ## ✅ Feito a 2026-09-03
 - **Site**: `weekly_discount = 0` nas 5 épocas altas (High Season 2026, High Season 15-30 Jun 2027, Peak July, Peak August, High Season September). Quinzenal 10% e mensal 15% mantidos.
 - **VRBO**: tabela subida e desconto semanal reposto a 10% — 15 Jun-15 Jul **295** (→265,50) · 16 Jul-31 Ago **317** (→285,30) · 1-15 Set **278** (→250,20). Fora da época alta: Out 2026 150 · Nov-Dez 2026 129 · Jan-Mai 2027 140 · 1-14 Jun 185 · 16 Set-31 Out 160 · Nov-Dez 2027 139.
-- **VRBO**: reserva antecipada 12 → **24 meses** (era isto que punha tudo depois de 3 Set 2027 como "Unbookable", não o Booking). MarketMaker desligado.
+- **VRBO**: reserva antecipada 12 → **18 meses** (os 12 punham tudo depois de 3 Set 2027 como "Unbookable" — não era o Booking; os 24 abriam Abr-Set 2028 à tarifa-base de 240 €, sem épocas definidas, ~25% abaixo do equivalente de 2027). 18 meses cobre até Mar 2028, que é tudo o que temos com preço. MarketMaker desligado.
 - **Booking**: tabela do Standard Rate subida na época alta para a *Weekly Rate* (−5%) aterrar no preço-alvo — 15 Jun-15 Jul **305** (→289,75) · 16 Jul-31 Ago **330** (→313,50) · 1-15 Set **290** (→275,50). Fora da época alta mantém-se site × 1,10: 1-14 Jun 205 · Fev 155 · 16 Set-31 Out 175 · Nov-Dez 2027 155 · Out 2026 165 · Nov-Dez 2026 140.
+- **Site**: `booking_open_until` 30 Set 2027 → **31 Dez 2027**. Estava a fechar o canal directo três meses antes do Booking e do VRBO, que já vendiam Out-Dez 2027.
 - **Booking**: aberto **1 Out → 31 Dez 2027** (o fecho longo do feed caiu de 519 para 62 noites; só resta 1 Jan-3 Mar 2028, que o site também não vende). Mínimo 7 noites em 1 Jul-31 Ago 2027 nos 3 planos.
 
 ## 📋 Por fazer
