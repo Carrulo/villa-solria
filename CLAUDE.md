@@ -2,14 +2,21 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-03 12:40)
-- **Active branch**: main, limpo, tudo em produção (`da9ed8b`).
+## 📍 Current State (updated 2026-09-03 14:20)
+- **Active branch**: main, limpo, tudo em produção.
 - **Sábado-a-sábado só em Julho e Agosto** (decisão do Bruno): época `Peak July` (1-15 Jul 2027, 265 €) separada da `High Season` de Junho. Só `Peak July` e `Peak August` têm `min_nights 7` + `allowed_checkin_days {6}`. Junho 15-30 e Setembro 1-15 voltaram a `enforce_stay_rules=false` / dias livres — no site, no Airbnb e no VRBO.
-- **VRBO alinhado ao site, Out 2026 → Dez 2027** (feito à mão no extranet, ver secção abaixo).
-- **Blockers — ambos precisam do Bruno**:
-  1. **Booking.com exporta `1 Out 2027 → 3 Mar 2028` como `CLOSED - Not available`** (519 noites). É o horizonte de venda deles. O VRBO e o Airbnb importam isso como bloqueio real, por isso Out 2027-Mar 2028 está fechado nesses canais. Fix: no extranet do Booking, abrir o calendário para lá de 30 Set 2027. O nosso site já filtra este fecho (`BOOKING_MAX_RESERVATION_NIGHTS` em `src/app/api/ical/sync/route.ts`), os outros canais não.
-  2. **Booking**: falta aplicar mínimo 7 noites + chegada/saída ao sábado **só de 1 Jul a 31 Ago 2027** (Restrições nos planos tarifários). A sessão do extranet expirou e não se introduzem credenciais.
+- **VRBO e Booking alinhados ao site**, Out 2026 → Dez 2027 (ver secções abaixo). Regra do Booking: **preço do site × 1,10 arredondado a 5 €**.
+- **Booking já não fecha Out 2027-Dez 2027**: o fecho longo do feed encolheu de 519 para 62 noites (só resta `1 Jan → 3 Mar 2028`, que o site também não vende).
 - **Airbnb pendente**: decidir se a restrição **global** de check-in ao sábado fica ligada (é global, não dá por datas — com o âmbito reduzido a Jul/Ago faz menos sentido); e a **13 Out 2026** subir todas as tarifas ~18,3% (÷0,845) quando entra a comissão host-only de 15,5%.
+- **⚠️ A vigiar**: a *Dynamic restriction rule* do Booking ("For unsold nights, next 60 days, min. length of stay 1 night", ligada) vai **anular o mínimo de 7 noites** quando Jul/Ago 2027 entrar na janela de 60 dias. Decisão do Bruno: desligar a regra em Maio 2027 ou aceitar noites soltas de última hora.
+
+## 📅 Booking.com — estado depois de 2026-09-03
+- **hotel_id 14039693**, room_id 1403969301. Três planos: Standard Rate `54189435` · Weekly Rate `54189437` (5% mais barato) · Totalmente flexível `63117029` (10% mais caro).
+- **Aberto 1 Out → 31 Dez 2027** (estava `Closed`; a abertura exige preço no Standard Rate). O horizonte de venda não tem definição própria — abre-se em massa no *Calendar → Dates & rates*.
+- **Tarifas**: Out 2026 165 · Nov-Dez 2026 140 · (2027 já estava) Fev 155, 1-15 Jul 290, 16 Jul-31 Ago 315, 1-15 Set 275, 16 Set-31 Out 175 · **Nov-Dez 2027 155** (novo).
+- **Mínimo 7 noites em 1 Jul-31 Ago 2027** aplicado nos 3 planos.
+- **Sábado a sábado não é possível no Booking**: a *List view* com `Restrictions` só expõe *Minimum length of stay* e *Min. advance reservation*. Não há *closed to arrival/departure* nem dia de check-in — o "Bookable" do plano tarifário é só antecedência. O mínimo de 7 noites é o mais perto que se chega.
+- Os campos de data do painel aceitam texto `YYYY-MM-DD`: **pôr a data final primeiro**, depois a inicial (mudar a inicial arrasta a final).
 
 ## 📅 VRBO — estado depois de 2026-09-03
 - **MarketMaker desligado** (estava a reescrever as tarifas manuais). Os limites min 130/máx 260 dele já **não** bloqueiam preços manuais — o erro "Introduza um preço entre e NaN" era um **bug de i18n do pt-PT**; no extranet em inglês (`vrbo.com/p/...`, sem `/pt-pt/`) grava sem problema. **Usar sempre a UI em inglês.**
