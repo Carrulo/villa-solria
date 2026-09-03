@@ -37,6 +37,7 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'Low Season Winter': 'Epoca Baixa (Inverno)',
     'Mid Season Autumn': 'Epoca Media (Outono)',
     'Peak August': 'Epoca Alta (Agosto)',
+    'Peak July': 'Epoca Alta (Julho)',
     'High Season September': 'Epoca Alta (Setembro)',
   },
   en: {
@@ -46,6 +47,7 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'Low Season Winter': 'Low Season (Winter)',
     'Mid Season Autumn': 'Mid Season (Autumn)',
     'Peak August': 'Peak Season (August)',
+    'Peak July': 'Peak Season (July)',
     'High Season September': 'High Season (September)',
   },
   es: {
@@ -55,6 +57,7 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'Low Season Winter': 'Temporada Baja (Invierno)',
     'Mid Season Autumn': 'Temporada Media (Otono)',
     'Peak August': 'Temporada Alta (Agosto)',
+    'Peak July': 'Temporada Alta (Julio)',
     'High Season September': 'Temporada Alta (Septiembre)',
   },
   de: {
@@ -64,6 +67,7 @@ const seasonNameTranslations: Record<string, Record<string, string>> = {
     'Low Season Winter': 'Nebensaison (Winter)',
     'Mid Season Autumn': 'Zwischensaison (Herbst)',
     'Peak August': 'Hauptsaison (August)',
+    'Peak July': 'Hauptsaison (Juli)',
     'High Season September': 'Hauptsaison (September)',
   },
 };
