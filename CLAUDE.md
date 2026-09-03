@@ -2,28 +2,40 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-03 14:20)
-- **Active branch**: main, limpo, tudo em produção.
-- **Sábado-a-sábado só em Julho e Agosto** (decisão do Bruno): época `Peak July` (1-15 Jul 2027, 265 €) separada da `High Season` de Junho. Só `Peak July` e `Peak August` têm `min_nights 7` + `allowed_checkin_days {6}`. Junho 15-30 e Setembro 1-15 voltaram a `enforce_stay_rules=false` / dias livres — no site, no Airbnb e no VRBO.
-- **VRBO e Booking alinhados ao site**, Out 2026 → Dez 2027 (ver secções abaixo). Regra do Booking: **preço do site × 1,10 arredondado a 5 €**.
-- **Booking já não fecha Out 2027-Dez 2027**: o fecho longo do feed encolheu de 519 para 62 noites (só resta `1 Jan → 3 Mar 2028`, que o site também não vende).
-- **Airbnb pendente**: decidir se a restrição **global** de check-in ao sábado fica ligada (é global, não dá por datas — com o âmbito reduzido a Jul/Ago faz menos sentido); e a **13 Out 2026** subir todas as tarifas ~18,3% (÷0,845) quando entra a comissão host-only de 15,5%.
-- **⚠️ A vigiar**: a *Dynamic restriction rule* do Booking ("For unsold nights, next 60 days, min. length of stay 1 night", ligada) vai **anular o mínimo de 7 noites** quando Jul/Ago 2027 entrar na janela de 60 dias. Decisão do Bruno: desligar a regra em Maio 2027 ou aceitar noites soltas de última hora.
+## 📍 Current State (updated 2026-09-03 16:10)
+- **Active branch**: main, limpo.
+- **Sábado-a-sábado só em Julho e Agosto**. Só `Peak July` e `Peak August` têm `min_nights 7` + `allowed_checkin_days {6}`. Junho 15-30 e Setembro 1-15 são livres.
+- **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
+- **Blocker — precisa do Bruno**: a sessão do extranet do **Booking** expira ao fim de pouco tempo e não se introduzem credenciais. Falta lá subir as tabelas (ver abaixo).
 
-## 📅 Booking.com — estado depois de 2026-09-03
-- **hotel_id 14039693**, room_id 1403969301. Três planos: Standard Rate `54189435` · Weekly Rate `54189437` (5% mais barato) · Totalmente flexível `63117029` (10% mais caro).
-- **Aberto 1 Out → 31 Dez 2027** (estava `Closed`; a abertura exige preço no Standard Rate). O horizonte de venda não tem definição própria — abre-se em massa no *Calendar → Dates & rates*.
-- **Tarifas**: Out 2026 165 · Nov-Dez 2026 140 · (2027 já estava) Fev 155, 1-15 Jul 290, 16 Jul-31 Ago 315, 1-15 Set 275, 16 Set-31 Out 175 · **Nov-Dez 2027 155** (novo).
-- **Mínimo 7 noites em 1 Jul-31 Ago 2027** aplicado nos 3 planos.
-- **Sábado a sábado não é possível no Booking**: a *List view* com `Restrictions` só expõe *Minimum length of stay* e *Min. advance reservation*. Não há *closed to arrival/departure* nem dia de check-in — o "Bookable" do plano tarifário é só antecedência. O mínimo de 7 noites é o mais perto que se chega.
-- Os campos de data do painel aceitam texto `YYYY-MM-DD`: **pôr a data final primeiro**, depois a inicial (mudar a inicial arrasta a final).
+## 💶 Regra de preços por canal (definida a 2026-09-03)
+Preço do site é a base. Cada canal sobe a tabela o suficiente para absorver o **seu próprio** desconto semanal, de modo a que o hóspede pague sempre ~+10% face ao site.
+| Canal | Comissão | Desconto semanal | Tabela |
+|---|---|---|---|
+| Site | Stripe ~1,5% | **0% na época alta** | preço base |
+| Booking | 15% (nós) | plano *Weekly Rate* −5% | site × 1,10 ÷ 0,95 |
+| VRBO | 8% (nós) | 10% por intervalo de datas | site ÷ 0,90 |
+| Airbnb | 3% + ~14% ao hóspede (host-only 15,5% a partir de 13 Out 2026) | 8% **global**, não dá por datas | site ÷ 0,92 |
 
-## 📅 VRBO — estado depois de 2026-09-03
-- **MarketMaker desligado** (estava a reescrever as tarifas manuais). Os limites min 130/máx 260 dele já **não** bloqueiam preços manuais — o erro "Introduza um preço entre e NaN" era um **bug de i18n do pt-PT**; no extranet em inglês (`vrbo.com/p/...`, sem `/pt-pt/`) grava sem problema. **Usar sempre a UI em inglês.**
-- **Reserva antecipada: 12 → 24 meses.** Era isto que punha tudo a partir de 3 Set 2027 (365 dias) como "Unbookable", não o Booking.
-- **Tarifas aplicadas** (= preço do site): Out 2026 150 · Nov-Dez 2026 129 · Jan-Mai 2027 140 · 1-14 Jun 185 · 15-30 Jun 265 · **1-15 Jul 265** (estava com um erro de digitação a **2 260 €/noite**) · 16 Jul-31 Ago 285 · 1-15 Set 250 · 16 Set-31 Out 160 · Nov-Dez 2027 139.
-- **Setembro 2026 não foi tocado** — está quase todo reservado e o resto são datas de última hora com preços antigos do MarketMaker (177-260 €); mexer agora não traz nada.
-- Selecção de intervalo com preços diferentes activa sozinha o *Customize by night of week* e bloqueia o campo único: **desligar o toggle primeiro**, depois escrever o valor.
+**Comparação medida a 3 Set 2026** (17-24 Jul 2027, 7 noites): site 1 945 € · Booking 2 089 € · Airbnb 2 295 €. Confirmou que **o Airbnb é hoje o mais caro para o hóspede** — a taxa dele é somada por cima, a do Booking sai do nosso preço. A 13 Out isto inverte-se e o Airbnb passa a ser o mais barato se não se subirem as tarifas.
+
+## ✅ Feito a 2026-09-03
+- **Site**: `weekly_discount = 0` nas 5 épocas altas (High Season 2026, High Season 15-30 Jun 2027, Peak July, Peak August, High Season September). Quinzenal 10% e mensal 15% mantidos.
+- **VRBO**: tabela subida e desconto semanal reposto a 10% — 15 Jun-15 Jul **295** (→265,50) · 16 Jul-31 Ago **317** (→285,30) · 1-15 Set **278** (→250,20). Fora da época alta: Out 2026 150 · Nov-Dez 2026 129 · Jan-Mai 2027 140 · 1-14 Jun 185 · 16 Set-31 Out 160 · Nov-Dez 2027 139.
+- **VRBO**: reserva antecipada 12 → **24 meses** (era isto que punha tudo depois de 3 Set 2027 como "Unbookable", não o Booking). MarketMaker desligado.
+- **Booking**: aberto **1 Out → 31 Dez 2027** (o fecho longo do feed caiu de 519 para 62 noites; só resta 1 Jan-3 Mar 2028, que o site também não vende). Mínimo 7 noites em 1 Jul-31 Ago 2027 nos 3 planos. Tarifas 2026 alinhadas: Out **165**, Nov-Dez **140**.
+
+## 📋 Por fazer
+1. **Booking — subir tabelas da época alta** (pede login): 15-30 Jun 290→**305** · 1-15 Jul 290→**305** · 16 Jul-31 Ago 315→**330** · 1-15 Set 275→**290**. A Weekly Rate (−5%) leva o hóspede ao preço actual, com desconto visível.
+2. **Airbnb — subir tabelas da época alta ~8,7%** (÷0,92) para absorver o desconto semanal global de 8%, que não dá para limitar a datas.
+3. **Airbnb — 13 Out 2026**: subir todas as tarifas ~18,3% (÷0,845) quando entrar a comissão host-only de 15,5%.
+4. **Airbnb**: decidir se a restrição **global** de check-in ao sábado fica ligada (com o âmbito reduzido a Jul/Ago faz menos sentido).
+5. **⚠️ Booking, vigiar**: a *Dynamic restriction rule* "For unsold nights, next 60 days, min. length of stay 1 night" está ligada e vai **anular o mínimo de 7 noites** quando Jul/Ago 2027 entrar na janela dos 60 dias. Desligar em Maio 2027 ou aceitar noites soltas de última hora.
+
+## 🧰 Notas de extranet (poupam tempo)
+- **VRBO**: usar sempre a UI **em inglês** (`vrbo.com/p/...`, sem `/pt-pt/`) — em pt-PT há um bug de i18n que rejeita preços com "Introduza um preço entre e NaN". Selecção com preços diferentes liga sozinha o *Customize by night of week*: desligar primeiro. Tarifa e desconto semanal editam-se no mesmo painel *Rates and discounts*, por intervalo de datas.
+- **Booking**: os campos de data aceitam texto `YYYY-MM-DD` — pôr a **data final primeiro**, depois a inicial. Abrir datas fechadas exige preço no Standard Rate. **Não existe** restrição de dia de chegada/saída: a *List view* com `Restrictions` só expõe *Minimum length of stay* e *Min. advance reservation*. Planos: Standard `54189435` · Weekly `54189437` (−5%) · Totalmente flexível `63117029` (+10%). hotel_id 14039693, room_id 1403969301.
+- **Airbnb**: o multicalendário não renderiza ("Invalid date"); os descontos por duração são **globais**, não por datas. Anúncio 53089334.
 
 ## 🏠 A casa (fonte de verdade: `src/lib/villa-rooms.ts`)
 - Q1 **Principal** — 1º andar, cama queen + berço
