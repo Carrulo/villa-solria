@@ -17,6 +17,13 @@ Seguíamos metade do padrão da Stripe para *limited inventory*: definíamos `ex
 - **`session_timeout_min` 1440 → 30** (editável em `/admin/payments`). Com hold, 24h tirava a data do mercado um dia inteiro; 30 min é o mínimo que a Stripe permite.
 - **`pending` continua a não bloquear nada** — tentativa abandonada não segura datas, é o comportamento correcto e foi confirmado por teste.
 
+## 🔴 A VERIFICAR — o Booking deixou de exportar a estadia da Raquel (5-12 Set 2026)
+- O feed do Booking tinha `20260905→20260912` de manhã. À tarde já **não tem**. Só restam 16-24 Set e o bloco de horizonte de 2028.
+- **Não se sabe porquê.** As hipóteses são opostas e mudam tudo: ou a reserva foi **cancelada no Booking**, ou é um comportamento do feed. **Confirmar no extranet.** Se foi cancelada: cancelar a reserva na BD, apagar as `blocked_dates` de 5-11 Set e a `cleaning_task` de 12 Set.
+- Entretanto ficou **bloqueado**, que é o lado seguro com a entrada a ser no dia seguinte e a nossa reserva a dizer `confirmed/paid`.
+- **Dano colateral que eu causei**: ao desfazer os auto-agrupamentos de manhã, tirei sem querer a única coisa que protegia 13 `cleaning_tasks` do apagamento pelo sync — o filtro de apagar exigia `!linked_to_booking_id`. O sync seguinte levou as 13. Reconstruí-as a partir das reservas (com `external_source` nulo, para o sync não lhes tocar), mas **perderam-se campos editados à mão**, se os houvesse: quartos, toalhas, notas, horas.
+- **Fechado**: o sync já não apaga tarefas com `booking_id` — pertencem à reserva, não ao feed, e os feeds deixam cair estadias passadas e canceladas por rotina.
+
 ## 🔴 Resolvido 2026-09-04 — limpezas invisíveis por auto-agrupamento
 - **Sintoma**: a mensagem de 5 Set dizia *"não entra ninguém a seguir"* no dia em que a Raquel fazia check-in.
 - **Causa**: a tarefa de limpeza dela tinha `linked_to_booking_id = booking_id`, ou seja agrupada consigo própria. Linhas agrupadas são filtradas de todas as consultas de limpeza (a "mãe" é que fica com a limpeza) — aqui a mãe era a própria linha, portanto escondia-se. E como o `isTurn` deriva as chegadas das tarefas **visíveis**, a entrada da Raquel deixava de existir para o gerador da mensagem.
