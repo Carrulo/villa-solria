@@ -8,6 +8,10 @@
 - **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
 - **Blocker — precisa do Bruno**: a sessão do extranet do **Booking** expira ao fim de pouco tempo e não se introduzem credenciais. Falta lá subir as tabelas (ver abaixo).
 
+## 🧹 Mensagem de WhatsApp para a empregada
+- **Usar sempre `api.whatsapp.com/send`, nunca `wa.me`.** O wa.me redirecciona por `web.whatsapp.com` e no Chrome desktop descodifica o texto duas vezes: todos os emojis (3 e 4 bytes) chegam como `�`, enquanto os acentos de 2 bytes passam. Já tinha mordido no guia do hóspede (`src/app/admin/bookings/page.tsx`) e voltou a morder em `src/lib/whatsapp.ts` a 3 Set 2026.
+- **O berço não faz parte da descrição do quarto.** É a coluna `cleaning_tasks.needs_cot` (migração 015), com interruptor no modal *Instruções p/ limpeza*. Desligado por omissão. `COT_ROOM`/`COT_LABEL` em `src/lib/villa-rooms.ts` dizem em que quarto fica.
+
 ## 💶 Regra de preços por canal (definida a 2026-09-03)
 Preço do site é a base. Cada canal sobe a tabela o suficiente para absorver o **seu próprio** desconto semanal, de modo a que o hóspede pague sempre ~+10% face ao site.
 | Canal | Comissão | Desconto semanal | Tabela |
