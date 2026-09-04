@@ -8,6 +8,12 @@
 - **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
 - **Blocker — precisa do Bruno**: a sessão do extranet do **Booking** expira ao fim de pouco tempo e não se introduzem credenciais. Falta lá subir as tabelas (ver abaixo).
 
+## 🔴 Resolvido 2026-09-04 — limpezas invisíveis por auto-agrupamento
+- **Sintoma**: a mensagem de 5 Set dizia *"não entra ninguém a seguir"* no dia em que a Raquel fazia check-in.
+- **Causa**: a tarefa de limpeza dela tinha `linked_to_booking_id = booking_id`, ou seja agrupada consigo própria. Linhas agrupadas são filtradas de todas as consultas de limpeza (a "mãe" é que fica com a limpeza) — aqui a mãe era a própria linha, portanto escondia-se. E como o `isTurn` deriva as chegadas das tarefas **visíveis**, a entrada da Raquel deixava de existir para o gerador da mensagem.
+- **Alcance**: **13 tarefas** assim desde Junho 2026. Todas reapareceram com `cleaning_done = false` e por pagar — **verificar com a Leonor se alguma dessas limpezas ficou por pagar**, e fechar as antigas no ledger.
+- **Fechado em três sítios**: constraint `cleaning_tasks_no_self_link` (migração 016); `/api/bookings/manual` exclui do update em massa a tarefa que já pertence à reserva; `/api/bookings/link-external` devolve 400.
+
 ## 📹 Videovigilância (2026-09-04)
 - Uma câmara **exterior na entrada**, a apanhar porta e fachada. **Só imagem, sem áudio**, retenção **7 dias**, só a nossa propriedade. Base legal: interesse legítimo.
 - **Aviso em duas camadas** (o que o RGPD recomenda): no guia, secção `cctv` (sort 25), ficam três linhas — o que é, que não grava som, que não há câmaras no interior, 7 dias — mais link para a política. O detalhe legal completo (finalidade, base legal, destinatários, direitos) vive só na política de privacidade do site. Ambos nas 4 línguas.
