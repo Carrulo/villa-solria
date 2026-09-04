@@ -149,6 +149,7 @@ interface T {
   types: Record<string, string>;
   distance: string;
   emergency_note: string;
+  follow_us: string;
   suggestions_title: string;
   suggestions_subtitle: string;
   suggestions_placeholder: string;
@@ -171,6 +172,7 @@ const T: Record<Locale, T> = {
     types: { beach: 'Praias', restaurant: 'Restaurantes', shop: 'Lojas e supermercados', activity: 'Actividades', transport: 'Transportes' },
     distance: 'km',
     emergency_note: 'Qualquer dúvida, estamos a uma mensagem de distância.',
+    follow_us: 'Siga a Villa Solria no Facebook',
     suggestions_title: 'Sugestões e feedback',
     suggestions_subtitle: 'Ajude-nos a melhorar a sua experiência. Algo que faltou? Algo que adorou?',
     suggestions_placeholder: 'Conte-nos o que achou ou o que podemos melhorar…',
@@ -191,6 +193,7 @@ const T: Record<Locale, T> = {
     types: { beach: 'Beaches', restaurant: 'Restaurants', shop: 'Shops & supermarkets', activity: 'Activities', transport: 'Transport' },
     distance: 'km',
     emergency_note: 'Any question, we are one message away.',
+    follow_us: 'Follow Villa Solria on Facebook',
     suggestions_title: 'Suggestions & feedback',
     suggestions_subtitle: 'Help us improve your experience. Anything missing? Anything you loved?',
     suggestions_placeholder: 'Tell us what you think or what we can improve…',
@@ -211,6 +214,7 @@ const T: Record<Locale, T> = {
     types: { beach: 'Playas', restaurant: 'Restaurantes', shop: 'Tiendas y supermercados', activity: 'Actividades', transport: 'Transportes' },
     distance: 'km',
     emergency_note: 'Cualquier duda, estamos a un mensaje.',
+    follow_us: 'Siga a Villa Solria en Facebook',
     suggestions_title: 'Sugerencias y comentarios',
     suggestions_subtitle: 'Ayúdenos a mejorar su experiencia. ¿Algo faltó? ¿Algo le encantó?',
     suggestions_placeholder: 'Cuéntenos qué le pareció o qué podemos mejorar…',
@@ -231,6 +235,7 @@ const T: Record<Locale, T> = {
     types: { beach: 'Strände', restaurant: 'Restaurants', shop: 'Geschäfte', activity: 'Aktivitäten', transport: 'Transport' },
     distance: 'km',
     emergency_note: 'Bei Fragen sind wir nur eine Nachricht entfernt.',
+    follow_us: 'Folgen Sie Villa Solria auf Facebook',
     suggestions_title: 'Vorschläge & Feedback',
     suggestions_subtitle: 'Helfen Sie uns, Ihren Aufenthalt zu verbessern. Hat etwas gefehlt? Was hat gefallen?',
     suggestions_placeholder: 'Erzählen Sie uns, was Sie denken oder was wir verbessern können…',
@@ -594,6 +599,21 @@ export default async function GuidePage({
             error: t.suggestions_error,
           }}
         />
+
+        {/* Last thing on the page: a soft nudge to keep in touch after
+            the stay. Deliberately after the suggestion box so it never
+            competes with feedback the host actually needs. */}
+        <a
+          href="https://www.facebook.com/VillaSolria"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex items-center justify-center gap-2 text-sm text-stone-600 hover:text-blue-700 transition-colors"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="w-5 h-5 fill-current">
+            <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.5-3.91 3.77-3.91 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.89h2.78l-.45 2.91h-2.33V22c4.78-.76 8.44-4.92 8.44-9.94Z" />
+          </svg>
+          {t.follow_us}
+        </a>
 
         <p className="text-xs text-center text-stone-500 pt-4 pb-2">{t.emergency_note}</p>
       </main>
