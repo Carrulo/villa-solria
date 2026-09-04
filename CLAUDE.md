@@ -8,6 +8,15 @@
 - **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
 - **Blocker — precisa do Bruno**: a sessão do extranet do **Booking** expira ao fim de pouco tempo e não se introduzem credenciais. Falta lá subir as tabelas (ver abaixo).
 
+## 💳 Reserva de datas durante o checkout (2026-09-04)
+Seguíamos metade do padrão da Stripe para *limited inventory*: definíamos `expires_at` e libertávamos em `checkout.session.expired`, mas **nunca reservávamos**. Dois hóspedes podiam pagar as mesmas noites.
+- **Hold**: `/api/checkout/session` põe a reserva em `pending_payment` ao criar a sessão. É o estado que o Multibanco já usava e que `/api/booking` já respeita. Se as noites tiverem sido levadas, expira a sessão do Stripe e devolve 409.
+- **Release**: o handler de `checkout.session.expired` filtrava só `pending` — agora aceita `pending_payment`, senão o hold ficava preso para sempre.
+- **Rede de segurança**: constraint `bookings_no_overlap` (migração 017), `EXCLUDE USING gist (daterange(checkin,checkout) WITH &&) WHERE status in ('confirmed','pending_payment')`. É a única camada que aguenta duas transacções simultâneas. `daterange` é `[)`, portanto saída no dia da entrada seguinte passa.
+- **Corrida perdida**: se um pagamento chegar para noites já vendidas, o `fulfillBooking` apanha o erro `23P01`, **não confirma** e avisa por Telegram. O reembolso é manual de propósito — automatizá-lo era decisão do Bruno e ficou por decidir.
+- **`session_timeout_min` 1440 → 30** (editável em `/admin/payments`). Com hold, 24h tirava a data do mercado um dia inteiro; 30 min é o mínimo que a Stripe permite.
+- **`pending` continua a não bloquear nada** — tentativa abandonada não segura datas, é o comportamento correcto e foi confirmado por teste.
+
 ## 🔴 Resolvido 2026-09-04 — limpezas invisíveis por auto-agrupamento
 - **Sintoma**: a mensagem de 5 Set dizia *"não entra ninguém a seguir"* no dia em que a Raquel fazia check-in.
 - **Causa**: a tarefa de limpeza dela tinha `linked_to_booking_id = booking_id`, ou seja agrupada consigo própria. Linhas agrupadas são filtradas de todas as consultas de limpeza (a "mãe" é que fica com a limpeza) — aqui a mãe era a própria linha, portanto escondia-se. E como o `isTurn` deriva as chegadas das tarefas **visíveis**, a entrada da Raquel deixava de existir para o gerador da mensagem.
