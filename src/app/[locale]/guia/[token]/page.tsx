@@ -53,6 +53,31 @@ function addDays(iso: string, days: number): string {
 }
 
 // Minimal markdown renderer: **bold**, *italic*, `code`, line breaks, ordered/unordered lists.
+/** Public Supabase Storage prefix — the one host next.config allows. */
+const STORAGE_PREFIX = 'https://esqkhahcifdtthnvlyos.supabase.co/storage/v1/object/public/';
+
+/**
+ * Photos inside a section body. Routed through Next's image optimizer
+ * (AVIF/WebP + CDN cache) when the source is our own storage bucket,
+ * which is the only remote host next.config allows — anything else is
+ * served as-is so a foreign URL degrades instead of 400-ing.
+ */
+function imageHtml(alt: string, url: string): string {
+  const safeAlt = alt.replace(/"/g, '&quot;');
+  if (url.startsWith(STORAGE_PREFIX)) {
+    const opt = (w: number) => `/_next/image?url=${encodeURIComponent(url)}&w=${w}&q=75`;
+    return (
+      `<img src="${opt(828)}" srcset="${opt(640)} 640w, ${opt(828)} 828w, ${opt(1080)} 1080w" ` +
+      `sizes="(max-width: 640px) 100vw, 320px" alt="${safeAlt}" loading="lazy" decoding="async" ` +
+      `class="rounded-xl w-full max-w-xs mx-auto my-3 shadow-sm" />`
+    );
+  }
+  return (
+    `<img src="${url}" alt="${safeAlt}" loading="lazy" decoding="async" ` +
+    `class="rounded-xl w-full max-w-xs mx-auto my-3 shadow-sm" />`
+  );
+}
+
 function renderMarkdown(md: string): string {
   const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const lines = escape(md).split('\n');
@@ -66,6 +91,8 @@ function renderMarkdown(md: string): string {
   };
   const inline = (s: string) =>
     s
+      // Images first: ![alt](url) also matches the link pattern below.
+      .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt, url) => imageHtml(alt, url))
       .replace(/`([^`]+)`/g, '<code class="bg-stone-100 text-stone-800 px-1.5 py-0.5 rounded font-mono text-sm">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
@@ -77,6 +104,12 @@ function renderMarkdown(md: string): string {
 
   for (const raw of lines) {
     const l = raw.trimEnd();
+    const imgOnly = /^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/.exec(l.trim());
+    if (imgOnly) {
+      closeList();
+      out.push(imageHtml(imgOnly[1], imgOnly[2]));
+      continue;
+    }
     const ol = /^\d+\.\s+(.*)/.exec(l);
     const ul = /^[-*]\s+(.*)/.exec(l);
     if (ol) {
