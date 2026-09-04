@@ -250,16 +250,22 @@ async function syncSource(
     try {
       const { data: existingRows } = await supabase
         .from('cleaning_tasks')
-        .select('external_ref, cleaning_date, cleaning_paid, laundry_paid, linked_to_booking_id, linked_to_external_ref')
+        .select('external_ref, cleaning_date, cleaning_paid, laundry_paid, booking_id, linked_to_booking_id, linked_to_external_ref')
         .eq('external_source', source);
 
       const currentKeys = new Set(cleaningRows.map((r) => `${r.external_ref}|${r.cleaning_date}`));
       const toDelete = (existingRows || [])
         .filter(
-          (r: { external_ref: string | null; cleaning_date: string; cleaning_paid: boolean; laundry_paid: boolean; linked_to_booking_id: string | null; linked_to_external_ref: string | null }) =>
+          (r: { external_ref: string | null; cleaning_date: string; cleaning_paid: boolean; laundry_paid: boolean; booking_id: string | null; linked_to_booking_id: string | null; linked_to_external_ref: string | null }) =>
             r.external_ref &&
             !r.cleaning_paid &&
             !r.laundry_paid &&
+            // A task a real booking has adopted is owned by that booking,
+            // not by the feed. Platform feeds drop past and cancelled
+            // stays, and deleting on that basis destroyed 13 historical
+            // cleanings on 2026-09-04 the moment an unrelated fix removed
+            // the flag that had been shielding them by accident.
+            !r.booking_id &&
             !r.linked_to_booking_id &&
             !r.linked_to_external_ref &&
             !currentKeys.has(`${r.external_ref}|${r.cleaning_date}`)
