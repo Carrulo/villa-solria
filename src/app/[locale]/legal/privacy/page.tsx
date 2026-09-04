@@ -163,7 +163,7 @@ function PtPrivacy() {
       </ul>
       <p>
         Pode exercer os direitos de acesso, cópia, apagamento e oposição através de{' '}
-        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>, bem como reclamar junto da CNPD.
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>. A pedido do hóspede, desativamos a gravação durante a estadia.
       </p>
 
       <h2>11. Alterações a esta Política</h2>
@@ -276,7 +276,7 @@ function EnPrivacy() {
       </ul>
       <p>
         You may exercise your rights of access, copy, erasure and objection through{' '}
-        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>, and lodge a complaint with the Portuguese supervisory authority, CNPD.
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>. At a guest request, we switch the recording off for the duration of the stay.
       </p>
 
       <h2>11. Changes to this Policy</h2>
@@ -352,7 +352,7 @@ function EsPrivacy() {
       </ul>
       <p>
         Puede ejercer los derechos de acceso, copia, supresión y oposición a través de{' '}
-        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>, así como reclamar ante la CNPD portuguesa.
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>. A petición del huésped, desactivamos la grabación durante la estancia.
       </p>
     </>
   );
@@ -425,7 +425,7 @@ function DePrivacy() {
       </ul>
       <p>
         Ihre Rechte auf Auskunft, Kopie, Löschung und Widerspruch können Sie über{' '}
-        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a> geltend machen; zudem können Sie sich bei der portugiesischen Aufsichtsbehörde CNPD beschweren.
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a> geltend machen. Auf Wunsch des Gastes schalten wir die Aufzeichnung für die Dauer des Aufenthalts aus.
       </p>
     </>
   );
