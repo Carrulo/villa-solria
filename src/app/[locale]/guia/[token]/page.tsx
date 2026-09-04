@@ -83,6 +83,7 @@ function renderMarkdown(md: string): string {
   const lines = escape(md).split('\n');
   const out: string[] = [];
   let listType: 'ul' | 'ol' | null = null;
+  let inDetails = false;
   const closeList = () => {
     if (listType) {
       out.push(`</${listType}>`);
@@ -104,6 +105,30 @@ function renderMarkdown(md: string): string {
 
   for (const raw of lines) {
     const l = raw.trimEnd();
+    // ":::details Título" … ":::" folds long detail into the page
+    // instead of sending the guest off to another URL — on a phone,
+    // opened from inside WhatsApp, leaving the guide is often one-way.
+    const detailsOpen = /^:::details\s+(.+)$/.exec(l.trim());
+    if (detailsOpen) {
+      closeList();
+      if (inDetails) out.push('</div></details>');
+      out.push(
+        '<details class="mt-3 rounded-lg bg-stone-50 border border-stone-200 px-3 py-2">' +
+          '<summary class="cursor-pointer text-blue-700 hover:text-blue-900 text-sm font-medium marker:text-stone-400">' +
+          inline(detailsOpen[1]) +
+          '</summary><div class="mt-2 text-sm">'
+      );
+      inDetails = true;
+      continue;
+    }
+    if (l.trim() === ':::') {
+      closeList();
+      if (inDetails) {
+        out.push('</div></details>');
+        inDetails = false;
+      }
+      continue;
+    }
     const imgOnly = /^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)$/.exec(l.trim());
     if (imgOnly) {
       closeList();
@@ -135,6 +160,7 @@ function renderMarkdown(md: string): string {
     }
   }
   closeList();
+  if (inDetails) out.push('</div></details>');
   return out.join('\n');
 }
 
