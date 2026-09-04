@@ -10,7 +10,8 @@
 
 ## 📹 Videovigilância (2026-09-04)
 - Uma câmara **exterior na entrada**, a apanhar porta e fachada. **Só imagem, sem áudio**, retenção **7 dias**, só a nossa propriedade. Base legal: interesse legítimo.
-- Está informada na secção `cctv` do guia (sort 25) e na política de privacidade do site, **nas 4 línguas**.
+- **Aviso em duas camadas** (o que o RGPD recomenda): no guia, secção `cctv` (sort 25), ficam três linhas — o que é, que não grava som, que não há câmaras no interior, 7 dias — mais link para a política. O detalhe legal completo (finalidade, base legal, destinatários, direitos) vive só na política de privacidade do site. Ambos nas 4 línguas.
+- O texto longo no guia foi tentado primeiro e o Bruno rejeitou-o: num guia de hóspede lê-se como aviso e assusta, em vez de tranquilizar.
 - **⚠️ Falta fora do código** — nenhum destes é coisa que se resolva no repositório:
   1. **Divulgar nos anúncios antes da reserva.** O guia só chega depois de reservar; o Airbnb exige que câmaras exteriores estejam declaradas no anúncio (e proíbe as interiores desde 30 Abr 2024). Booking e VRBO também têm campo próprio. Hoje não está em nenhum.
   2. **Placa física visível na entrada**, antes de se entrar na zona vigiada — é exigência da CNPD, não basta o aviso escrito.
