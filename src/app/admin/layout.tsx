@@ -233,7 +233,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Main content */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Header */}
-            <header className="h-16 border-b border-white/5 bg-[#16213e]/50 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
+            {/* relative z-30: backdrop-blur creates a stacking context, so
+                the notification popover's own z-50 is trapped inside the
+                header. Without a z-index here the header sits at the
+                default level and <main>, later in the DOM, paints over
+                it — the popover rendered behind the availability
+                calendar. Stays under the mobile sidebar (z-50) and its
+                overlay (z-40), which should cover the header. */}
+            <header className="relative z-30 h-16 border-b border-white/5 bg-[#16213e]/50 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden text-gray-400 hover:text-white"
