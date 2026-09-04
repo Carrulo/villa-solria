@@ -148,7 +148,25 @@ function PtPrivacy() {
       <h2>9. Segurança</h2>
       <p>Implementamos medidas técnicas e organizativas adequadas para proteger os seus dados pessoais contra acesso não autorizado, perda ou destruição, incluindo encriptação SSL/TLS em todas as comunicações.</p>
 
-      <h2>10. Alterações a esta Política</h2>
+      <h2>10. Videovigilância</h2>
+      <p>
+        O alojamento dispõe de <strong>uma câmara de videovigilância no exterior, na zona da entrada</strong>,
+        orientada para a porta e a fachada.
+      </p>
+      <ul>
+        <li><strong>Finalidade:</strong> segurança de pessoas e bens</li>
+        <li><strong>Base legal:</strong> interesse legítimo (art. 6.º, n.º 1, alínea f, do RGPD)</li>
+        <li><strong>Dados recolhidos:</strong> imagem. <strong>Não é captado som.</strong></li>
+        <li><strong>Área abrangida:</strong> apenas o exterior da entrada da propriedade. Não existem câmaras no interior da habitação, no terraço nem no jardim</li>
+        <li><strong>Conservação:</strong> as imagens são eliminadas automaticamente ao fim de 7 dias, salvo se forem necessárias como prova de um incidente</li>
+        <li><strong>Destinatários:</strong> ninguém, salvo pedido de autoridade competente</li>
+      </ul>
+      <p>
+        Pode exercer os direitos de acesso, cópia, apagamento e oposição através de{' '}
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>, bem como reclamar junto da CNPD.
+      </p>
+
+      <h2>11. Alterações a esta Política</h2>
       <p>Reservamo-nos o direito de atualizar esta política de privacidade. Quaisquer alterações significativas serão comunicadas através do website.</p>
     </>
   );
@@ -243,7 +261,25 @@ function EnPrivacy() {
       <h2>9. Security</h2>
       <p>We implement appropriate technical and organizational measures to protect your personal data, including SSL/TLS encryption for all communications.</p>
 
-      <h2>10. Changes to this Policy</h2>
+      <h2>10. CCTV</h2>
+      <p>
+        The property has <strong>one outdoor security camera at the entrance</strong>, pointed at the
+        front door and the façade.
+      </p>
+      <ul>
+        <li><strong>Purpose:</strong> security of people and property</li>
+        <li><strong>Legal basis:</strong> legitimate interest (Art. 6(1)(f) GDPR)</li>
+        <li><strong>Data collected:</strong> image only. <strong>No audio is recorded.</strong></li>
+        <li><strong>Area covered:</strong> only the outside of the property entrance. There are no cameras inside the house, on the terrace or in the garden</li>
+        <li><strong>Retention:</strong> footage is deleted automatically after 7 days, unless needed as evidence of an incident</li>
+        <li><strong>Recipients:</strong> nobody, except at the request of a competent authority</li>
+      </ul>
+      <p>
+        You may exercise your rights of access, copy, erasure and objection through{' '}
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>, and lodge a complaint with the Portuguese supervisory authority, CNPD.
+      </p>
+
+      <h2>11. Changes to this Policy</h2>
       <p>We reserve the right to update this privacy policy. Significant changes will be communicated through the website.</p>
     </>
   );
@@ -300,6 +336,24 @@ function EsPrivacy() {
 
       <h2>7. Seguridad</h2>
       <p>Implementamos medidas tecnicas y organizativas adecuadas, incluyendo encriptacion SSL/TLS.</p>
+
+      <h2>8. Videovigilancia</h2>
+      <p>
+        El alojamiento dispone de <strong>una cámara de videovigilancia en el exterior, en la zona de
+        la entrada</strong>, orientada a la puerta y a la fachada.
+      </p>
+      <ul>
+        <li><strong>Finalidad:</strong> seguridad de personas y bienes</li>
+        <li><strong>Base legal:</strong> interés legítimo (art. 6.1.f del RGPD)</li>
+        <li><strong>Datos recogidos:</strong> imagen. <strong>No se capta sonido.</strong></li>
+        <li><strong>Área cubierta:</strong> únicamente el exterior de la entrada. No hay cámaras en el interior de la vivienda, ni en la terraza ni en el jardín</li>
+        <li><strong>Conservación:</strong> las imágenes se eliminan automáticamente a los 7 días, salvo que sean necesarias como prueba de un incidente</li>
+        <li><strong>Destinatarios:</strong> nadie, salvo requerimiento de autoridad competente</li>
+      </ul>
+      <p>
+        Puede ejercer los derechos de acceso, copia, supresión y oposición a través de{' '}
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a>, así como reclamar ante la CNPD portuguesa.
+      </p>
     </>
   );
 }
@@ -355,6 +409,24 @@ function DePrivacy() {
 
       <h2>7. Sicherheit</h2>
       <p>Wir setzen geeignete technische und organisatorische Massnahmen ein, einschliesslich SSL/TLS-Verschlusselung.</p>
+
+      <h2>8. Videoüberwachung</h2>
+      <p>
+        Die Unterkunft verfügt über <strong>eine Außenkamera im Eingangsbereich</strong>, die auf die
+        Haustür und die Fassade gerichtet ist.
+      </p>
+      <ul>
+        <li><strong>Zweck:</strong> Sicherheit von Personen und Eigentum</li>
+        <li><strong>Rechtsgrundlage:</strong> berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)</li>
+        <li><strong>Erhobene Daten:</strong> Bild. <strong>Es wird kein Ton aufgezeichnet.</strong></li>
+        <li><strong>Erfasster Bereich:</strong> ausschließlich der Außenbereich des Eingangs. Im Haus, auf der Terrasse und im Garten gibt es keine Kameras</li>
+        <li><strong>Speicherdauer:</strong> Aufnahmen werden nach 7 Tagen automatisch gelöscht, sofern sie nicht als Nachweis eines Vorfalls benötigt werden</li>
+        <li><strong>Empfänger:</strong> niemand, außer auf Verlangen einer zuständigen Behörde</li>
+      </ul>
+      <p>
+        Ihre Rechte auf Auskunft, Kopie, Löschung und Widerspruch können Sie über{' '}
+        <a href="mailto:reservas@villasolria.com">reservas@villasolria.com</a> geltend machen; zudem können Sie sich bei der portugiesischen Aufsichtsbehörde CNPD beschweren.
+      </p>
     </>
   );
 }
