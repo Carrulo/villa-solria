@@ -324,11 +324,17 @@ export async function POST(req: Request) {
     typeof linkExt.external_ref === 'string' &&
     linkExt.external_ref.length > 0
   ) {
+    // Never link a task to the booking that already owns it. Grouped
+    // rows are hidden on the assumption the parent holds the clean — if
+    // the parent is the row itself, the cleaning vanishes from the
+    // ledger and from the cleaner's message. A DB constraint blocks it
+    // too; this keeps the request from failing outright.
     await supabase
       .from('cleaning_tasks')
       .update({ linked_to_booking_id: bookingId })
       .eq('external_source', linkExt.external_source)
-      .eq('external_ref', linkExt.external_ref);
+      .eq('external_ref', linkExt.external_ref)
+      .or(`booking_id.is.null,booking_id.neq.${bookingId}`);
 
     // Refresh the existing "Nova reserva Booking — CLOSED - Not available"
     // notification with the real guest name and dates instead of creating

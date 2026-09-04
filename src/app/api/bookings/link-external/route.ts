@@ -49,6 +49,25 @@ export async function POST(req: Request) {
     }
   }
 
+  if (linked_to_booking_id) {
+    // Same trap as linking an external entry to itself: if the row we
+    // are about to mark as grouped is already this booking's own
+    // cleaning, it would hide itself and the clean would disappear.
+    const { data: own } = await supabase
+      .from('cleaning_tasks')
+      .select('id')
+      .eq('external_source', external_source)
+      .eq('external_ref', external_ref)
+      .eq('booking_id', linked_to_booking_id)
+      .limit(1);
+    if (own && own.length > 0) {
+      return NextResponse.json(
+        { error: 'Cannot link a cleaning to its own booking' },
+        { status: 400 }
+      );
+    }
+  }
+
   if (linked_to_external_source && linked_to_external_ref) {
     if (
       linked_to_external_source === external_source &&
