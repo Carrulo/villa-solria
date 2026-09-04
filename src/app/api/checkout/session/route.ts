@@ -286,11 +286,42 @@ export async function POST(request: NextRequest) {
       locale,
     });
 
-    // Save session ID on booking
-    await supabase
+    // Hold the dates for the length of the checkout window.
+    //
+    // Stripe's limited-inventory guidance is to reserve when the session
+    // is created and release on checkout.session.expired. We already did
+    // the releasing half; this is the reserve half that was missing, and
+    // without it two guests could pay for the same nights.
+    //
+    // 'pending_payment' is the status the Multibanco hold already uses,
+    // so the availability check in /api/booking blocks on it for free.
+    // The exclusion constraint rejects the update if someone got there
+    // first — in that case the dates are genuinely gone, so refuse the
+    // checkout instead of taking money we would have to refund.
+    const { error: holdError } = await supabase
       .from('bookings')
-      .update({ stripe_session_id: session.id })
-      .eq('id', bookingId);
+      .update({ status: 'pending_payment', stripe_session_id: session.id })
+      .eq('id', bookingId)
+      .eq('status', 'pending');
+
+    if (holdError) {
+      // 23P01 = exclusion_violation → the nights were taken meanwhile.
+      const taken = holdError.code === '23P01';
+      console.error('Could not hold dates for checkout:', holdError.message);
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch {
+        // Session will expire on its own; nothing else to do here.
+      }
+      return NextResponse.json(
+        {
+          error: taken
+            ? 'Dates were just booked by someone else. Please pick other dates.'
+            : 'Could not hold these dates. Please try again.',
+        },
+        { status: 409 },
+      );
+    }
 
     // Meta CAPI InitiateCheckout — fired from the server with the original
     // request's IP, UA and _fbp/_fbc cookies for high-quality matching.

@@ -98,6 +98,23 @@ export async function POST(request: NextRequest) {
         .eq('id', bookingId);
 
       if (updateError) {
+        // 23P01 = the no-overlap exclusion constraint fired: another
+        // booking was confirmed for these nights while this guest paid.
+        // The money is already taken, so this needs a human — shout.
+        if (updateError.code === '23P01') {
+          console.error(`DOUBLE BOOKING BLOCKED for ${bookingId} — payment taken, dates already sold`);
+          try {
+            await sendTelegramNotification(
+              `🚨 *Pagamento recebido para datas já vendidas*\n\n` +
+                `Reserva \`${bookingId}\` foi paga mas as noites já estavam confirmadas para outra pessoa. ` +
+                `A base de dados recusou a confirmação.\n\n` +
+                `*É preciso reembolsar e contactar o hóspede.*`,
+            );
+          } catch (notifyErr) {
+            console.error('Failed to send double-booking alert:', notifyErr);
+          }
+          return;
+        }
         console.error('Failed to update booking after payment:', updateError);
         return;
       }
@@ -320,11 +337,13 @@ export async function POST(request: NextRequest) {
 
         if (bookingId) {
           // Fetch booking details before cancelling — needed for abandonment email
+          // The checkout hold moved the booking to 'pending_payment', so
+          // matching only 'pending' here would leave the dates held forever.
           const { data: expiredBooking } = await supabase
             .from('bookings')
             .select('*')
             .eq('id', bookingId)
-            .eq('status', 'pending')
+            .in('status', ['pending', 'pending_payment'])
             .single();
 
           // Send abandonment email (non-blocking — cancellation proceeds regardless)
@@ -349,7 +368,7 @@ export async function POST(request: NextRequest) {
             .from('bookings')
             .update({ status: 'cancelled' })
             .eq('id', bookingId)
-            .eq('status', 'pending');
+            .in('status', ['pending', 'pending_payment']);
 
           console.log(`Booking ${bookingId} cancelled (session expired)`);
 
