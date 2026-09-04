@@ -16,6 +16,8 @@ Seguíamos metade do padrão da Stripe para *limited inventory*: definíamos `ex
 - **Corrida perdida**: se um pagamento chegar para noites já vendidas, o `fulfillBooking` apanha o erro `23P01`, **não confirma** e avisa por Telegram. O reembolso é manual de propósito — automatizá-lo era decisão do Bruno e ficou por decidir.
 - **`session_timeout_min` 1440 → 30** (editável em `/admin/payments`). Com hold, 24h tirava a data do mercado um dia inteiro; 30 min é o mínimo que a Stripe permite.
 - **`pending` continua a não bloquear nada** — tentativa abandonada não segura datas, é o comportamento correcto e foi confirmado por teste.
+- **Ciclo testado ponta a ponta a 2026-09-04 22:01→22:31** (checkout com MB Way, sem aceitar o pagamento): hold aplicado na criação da sessão · datas protegidas por código e pela constraint (insert conflituoso rejeitado com 23P01) · `checkout.session.expired` disparou aos 30,3 min e pôs a reserva em `cancelled` · datas livres outra vez. **O webhook de expiração está subscrito e funciona** — havia dúvida porque não existia um único cancelamento na BD desde Abril.
+- **Avisos "Nova reserva" só quando o pagamento entra** (migração 018). Estavam em `AFTER INSERT`, portanto cada checkout abandonado gerava um aviso falso — havia 13 na BD, desde Maio. Agora: insert com `confirmed` (manuais) ou update para `confirmed` (site).
 
 ## 🔴 A VERIFICAR — o Booking deixou de exportar a estadia da Raquel (5-12 Set 2026)
 - O feed do Booking tinha `20260905→20260912` de manhã. À tarde já **não tem**. Só restam 16-24 Set e o bloco de horizonte de 2028.
