@@ -19,6 +19,7 @@
 
 ## 📖 Guia do hóspede
 - Conteúdo em `guide_sections` (Supabase), corpo em jsonb `{pt,en,es,de}` — **editar as 4 línguas sempre**. O `media_url` é um campo único, para uma foto/vídeo por secção.
+- **Blocos dobráveis**: `:::details Título` … `:::` no corpo abre um `<details>` dentro da própria secção. Usar isto em vez de mandar o hóspede para outra página — o guia tem um token na URL, as páginas do site não têm caminho de volta, e no telemóvel abre-se muitas vezes dentro do WhatsApp, onde sair é viagem sem regresso.
 - **Fotos dentro do texto**: `![alt](url)` no corpo. As do nosso bucket passam pelo `/_next/image` (AVIF/WebP + CDN); outras origens são servidas tal e qual, porque o `next.config` só autoriza o host do Supabase. Imagens são tratadas antes dos links no `renderMarkdown`, senão `![a](b)` casa com o padrão de link.
 - **Storage**: bucket público `property-photos`, prefixo `guide/`. O upload precisa da **service_role JWT legada** — as chaves novas `sb_secret_…` do `.env` dão "Invalid Compact JWS" no Storage. Buscar em `GET https://api.supabase.com/v1/projects/<ref>/api-keys?reveal=true` com o PAT.
 - A Management API está atrás da Cloudflare: **enviar sempre `User-Agent`**, senão devolve 403 code 1010.
