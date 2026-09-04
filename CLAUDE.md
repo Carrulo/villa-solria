@@ -8,6 +8,14 @@
 - **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
 - **Blocker — precisa do Bruno**: a sessão do extranet do **Booking** expira ao fim de pouco tempo e não se introduzem credenciais. Falta lá subir as tabelas (ver abaixo).
 
+## 📹 Videovigilância (2026-09-04)
+- Uma câmara **exterior na entrada**, a apanhar porta e fachada. **Só imagem, sem áudio**, retenção **7 dias**, só a nossa propriedade. Base legal: interesse legítimo.
+- Está informada na secção `cctv` do guia (sort 25) e na política de privacidade do site, **nas 4 línguas**.
+- **⚠️ Falta fora do código** — nenhum destes é coisa que se resolva no repositório:
+  1. **Divulgar nos anúncios antes da reserva.** O guia só chega depois de reservar; o Airbnb exige que câmaras exteriores estejam declaradas no anúncio (e proíbe as interiores desde 30 Abr 2024). Booking e VRBO também têm campo próprio. Hoje não está em nenhum.
+  2. **Placa física visível na entrada**, antes de se entrar na zona vigiada — é exigência da CNPD, não basta o aviso escrito.
+  3. Confirmar que o enquadramento não apanha via pública nem casa de vizinhos; se apanhar, mascarar essa zona.
+
 ## 📖 Guia do hóspede
 - Conteúdo em `guide_sections` (Supabase), corpo em jsonb `{pt,en,es,de}` — **editar as 4 línguas sempre**. O `media_url` é um campo único, para uma foto/vídeo por secção.
 - **Fotos dentro do texto**: `![alt](url)` no corpo. As do nosso bucket passam pelo `/_next/image` (AVIF/WebP + CDN); outras origens são servidas tal e qual, porque o `next.config` só autoriza o host do Supabase. Imagens são tratadas antes dos links no `renderMarkdown`, senão `![a](b)` casa com o padrão de link.
