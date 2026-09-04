@@ -10,7 +10,7 @@ import {
   type UpcomingCleaning,
 } from '@/lib/cleaning-message';
 import { whatsAppLink } from '@/lib/whatsapp';
-import { roomProfile, shortRoom } from '@/lib/villa-rooms';
+import { roomProfile, shortRoom, COT_ROOM } from '@/lib/villa-rooms';
 import {
   CLEANERS,
   laundryByWeight,
@@ -62,6 +62,7 @@ interface OwnerInstructionsPatch {
   rooms_to_prepare: number[] | null;
   room_plan: Record<string, number> | null;
   towels_override: number | null;
+  needs_cot: boolean;
 }
 
 export default function AdminCleaningPage() {
@@ -410,6 +411,7 @@ export default function AdminCleaningPage() {
           rooms_to_prepare: t.rooms_to_prepare ?? null,
           room_plan: t.room_plan ?? null,
           towels_override: t.towels_override ?? null,
+          needs_cot: t.needs_cot ?? false,
           kind: t.kind ?? 'turnover',
           owner_notes: t.owner_notes ?? null,
           num_guests: t.num_guests,
@@ -1557,6 +1559,7 @@ function OwnerInstructions({
     task.towels_override != null ? String(task.towels_override) : ''
   );
   const [kind, setKind] = useState<'turnover' | 'midstay'>(task.kind ?? 'turnover');
+  const [needsCot, setNeedsCot] = useState<boolean>(task.needs_cot === true);
 
   const guests = allOptions.reduce((sum, n) => sum + (plan[n] || 0), 0);
   const usedRooms = allOptions.filter((n) => (plan[n] || 0) > 0);
@@ -1573,7 +1576,8 @@ function OwnerInstructions({
     initialNotes.length > 0 ||
     hasPartialRooms ||
     !!task.room_plan ||
-    task.towels_override != null;
+    task.towels_override != null ||
+    task.needs_cot === true;
 
   function setRoom(n: number, people: number) {
     setPlan((prev) => ({
@@ -1598,6 +1602,7 @@ function OwnerInstructions({
         parsedTowels != null && Number.isFinite(parsedTowels) && parsedTowels > 0
           ? parsedTowels
           : null,
+      needs_cot: needsCot,
     });
     setOpen(false);
   }
@@ -1607,12 +1612,14 @@ function OwnerInstructions({
     setPlan({});
     setTowels('');
     setKind('turnover');
+    setNeedsCot(false);
     onSave({
       kind: 'turnover',
       owner_notes: null,
       rooms_to_prepare: null,
       room_plan: null,
       towels_override: null,
+      needs_cot: false,
     });
     setOpen(false);
   }
@@ -1626,6 +1633,7 @@ function OwnerInstructions({
           setPlan(initialPlan);
           setTowels(task.towels_override != null ? String(task.towels_override) : '');
           setKind(task.kind ?? 'turnover');
+          setNeedsCot(task.needs_cot === true);
           setOpen(true);
         }}
         className={`mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition-colors ${
@@ -1641,6 +1649,7 @@ function OwnerInstructions({
           <span>· {savedRooms.map((n) => shortRoom(n)).join(' + ')}</span>
         )}
         {task.towels_override != null && <span>· {task.towels_override} toalhas</span>}
+        {task.needs_cot === true && <span>· berço</span>}
       </button>
 
       {open && (
@@ -1726,6 +1735,40 @@ function OwnerInstructions({
                 );
               })}
             </div>
+
+            {/* The cot lives in Q1 but is only set up when a baby is
+                coming, so it is a per-cleaning switch rather than part of
+                the room's permanent description. */}
+            <button
+              type="button"
+              onClick={() => setNeedsCot((v) => !v)}
+              aria-pressed={needsCot}
+              className={`w-full flex items-center justify-between gap-3 px-3 py-2 mb-4 rounded-lg border text-left transition-colors ${
+                needsCot
+                  ? 'bg-amber-500/10 border-amber-400/40'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="text-sm text-white">👶 Berço</p>
+                <p className="text-[11px] text-gray-400">
+                  {needsCot
+                    ? `Vai na mensagem: montar no ${shortRoom(COT_ROOM)}`
+                    : 'Desligado — não é mencionado à Leonor'}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 w-10 h-6 rounded-full p-0.5 transition-colors ${
+                  needsCot ? 'bg-amber-500' : 'bg-white/15'
+                }`}
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white transition-transform ${
+                    needsCot ? 'translate-x-4' : ''
+                  }`}
+                />
+              </span>
+            </button>
 
             <div className="flex items-start gap-3 mb-3">
               <label className="block w-28 shrink-0">

@@ -22,7 +22,7 @@ export const ROOM_PROFILES: RoomProfile[] = [
     n: 1,
     name: 'Principal',
     floor: '1º andar',
-    beds: 'cama queen + berço',
+    beds: 'cama queen',
     bedLabel: 'cama queen',
     bedCount: 1,
     sleeps: 2,
@@ -52,7 +52,13 @@ export const BATHROOMS = 2;
 
 /** Max occupancy: 6 people plus a baby in the cot. */
 export const MAX_GUESTS = ROOM_PROFILES.reduce((sum, r) => sum + r.sleeps, 0);
-export const HAS_COT = true;
+/**
+ * The cot lives in Q1 Principal and is only set up when a baby is
+ * coming, so it is NOT part of that room's permanent bed description —
+ * it is a per-cleaning flag (`needs_cot`) the host switches on.
+ */
+export const COT_ROOM = 1;
+export const COT_LABEL = 'berço';
 
 export function roomProfile(n: number): RoomProfile {
   return (
@@ -68,7 +74,7 @@ export function roomProfile(n: number): RoomProfile {
   );
 }
 
-/** "Q1 Principal (1º andar) — cama de casal + berço" */
+/** "Q1 Principal (1º andar) — cama queen" */
 export function describeRoom(n: number): string {
   const r = roomProfile(n);
   const place = r.floor ? ` (${r.floor})` : '';

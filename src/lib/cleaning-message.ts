@@ -9,7 +9,15 @@
 // House rule: guests leave by 11h, new guests arrive from 16h, so a
 // same-day turnover must happen inside that window.
 
-import { describeRoom, shortRoom, roomProfile, BATHROOMS, MAX_GUESTS } from './villa-rooms';
+import {
+  describeRoom,
+  shortRoom,
+  roomProfile,
+  BATHROOMS,
+  MAX_GUESTS,
+  COT_ROOM,
+  COT_LABEL,
+} from './villa-rooms';
 
 export const CHECKOUT_HOUR = '11h';
 export const CHECKIN_HOUR = '16h';
@@ -25,6 +33,8 @@ export interface CleaningMessageTask {
   num_guests: number | null;
   /** A mid-stay intervention is a different job to a turnover. */
   kind?: 'turnover' | 'midstay';
+  /** Set up the cot in Q1. Off unless a baby is actually coming. */
+  needs_cot?: boolean | null;
 }
 
 /** Rooms with at least one person, in order. */
@@ -45,9 +55,9 @@ export function totalGuests(plan: Record<string, number> | null | undefined): nu
  * One line per room saying how many beds to make. The twin room is why
  * this is needed: one child in there means one bed made, not two.
  */
-function roomLine(n: number, people: number): string {
+function roomLine(n: number, people: number, needsCot = false): string {
   const r = roomProfile(n);
-  const head = `• ${describeRoom(n)}`;
+  const head = `• ${describeRoom(n)}${cotSuffix(n, needsCot)}`;
   if (r.bedCount > 1) {
     if (people >= r.bedCount) return `${head}\n   → fazer as ${r.bedCount} camas (${people} pessoas)`;
     const spare = r.bedCount - people;
@@ -57,6 +67,11 @@ function roomLine(n: number, people: number): string {
   }
   if (people >= 2) return `${head}\n   → casal (2 pessoas)`;
   return `${head}\n   → 1 pessoa`;
+}
+
+/** " + berço" on the room that holds it, and only when asked for. */
+function cotSuffix(n: number, needsCot: boolean): string {
+  return needsCot && n === COT_ROOM ? ` + ${COT_LABEL}` : '';
 }
 
 export interface UpcomingCleaning {
@@ -145,6 +160,7 @@ export function buildCleaningMessage({
   }
 
   const lines: string[] = greeting(cleanerName);
+  const needsCot = task.needs_cot === true;
 
   lines.push(`🧹 *Limpeza — ${formatPtDate(task.cleaning_date)}*`);
   lines.push('');
@@ -173,7 +189,8 @@ export function buildCleaningMessage({
     // Best case: the host said who sleeps where.
     const guests = totalGuests(task.room_plan);
     lines.push('🛏 *Preparar:*');
-    for (const n of planned) lines.push(roomLine(n, Number(task.room_plan?.[String(n)]) || 0));
+    for (const n of planned)
+      lines.push(roomLine(n, Number(task.room_plan?.[String(n)]) || 0, needsCot));
 
     const untouched = allRooms.filter((n) => !planned.includes(n));
     if (untouched.length > 0) {
@@ -197,7 +214,7 @@ export function buildCleaningMessage({
 
     if (explicit) {
       lines.push('🛏 *Preparar só estes quartos:*');
-      for (const n of explicit) lines.push(`• ${describeRoom(n)}`);
+      for (const n of explicit) lines.push(`• ${describeRoom(n)}${cotSuffix(n, needsCot)}`);
       const rest = allRooms.filter((n) => !explicit.includes(n));
       if (rest.length > 0) {
         lines.push('');
@@ -205,7 +222,7 @@ export function buildCleaningMessage({
       }
     } else {
       lines.push(`🛏 *Preparar os ${villaRooms} quartos:*`);
-      for (const n of allRooms) lines.push(`• ${describeRoom(n)}`);
+      for (const n of allRooms) lines.push(`• ${describeRoom(n)}${cotSuffix(n, needsCot)}`);
     }
 
     if (task.towels_override != null) {
@@ -219,6 +236,11 @@ export function buildCleaningMessage({
         }${task.num_guests >= MAX_GUESTS ? ', casa cheia' : ''})`
       );
     }
+  }
+
+  if (needsCot) {
+    lines.push('');
+    lines.push(`👶 *Montar o ${COT_LABEL}* no ${shortRoom(COT_ROOM)}.`);
   }
 
   // 3. Anything the host typed for this specific stay.
