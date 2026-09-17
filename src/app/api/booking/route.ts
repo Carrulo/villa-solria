@@ -51,6 +51,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dates not available' }, { status: 409 });
     }
 
+    // Channel reservations that were never turned into a `bookings` row
+    // live only in `blocked_dates` — the iCal sync writes them there.
+    // Checking only `bookings` left those nights on sale: on 2026-09-17
+    // three future stays were bookable through the site, including
+    // 24 Dec–1 Jan and a week of July 2027.
+    //
+    // A blocked date D means night D is taken, so the stay occupies
+    // checkIn .. checkOut-1.
+    const { data: blocked } = await supabase
+      .from('blocked_dates')
+      .select('date')
+      .gte('date', checkIn)
+      .lt('date', checkOut)
+      .limit(1);
+
+    if (blocked && blocked.length > 0) {
+      return NextResponse.json({ error: 'Dates not available' }, { status: 409 });
+    }
+
     // Calculate nights
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);

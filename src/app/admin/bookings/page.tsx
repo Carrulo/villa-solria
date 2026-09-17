@@ -409,11 +409,13 @@ export default function AdminBookingsPage() {
   }
 
   async function fetchBlockedDates() {
-    const today = new Date().toISOString().slice(0, 10);
     const { data } = await supabase
+      // No date floor: the calendar navigates backwards, and filtering to
+      // today made every past month render as free — a finished stay
+      // looked like it had never existed. The whole table is under a
+      // hundred rows for a single property, so load it.
       .from('blocked_dates')
       .select('id, date, source, note')
-      .gte('date', today)
       .order('date', { ascending: true })
       .limit(2000);
     setBlockedDates((data || []) as BlockedDateRow[]);
