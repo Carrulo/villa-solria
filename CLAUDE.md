@@ -2,7 +2,7 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-17 10:30)
+## 📍 Current State (updated 2026-09-17 11:40)
 - **Active branch**: main, limpo.
 - **Sábado-a-sábado só em Julho e Agosto**. Só `Peak July` e `Peak August` têm `min_nights 7` + `allowed_checkin_days {6}`. Junho 15-30 e Setembro 1-15 são livres.
 - **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
@@ -25,9 +25,20 @@ Resolve a dúvida de 4 Set: a reserva da Raquel **não foi cancelada**. O padrã
 - **O que salva a situação**: se a estadia tiver linha em `bookings` (como a Ailsa tem), o `/api/booking` recusa na mesma. Se só existir como `cleaning_task` + `blocked_dates`, ficava à venda — ver a correcção abaixo.
 - **Por decidir**: proteger as `blocked_dates` de estadias em curso no sync, ou aceitar e confiar na linha de `bookings`. Hoje depende de o Bruno ter criado a reserva à mão.
 
-## 🔴 Corrigido 2026-09-17 — o site vendia noites que os canais já tinham
-- **`/api/booking` só verificava a tabela `bookings`.** As reservas de canal que nunca foram transformadas em linha de `bookings` existem apenas em `blocked_dates`, e ficavam à venda. Estavam **três** assim: Airbnb 28 Set-10 Out, Booking 24 Dez-1 Jan, Booking 24-31 Jul 2027. Passa a recusar também por `blocked_dates` (`date >= checkIn and date < checkOut`).
-- **O calendário do admin escondia o passado**: a consulta tinha `.gte('date', today)`, portanto qualquer mês anterior aparecia todo livre. Foi o que levantou a questão — a estadia da Raquel parecia ter desaparecido, mas os dados estavam intactos. Filtro removido (a tabela tem 93 linhas).
+## ✅ 2026-09-17 — uma só resposta à disponibilidade
+A casa tem **duas** fontes de ocupação e cada porta consultava a sua. Foi assim que noites já vendidas ficaram à venda.
+- `bookings` — reservas do site e as que o Bruno cria à mão.
+- `blocked_dates` — escrita pelo sync de iCal. **Reservas de canal que nunca viraram linha de `bookings` existem só aqui.**
+
+**`src/lib/availability.ts` → `findAvailabilityConflict()`** lê as duas e é agora a única porta. Usada por `/api/booking`, `/api/bookings/manual` e, na forma de pintura, pelo calendário do admin.
+
+O que estava partido antes disto:
+- **`/api/booking`** só via `bookings`: três estadias futuras estavam à venda no site — Airbnb 28 Set-10 Out, Booking 24 Dez-1 Jan, Booking 24-31 Jul 2027. Escapou por acaso: as estadias que o Bruno converte em reserva manual ficavam cobertas.
+- **`/api/bookings/manual`** só via `blocked_dates`: uma reserva manual podia cair em cima de um hold de checkout e apanhar a constraint em bruto (500) em vez de mensagem legível. A excepção ao enriquecer estadia importada mantém-se, agora como opção `ignoreBlockedDates`.
+- **Calendário** só via `blocked_dates`, e por isso mostrava a casa livre com a Ailsa lá dentro. Passa a pintar também das reservas confirmadas, traduzindo `bookings.source` (`booking`/`airbnb`) para o rótulo `<canal>_ical` que a legenda e o `colorOf` usam.
+- **Calendário escondia o passado**: tinha `.gte('date', today)`, portanto qualquer mês anterior aparecia vazio. Foi isto que levantou a questão — a estadia da Raquel parecia apagada, mas os dados estavam intactos.
+
+**Porque aconteceu** (arqueologia): `/api/booking` nasceu a 6 Abr, quando `bookings` era a única fonte e a verificação estava completa. O sync de iCal entrou a 11 Abr e criou a segunda fonte sem ninguém voltar a essa porta. A 22 Abr a rota manual nasceu já a ver `blocked_dates` — corrigiu-se o caminho novo e não se olhou para o antigo. A 1 Mai a verificação pública foi mexida outra vez e a omissão passou despercebida. Cinco meses e meio.
 
 ## 🔴 Resolvido 2026-09-04 — limpezas invisíveis por auto-agrupamento
 - **Sintoma**: a mensagem de 5 Set dizia *"não entra ninguém a seguir"* no dia em que a Raquel fazia check-in.
