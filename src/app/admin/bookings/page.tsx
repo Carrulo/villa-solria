@@ -418,7 +418,60 @@ export default function AdminBookingsPage() {
       .select('id, date, source, note')
       .order('date', { ascending: true })
       .limit(2000);
-    setBlockedDates((data || []) as BlockedDateRow[]);
+
+    // blocked_dates is only half the picture. Channel feeds drop a stay
+    // the moment it starts — Booking does this at check-in — and the sync
+    // then removes its blocks, so the calendar showed the villa free with
+    // a guest inside it. Confirmed bookings are the other half, and they
+    // are the half that survives. Paint from both, exactly like the
+    // availability gate in src/lib/availability.ts does.
+    const { data: holding } = await supabase
+      .from('bookings')
+      .select('id, guest_name, checkin_date, checkout_date, source, status')
+      .in('status', ['confirmed', 'pending_payment'])
+      .limit(2000);
+
+    // bookings.source says 'booking'/'airbnb'/'vrbo'; blocked_dates and the
+    // legend speak in '<channel>_ical'. Translate here so the cell colour
+    // and the letter badge stay right without touching colorOf twice.
+    const canonicalSource = (src: string | null): string => {
+      switch (src) {
+        case 'booking':
+          return 'booking_ical';
+        case 'airbnb':
+          return 'airbnb_ical';
+        case 'vrbo':
+          return 'vrbo_ical';
+        case 'manual':
+          return 'manual';
+        default:
+          return 'website';
+      }
+    };
+
+    const byDate = new Map<string, BlockedDateRow>();
+    for (const row of (data || []) as BlockedDateRow[]) byDate.set(row.date, row);
+
+    for (const bk of holding || []) {
+      const cur = new Date(bk.checkin_date + 'T00:00:00Z');
+      const end = new Date(bk.checkout_date + 'T00:00:00Z');
+      while (cur < end) {
+        const iso = cur.toISOString().slice(0, 10);
+        // A real blocked_dates row wins: it carries the note the host
+        // may have written, and its source is the one the sync recorded.
+        if (!byDate.has(iso)) {
+          byDate.set(iso, {
+            id: `bk:${bk.id}:${iso}`,
+            date: iso,
+            source: canonicalSource(bk.source),
+            note: bk.guest_name ? `Reserva: ${bk.guest_name}` : null,
+          } as BlockedDateRow);
+        }
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    }
+
+    setBlockedDates([...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)));
 
     const { data: tasks } = await supabase
       .from('cleaning_tasks')

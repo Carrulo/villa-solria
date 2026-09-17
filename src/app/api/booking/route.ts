@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
 import { countryToLanguage } from '@/lib/countries';
 import { checkStayRules, describeViolation } from '@/lib/stay-rules';
+import { findAvailabilityConflict } from '@/lib/availability';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,38 +36,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for overlapping bookings that legitimately hold dates.
-    // Only confirmed bookings and Multibanco vouchers in pending_payment
-    // block the calendar — plain 'pending' means the form was submitted
-    // but the Stripe checkout never completed (abandoned attempts), and
-    // those should not prevent a new customer from booking.
-    const { data: conflicts } = await supabase
-      .from('bookings')
-      .select('id')
-      .in('status', ['confirmed', 'pending_payment'])
-      .lt('checkin_date', checkOut)
-      .gt('checkout_date', checkIn);
-
-    if (conflicts && conflicts.length > 0) {
-      return NextResponse.json({ error: 'Dates not available' }, { status: 409 });
-    }
-
-    // Channel reservations that were never turned into a `bookings` row
-    // live only in `blocked_dates` — the iCal sync writes them there.
-    // Checking only `bookings` left those nights on sale: on 2026-09-17
-    // three future stays were bookable through the site, including
-    // 24 Dec–1 Jan and a week of July 2027.
-    //
-    // A blocked date D means night D is taken, so the stay occupies
-    // checkIn .. checkOut-1.
-    const { data: blocked } = await supabase
-      .from('blocked_dates')
-      .select('date')
-      .gte('date', checkIn)
-      .lt('date', checkOut)
-      .limit(1);
-
-    if (blocked && blocked.length > 0) {
+    // One gate for both sources of occupancy — see src/lib/availability.ts
+    // for why this is shared with the admin route instead of duplicated.
+    const conflict = await findAvailabilityConflict(supabase, checkIn, checkOut);
+    if (conflict) {
       return NextResponse.json({ error: 'Dates not available' }, { status: 409 });
     }
 
@@ -166,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     const subTotal = subTotalNights;
     const discountAmount = Math.round(subTotal * (discountPercent / 100));
-    let totalPrice = subTotal - discountAmount + cleaningFee;
+    const totalPrice = subTotal - discountAmount + cleaningFee;
 
     // Language: country override wins; otherwise use the site locale the
     // guest was browsing. Falls back to English for safety.
