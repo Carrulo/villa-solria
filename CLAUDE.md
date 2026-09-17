@@ -2,7 +2,7 @@
 
 # Villa Solria — Claude Instructions
 
-## 📍 Current State (updated 2026-09-03 16:10)
+## 📍 Current State (updated 2026-09-17 10:30)
 - **Active branch**: main, limpo.
 - **Sábado-a-sábado só em Julho e Agosto**. Só `Peak July` e `Peak August` têm `min_nights 7` + `allowed_checkin_days {6}`. Junho 15-30 e Setembro 1-15 são livres.
 - **Sem desconto semanal na época alta** (decisão do Bruno, 3 Set): em Jul/Ago o mínimo já é 7 noites, por isso o desconto caía em 100% das reservas — era um corte de preço disfarçado. Mas **nas plataformas o desconto fica**, porque ajuda a converter; o que se faz é **subir a tabela para o desconto sair de um número maior**, de modo a que o hóspede aterre no mesmo sítio e o site continue o mais barato.
@@ -19,12 +19,15 @@ Seguíamos metade do padrão da Stripe para *limited inventory*: definíamos `ex
 - **Ciclo testado ponta a ponta a 2026-09-04 22:01→22:31** (checkout com MB Way, sem aceitar o pagamento): hold aplicado na criação da sessão · datas protegidas por código e pela constraint (insert conflituoso rejeitado com 23P01) · `checkout.session.expired` disparou aos 30,3 min e pôs a reserva em `cancelled` · datas livres outra vez. **O webhook de expiração está subscrito e funciona** — havia dúvida porque não existia um único cancelamento na BD desde Abril.
 - **Avisos "Nova reserva" só quando o pagamento entra** (migração 018). Estavam em `AFTER INSERT`, portanto cada checkout abandonado gerava um aviso falso — havia 13 na BD, desde Maio. Agora: insert com `confirmed` (manuais) ou update para `confirmed` (site).
 
-## 🔴 A VERIFICAR — o Booking deixou de exportar a estadia da Raquel (5-12 Set 2026)
-- O feed do Booking tinha `20260905→20260912` de manhã. À tarde já **não tem**. Só restam 16-24 Set e o bloco de horizonte de 2028.
-- **Não se sabe porquê.** As hipóteses são opostas e mudam tudo: ou a reserva foi **cancelada no Booking**, ou é um comportamento do feed. **Confirmar no extranet.** Se foi cancelada: cancelar a reserva na BD, apagar as `blocked_dates` de 5-11 Set e a `cleaning_task` de 12 Set.
-- Entretanto ficou **bloqueado**, que é o lado seguro com a entrada a ser no dia seguinte e a nossa reserva a dizer `confirmed/paid`.
-- **Dano colateral que eu causei**: ao desfazer os auto-agrupamentos de manhã, tirei sem querer a única coisa que protegia 13 `cleaning_tasks` do apagamento pelo sync — o filtro de apagar exigia `!linked_to_booking_id`. O sync seguinte levou as 13. Reconstruí-as a partir das reservas (com `external_source` nulo, para o sync não lhes tocar), mas **perderam-se campos editados à mão**, se os houvesse: quartos, toalhas, notas, horas.
-- **Fechado**: o sync já não apaga tarefas com `booking_id` — pertencem à reserva, não ao feed, e os feeds deixam cair estadias passadas e canceladas por rotina.
+## 📡 O feed do Booking larga a estadia quando ela começa (confirmado 2026-09-17)
+Resolve a dúvida de 4 Set: a reserva da Raquel **não foi cancelada**. O padrão repetiu-se com a Ailsa (16-24 Set), que saiu do feed no próprio check-in. **O iCal do Booking deixa de exportar uma reserva a partir do momento em que a estadia começa.**
+- **Consequência**: o sync apaga as `blocked_dates` dessa estadia enquanto o hóspede ainda lá está. O calendário do admin mostra a casa livre com gente dentro.
+- **O que salva a situação**: se a estadia tiver linha em `bookings` (como a Ailsa tem), o `/api/booking` recusa na mesma. Se só existir como `cleaning_task` + `blocked_dates`, ficava à venda — ver a correcção abaixo.
+- **Por decidir**: proteger as `blocked_dates` de estadias em curso no sync, ou aceitar e confiar na linha de `bookings`. Hoje depende de o Bruno ter criado a reserva à mão.
+
+## 🔴 Corrigido 2026-09-17 — o site vendia noites que os canais já tinham
+- **`/api/booking` só verificava a tabela `bookings`.** As reservas de canal que nunca foram transformadas em linha de `bookings` existem apenas em `blocked_dates`, e ficavam à venda. Estavam **três** assim: Airbnb 28 Set-10 Out, Booking 24 Dez-1 Jan, Booking 24-31 Jul 2027. Passa a recusar também por `blocked_dates` (`date >= checkIn and date < checkOut`).
+- **O calendário do admin escondia o passado**: a consulta tinha `.gte('date', today)`, portanto qualquer mês anterior aparecia todo livre. Foi o que levantou a questão — a estadia da Raquel parecia ter desaparecido, mas os dados estavam intactos. Filtro removido (a tabela tem 93 linhas).
 
 ## 🔴 Resolvido 2026-09-04 — limpezas invisíveis por auto-agrupamento
 - **Sintoma**: a mensagem de 5 Set dizia *"não entra ninguém a seguir"* no dia em que a Raquel fazia check-in.
