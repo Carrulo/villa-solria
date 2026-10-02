@@ -1,9 +1,16 @@
 import { getTranslations } from 'next-intl/server';
+import { pageMetadata } from '@/lib/seo';
 
 type Props = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'meta' });
+  return pageMetadata(locale, '/faq', t('faqTitle'), t('faqDescription'));
+}
 
 export default async function FaqLayout({ children, params }: Props) {
   const { locale } = await params;

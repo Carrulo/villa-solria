@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
@@ -18,7 +19,7 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
-  return { title: t('villaTitle'), description: t('villaDescription') };
+  return pageMetadata(locale, '/villa', t('villaTitle'), t('villaDescription'));
 }
 
 type VillaSlots = {

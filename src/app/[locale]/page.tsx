@@ -13,6 +13,7 @@ import RecentInterestBadge from '@/components/RecentInterestBadge';
 import { createServerClient } from '@/lib/supabase-server';
 import type { Review, Photo } from '@/lib/supabase';
 import { getPhotoUrl } from '@/lib/supabase';
+import { pageMetadata } from '@/lib/seo';
 
 function JsonLd({
   ratingValue,
@@ -100,6 +101,12 @@ function JsonLd({
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
     />
   );
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'meta' });
+  return pageMetadata(locale, '', t('title'), t('description'));
 }
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {

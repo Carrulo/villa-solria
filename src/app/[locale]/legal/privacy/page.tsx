@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { useTranslations, useLocale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
@@ -10,9 +11,7 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'legal' });
-  return {
-    title: `${t('privacyTitle')} - Villa Solria`,
-  };
+  return pageMetadata(locale, '/legal/privacy', `${t('privacyTitle')} - Villa Solria`);
 }
 
 const privacyContent: Record<string, React.FC> = {

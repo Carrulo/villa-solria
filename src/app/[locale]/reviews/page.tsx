@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Star } from 'lucide-react';
@@ -12,7 +13,7 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
-  return { title: t('reviewsTitle'), description: t('reviewsDescription') };
+  return pageMetadata(locale, '/reviews', t('reviewsTitle'), t('reviewsDescription'));
 }
 
 export default async function ReviewsPage({ params }: Props) {

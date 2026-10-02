@@ -15,5 +15,8 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next|images|favicon|api|admin).*)', '/', '/(pt|en|es|de)/:path*']
+  // Anything with a file extension (robots.txt, sitemap.xml, og-image.jpg)
+  // must bypass next-intl, or it gets rewritten to /pt/robots.txt and 404s
+  // — which is how the site went without robots and sitemap.
+  matcher: ['/((?!_next|_vercel|images|favicon|api|admin|.*\\..*).*)', '/', '/(pt|en|es|de)/:path*']
 };

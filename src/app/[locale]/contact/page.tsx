@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { getTranslations } from 'next-intl/server';
 import { Mail, Phone, MapPin, MessageCircle, Clock } from 'lucide-react';
 import ContactForm from '@/components/ContactForm';
@@ -10,7 +11,7 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
-  return { title: t('contactTitle'), description: t('contactDescription') };
+  return pageMetadata(locale, '/contact', t('contactTitle'), t('contactDescription'));
 }
 
 type SettingsMap = Record<string, string>;

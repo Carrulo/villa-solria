@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import { MapPin, Umbrella, Building2, Plane, Palmtree, UtensilsCrossed, Bike, Landmark } from 'lucide-react';
@@ -10,7 +11,7 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
-  return { title: t('locationTitle'), description: t('locationDescription') };
+  return pageMetadata(locale, '/location', t('locationTitle'), t('locationDescription'));
 }
 
 async function getLocationHeroUrl(): Promise<string> {

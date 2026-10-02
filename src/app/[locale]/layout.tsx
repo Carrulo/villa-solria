@@ -106,15 +106,8 @@ export async function generateMetadata({ params }: Props) {
       description: t('description'),
       images: ['/og-image.jpg'],
     },
-    alternates: {
-      languages: {
-        'pt': '/',
-        'en': '/en',
-        'es': '/es',
-        'de': '/de',
-        'x-default': '/',
-      },
-    },
+    // canonical + hreflang are per page (src/lib/seo.ts). Declaring them
+    // here made every subpage claim the homepage as its alternates.
     icons: {
       icon: '/favicon.svg',
       apple: '/favicon.svg',

@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo';
 import { getTranslations } from 'next-intl/server';
 import {
   Calendar,
@@ -25,7 +26,7 @@ type Props = {
 export async function generateMetadata({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'meta' });
-  return { title: t('pricingTitle'), description: t('pricingDescription') };
+  return pageMetadata(locale, '/pricing', t('pricingTitle'), t('pricingDescription'));
 }
 
 // Translate common season names based on locale
