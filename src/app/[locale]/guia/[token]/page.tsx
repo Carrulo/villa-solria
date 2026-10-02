@@ -319,7 +319,22 @@ export default async function GuidePage({
   // sometimes come back for a few days after the stay.
   const opensAt = addDays(b.checkin_date, -7);
   const closesAt = addDays(b.checkout_date, 30);
-  const isBefore = today < opensAt;
+  // A stay that continues one already under way (Luis, 29 Sep-12 Oct then
+  // 12-20 Oct 2026) has a guest in the house today. Holding their guide
+  // until a week before the second check-in made no sense.
+  let continuesCurrentStay = false;
+  if (!isPreviewToken && today < opensAt) {
+    const { data: previous } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('status', 'confirmed')
+      .eq('checkout_date', b.checkin_date)
+      .lte('checkin_date', today)
+      .neq('id', b.id)
+      .limit(1);
+    continuesCurrentStay = !!previous && previous.length > 0;
+  }
+  const isBefore = today < opensAt && !continuesCurrentStay;
   const isAfter = today > closesAt;
   // ?preview=1 bypasses the access window so admins can sanity-check
   // the guide before the booking goes live.
