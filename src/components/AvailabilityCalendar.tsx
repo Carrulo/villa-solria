@@ -16,7 +16,7 @@ type Props = {
   minNights?: number;
 };
 
-type BlockedDate = { date: string; source: string; note: string | null };
+type BlockedDate = { date: string; source: string | null };
 
 function toISO(d: Date): string {
   const y = d.getFullYear();
