@@ -14,6 +14,11 @@ function formatDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Today's date at the villa, not on the Vercel server (UTC). */
+function lisbonToday(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date());
+}
+
 function parseICalDate(value: string): Date | null {
   // Handles YYYYMMDD (date-only) and YYYYMMDDTHHMMSSZ (date-time)
   const clean = value.trim();
@@ -224,6 +229,32 @@ async function syncSource(
       }
     }
 
+    // Platform feeds stop exporting a stay once it has begun — Booking
+    // does it on check-in day (Raquel, Ailsa, Luis in Sep/Oct 2026). A
+    // plain full refresh would then free the remaining nights while the
+    // guest is still in the house, and put them back on sale anywhere
+    // that only reads blocked_dates. A stay we already know about and
+    // that is under way keeps its nights until it ends.
+    const today = lisbonToday();
+    const feedKeys = new Set(cleaningRows.map((r) => `${r.external_ref}|${r.cleaning_date}`));
+    const { data: ongoing } = await supabase
+      .from('cleaning_tasks')
+      .select('external_ref, cleaning_date, checkin_date, stay_checkout_date, guest_name')
+      .eq('external_source', source)
+      .lte('checkin_date', today)
+      .gt('stay_checkout_date', today);
+    const ongoingKeys = new Set<string>();
+    for (const stay of ongoing || []) {
+      const key = `${stay.external_ref}|${stay.cleaning_date}`;
+      ongoingKeys.add(key);
+      if (feedKeys.has(key)) continue;
+      const start = new Date(`${stay.checkin_date}T00:00:00Z`);
+      const end = new Date(`${stay.stay_checkout_date}T00:00:00Z`);
+      for (const date of datesInRange(start, end)) {
+        blockedRows.push({ date, source, note: stay.guest_name });
+      }
+    }
+
     // Full refresh of blocked_dates for this source
     const { error: delError } = await supabase.from('blocked_dates').delete().eq('source', source);
     if (delError) {
@@ -268,6 +299,9 @@ async function syncSource(
             !r.booking_id &&
             !r.linked_to_booking_id &&
             !r.linked_to_external_ref &&
+            // Dropped from the feed because it started, not because it
+            // was cancelled — the checkout-day cleaning still happens.
+            !ongoingKeys.has(`${r.external_ref}|${r.cleaning_date}`) &&
             !currentKeys.has(`${r.external_ref}|${r.cleaning_date}`)
         )
         .map((r: { external_ref: string | null; cleaning_date: string }) => ({
