@@ -3,11 +3,14 @@ import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
 import { sendTelegramNotification, buildRefundMessage } from '@/lib/telegram';
 import { sendRefundEmail } from '@/lib/email';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
   try {
     const { bookingId } = await request.json();
 

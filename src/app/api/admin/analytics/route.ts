@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchGa4Snapshot, getGa4Client } from '@/lib/ga4';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
   const url = new URL(request.url);
   const daysParam = Number(url.searchParams.get('days') || '7');
   const days = daysParam === 30 ? 30 : 7;

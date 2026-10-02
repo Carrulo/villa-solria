@@ -128,6 +128,14 @@ async function syncSource(
       return { events: 0, dates_blocked: 0, error: `HTTP ${res.status}` };
     }
     const text = await res.text();
+    // Everything below starts by deleting this source's blocked_dates. A
+    // 200 with an error page, a login wall or an empty body would parse as
+    // zero events and wipe the channel's occupancy — every stay that only
+    // exists as blocked_dates back on sale. Refuse anything that is not a
+    // calendar.
+    if (!text.includes('BEGIN:VCALENDAR')) {
+      return { events: 0, dates_blocked: 0, error: 'response is not an iCal feed — kept existing dates' };
+    }
     const rawEvents = parseICS(text);
 
     // Each VEVENT becomes its own row — the admin can manually link

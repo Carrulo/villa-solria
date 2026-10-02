@@ -374,7 +374,12 @@ export default async function GuidePage({
     return body
       .replace(/\{\{door_code\}\}/g, doorCode)
       .replace(/\{\{wifi_ssid\}\}/g, settings['guide_wifi_ssid'] || '—')
-      .replace(/\{\{wifi_password\}\}/g, settings['guide_wifi_password'] || '—');
+      // The 'preview' token is a public URL with no booking behind it —
+      // it shows the layout, never the real password.
+      .replace(
+        /\{\{wifi_password\}\}/g,
+        isPreviewToken ? '••••••••' : settings['guide_wifi_password'] || '—'
+      );
   }
 
   // Filter out places that require a longer stay than this booking has.

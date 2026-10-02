@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
 import { sendPreArrivalEmail } from '@/lib/email';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -37,6 +38,10 @@ export async function GET(req: Request) {
   const testName = url.searchParams.get('name') || 'Teste';
 
   if (testEmail) {
+    // A test send goes to any address given — admin only, or this route
+    // is an open relay from reservas@villasolria.com.
+    const denied = await requireAdmin(req);
+    if (denied) return denied;
     const sent = await sendPreArrivalEmail({
       guest_name: testName,
       guest_email: testEmail,

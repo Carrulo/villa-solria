@@ -84,7 +84,11 @@ export async function POST(request: NextRequest) {
 
     /** Run full booking fulfillment: reference, dates, cleaning task, email + telegram. */
     const fulfillBooking = async (session: Stripe.Checkout.Session, bookingId: string) => {
-      const { error: updateError } = await supabase
+      // Stripe retries a webhook it thinks failed (slow handler, timeout),
+      // so the same completion can arrive twice. Only the call that flips
+      // payment_status to 'paid' carries on; a replay used to mint a new
+      // reference and resend the confirmation email and Purchase event.
+      const { data: claimed, error: updateError } = await supabase
         .from('bookings')
         .update({
           status: 'confirmed',
@@ -95,7 +99,14 @@ export async function POST(request: NextRequest) {
               ? session.payment_intent
               : session.payment_intent?.id || null,
         })
-        .eq('id', bookingId);
+        .eq('id', bookingId)
+        .neq('payment_status', 'paid')
+        .select('id');
+
+      if (!updateError && (!claimed || claimed.length === 0)) {
+        console.log(`Booking ${bookingId} already fulfilled — duplicate webhook ignored`);
+        return;
+      }
 
       if (updateError) {
         // 23P01 = the no-overlap exclusion constraint fired: another
@@ -339,12 +350,17 @@ export async function POST(request: NextRequest) {
           // Fetch booking details before cancelling — needed for abandonment email
           // The checkout hold moved the booking to 'pending_payment', so
           // matching only 'pending' here would leave the dates held forever.
+          //
+          // Only the session that currently holds the booking may release
+          // it. A guest who reopens checkout gets a new session; the old
+          // one expiring must not cancel the booking under the new one.
           const { data: expiredBooking } = await supabase
             .from('bookings')
             .select('*')
             .eq('id', bookingId)
+            .eq('stripe_session_id', session.id)
             .in('status', ['pending', 'pending_payment'])
-            .single();
+            .maybeSingle();
 
           // Send abandonment email (non-blocking — cancellation proceeds regardless)
           if (expiredBooking?.guest_email) {
@@ -364,11 +380,14 @@ export async function POST(request: NextRequest) {
           }
 
           // Cancel the pending booking since payment expired
-          await supabase
-            .from('bookings')
-            .update({ status: 'cancelled' })
-            .eq('id', bookingId)
-            .in('status', ['pending', 'pending_payment']);
+          if (expiredBooking) {
+            await supabase
+              .from('bookings')
+              .update({ status: 'cancelled' })
+              .eq('id', bookingId)
+              .eq('stripe_session_id', session.id)
+              .in('status', ['pending', 'pending_payment']);
+          }
 
           console.log(`Booking ${bookingId} cancelled (session expired)`);
 

@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export async function POST(request: Request) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
   try {
     const { to_email, subject, body, message_id } = await request.json();
 

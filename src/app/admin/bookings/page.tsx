@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import type { Booking } from '@/lib/supabase';
 import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRight, StickyNote, Trash2, Link as LinkIcon, Unlink, BookOpen, Share2 } from 'lucide-react';
 import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface BlockedDateRow {
   id: string;
@@ -119,7 +120,7 @@ export default function AdminBookingsPage() {
         payload.linked_to_booking_id = parent.id;
       }
     }
-    const res = await fetch('/api/bookings/link-external', {
+    const res = await adminFetch('/api/bookings/link-external', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -202,7 +203,7 @@ export default function AdminBookingsPage() {
   }
 
   async function handleDelete(booking: Booking, confirmation: string) {
-    const res = await fetch(`/api/bookings/${booking.id}`, {
+    const res = await adminFetch(`/api/bookings/${booking.id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ confirmation }),
@@ -536,7 +537,7 @@ export default function AdminBookingsPage() {
   async function handleRefund(id: string) {
     setRefunding(id);
     try {
-      const res = await fetch('/api/bookings/refund', {
+      const res = await adminFetch('/api/bookings/refund', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId: id }),
@@ -1705,7 +1706,7 @@ function BookingDetailModal({
     }
     setQSubmitting(true);
     try {
-      const res = await fetch('/api/bookings/manual', {
+      const res = await adminFetch('/api/bookings/manual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2724,7 +2725,7 @@ function ManualBookingModal({
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/bookings/manual', {
+      const res = await adminFetch('/api/bookings/manual', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

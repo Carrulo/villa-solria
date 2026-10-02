@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
 import { sendBookingConfirmationEmail } from '@/lib/email';
 import { findAvailabilityConflict } from '@/lib/availability';
+import { requireAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -70,6 +71,8 @@ async function nextManualReference(
 }
 
 export async function POST(req: Request) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
   let body: Body;
   try {
     body = (await req.json()) as Body;

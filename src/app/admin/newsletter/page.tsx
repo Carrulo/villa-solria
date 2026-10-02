@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Trash2, Download, Send, Users, UserPlus, Globe, Search } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Subscriber {
   id: string;
@@ -193,7 +194,7 @@ export default function AdminNewsletterPage() {
         .map((line) => (line.trim() ? `<p>${line}</p>` : ''))
         .join('');
 
-      const res = await fetch('/api/newsletter/send', {
+      const res = await adminFetch('/api/newsletter/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

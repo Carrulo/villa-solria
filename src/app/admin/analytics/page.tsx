@@ -13,6 +13,7 @@ import {
   FileText,
   Activity,
 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Snapshot {
   totals: {
@@ -50,7 +51,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/admin/analytics?days=${days}`)
+    adminFetch(`/api/admin/analytics?days=${days}`)
       .then((r) => r.json())
       .then((json) => setData(json))
       .catch(() => setData(null))

@@ -16,35 +16,30 @@ const t: Record<SupportedLocale, {
   accommodation: string;
   nights: (n: number) => string;
   cleaningFee: string;
-  longStayDiscount: (pct: number) => string;
   depositNote: (pct: number) => string;
 }> = {
   pt: {
     accommodation: 'Villa Solria — Estadia',
     nights: (n) => `${n} noite${n > 1 ? 's' : ''}`,
     cleaningFee: 'Taxa de limpeza',
-    longStayDiscount: (pct) => `Desconto estadia longa (${pct}%)`,
     depositNote: (pct) => `(${pct}% depósito — restante na chegada)`,
   },
   en: {
     accommodation: 'Villa Solria — Accommodation',
     nights: (n) => `${n} night${n > 1 ? 's' : ''}`,
     cleaningFee: 'Cleaning fee',
-    longStayDiscount: (pct) => `Long stay discount (${pct}%)`,
     depositNote: (pct) => `(${pct}% deposit — remainder due on arrival)`,
   },
   es: {
     accommodation: 'Villa Solria — Estancia',
     nights: (n) => `${n} noche${n > 1 ? 's' : ''}`,
     cleaningFee: 'Tasa de limpieza',
-    longStayDiscount: (pct) => `Descuento estancia larga (${pct}%)`,
     depositNote: (pct) => `(${pct}% depósito — resto a la llegada)`,
   },
   de: {
     accommodation: 'Villa Solria — Unterkunft',
     nights: (n) => `${n} ${n > 1 ? 'Nächte' : 'Nacht'}`,
     cleaningFee: 'Reinigungsgebühr',
-    longStayDiscount: (pct) => `Langzeitrabatt (${pct}%)`,
     depositNote: (pct) => `(${pct}% Anzahlung — Rest bei Anreise)`,
   },
 };
@@ -195,9 +190,18 @@ export async function POST(request: NextRequest) {
     }
 
     const nights: number = booking.num_nights || 1;
-    const pricePerNight: number = booking.price_per_night || 100;
     const cleaningFee: number = booking.cleaning_fee || 0;
-    const discount: number = booking.discount || 0;
+    // Charge exactly what the guest was quoted. This used to rebuild the
+    // price as nights × price_per_night plus a coupon from
+    // booking.discount — but /api/booking never wrote `discount`, and
+    // price_per_night is a rounded blend across seasons. A 7+ night stay
+    // outside peak season would have been charged without its long-stay
+    // discount (12-20 Oct 2026: 1 320 € instead of 1 260 €).
+    const totalPrice = Number(booking.total_price);
+    const accommodationTotal = Math.round((totalPrice - cleaningFee) * 100) / 100;
+    if (!(accommodationTotal > 0)) {
+      return NextResponse.json({ error: 'Invalid booking total' }, { status: 400 });
+    }
 
     const isPartialDeposit = depositPercent < 100;
     const depositMultiplier = depositPercent / 100;
@@ -226,9 +230,9 @@ export async function POST(request: NextRequest) {
           name: i18n.accommodation,
           description: accommDesc,
         },
-        unit_amount: Math.round(pricePerNight * depositMultiplier * 100), // cents
+        unit_amount: Math.round(accommodationTotal * depositMultiplier * 100), // cents
       },
-      quantity: nights,
+      quantity: 1,
     });
 
     // Cleaning fee
@@ -241,17 +245,6 @@ export async function POST(request: NextRequest) {
         },
         quantity: 1,
       });
-    }
-
-    // Build discounts (use Stripe coupon if applicable)
-    const discounts: { coupon: string }[] = [];
-    if (discount > 0) {
-      const coupon = await stripe.coupons.create({
-        percent_off: discount,
-        duration: 'once',
-        name: i18n.longStayDiscount(discount),
-      });
-      discounts.push({ coupon: coupon.id });
     }
 
     // Determine base URL
@@ -268,7 +261,6 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card', 'mb_way'],
       mode: 'payment',
       line_items: lineItems,
-      ...(discounts.length > 0 ? { discounts } : {}),
       customer_email: booking.guest_email,
       payment_intent_data: {
         statement_descriptor: 'VILLA SOLRIA',
@@ -298,11 +290,41 @@ export async function POST(request: NextRequest) {
     // The exclusion constraint rejects the update if someone got there
     // first — in that case the dates are genuinely gone, so refuse the
     // checkout instead of taking money we would have to refund.
-    const { error: holdError } = await supabase
+    //
+    // A guest who comes back to checkout (second click, back button) is
+    // already in 'pending_payment'. Move the hold to the new session and
+    // expire the old one, so only one session can be paid and the old
+    // one's expiry cannot release the dates (the webhook matches
+    // stripe_session_id). If nothing was updated the booking is no longer
+    // payable — cancelled, or paid meanwhile.
+    const previousSessionId: string | null =
+      booking.status === 'pending_payment' ? booking.stripe_session_id || null : null;
+    const { data: held, error: holdError } = await supabase
       .from('bookings')
       .update({ status: 'pending_payment', stripe_session_id: session.id })
       .eq('id', bookingId)
-      .eq('status', 'pending');
+      .in('status', ['pending', 'pending_payment'])
+      .select('id');
+
+    if (!holdError && (!held || held.length === 0)) {
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch {
+        // Expires on its own.
+      }
+      return NextResponse.json(
+        { error: 'This booking can no longer be paid. Please start a new booking.' },
+        { status: 409 },
+      );
+    }
+
+    if (!holdError && previousSessionId && previousSessionId !== session.id) {
+      try {
+        await stripe.checkout.sessions.expire(previousSessionId);
+      } catch {
+        // Already expired or completed — nothing to do.
+      }
+    }
 
     if (holdError) {
       // 23P01 = exclusion_violation → the nights were taken meanwhile.
@@ -327,12 +349,7 @@ export async function POST(request: NextRequest) {
     // request's IP, UA and _fbp/_fbc cookies for high-quality matching.
     // Browser fires the same event_id from BookingForm so they dedup.
     const ctx = extractClientContext(request);
-    const totalForCapi = Math.round(
-      (pricePerNight * nights + cleaningFee) *
-        depositMultiplier *
-        (1 - discount / 100) *
-        100,
-    ) / 100;
+    const totalForCapi = Math.round(totalPrice * depositMultiplier * 100) / 100;
 
     const [firstName, ...rest] = (booking.guest_name || '').trim().split(/\s+/);
     const lastName = rest.join(' ') || null;

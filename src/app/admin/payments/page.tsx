@@ -21,6 +21,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 /* ---------- types ---------- */
 type Overview = {
@@ -131,7 +132,7 @@ export default function PaymentsPage() {
 
       // Load stats
       try {
-        const res = await fetch('/api/payments/stats');
+        const res = await adminFetch('/api/payments/stats');
         if (res.ok) {
           const data = await res.json();
           setOverview(data.overview);
@@ -192,7 +193,7 @@ export default function PaymentsPage() {
     setTestResult(null);
 
     try {
-      const res = await fetch('/api/payments/test', {
+      const res = await adminFetch('/api/payments/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

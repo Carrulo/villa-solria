@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Send, Check, Clock, CalendarDays } from 'lucide-react';
 import { countryFlag } from '@/lib/countries';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface Row {
   id: string;
@@ -78,7 +79,7 @@ export default function ReviewRequestsPage() {
   async function sendNow(id: string) {
     setSending(id);
     try {
-      const res = await fetch('/api/reviews/send-one', {
+      const res = await adminFetch('/api/reviews/send-one', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ booking_id: id }),

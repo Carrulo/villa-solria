@@ -13,6 +13,7 @@ import {
   ChevronRight,
   ArrowLeft,
 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 interface ContactMessage {
   id: string;
@@ -138,7 +139,7 @@ export default function AdminInboxPage() {
 
     setSending(true);
     try {
-      const res = await fetch('/api/inbox/reply', {
+      const res = await adminFetch('/api/inbox/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
