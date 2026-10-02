@@ -322,17 +322,22 @@ export default async function GuidePage({
   // A stay that continues one already under way (Luis, 29 Sep-12 Oct then
   // 12-20 Oct 2026) has a guest in the house today. Holding their guide
   // until a week before the second check-in made no sense.
+  // The guest is already inside with the previous booking's code, so a
+  // continuation without its own code inherits that one.
   let continuesCurrentStay = false;
-  if (!isPreviewToken && today < opensAt) {
+  if (!isPreviewToken && (today < opensAt || !b.door_code?.trim())) {
     const { data: previous } = await supabase
       .from('bookings')
-      .select('id')
+      .select('id, door_code')
       .eq('status', 'confirmed')
       .eq('checkout_date', b.checkin_date)
       .lte('checkin_date', today)
       .neq('id', b.id)
       .limit(1);
-    continuesCurrentStay = !!previous && previous.length > 0;
+    if (previous && previous.length > 0) {
+      continuesCurrentStay = true;
+      if (!b.door_code?.trim() && previous[0].door_code) b.door_code = previous[0].door_code;
+    }
   }
   const isBefore = today < opensAt && !continuesCurrentStay;
   const isAfter = today > closesAt;
