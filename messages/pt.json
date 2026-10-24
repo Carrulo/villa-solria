@@ -464,5 +464,8 @@
     "boatRia": "Passeios na Ria",
     "boatSea": "Saídas ao mar",
     "padel": "Stand-up Paddle"
+  },
+  "channelRatings": {
+    "reviews": "{count, plural, one {# avaliação} other {# avaliações}}"
   }
 }

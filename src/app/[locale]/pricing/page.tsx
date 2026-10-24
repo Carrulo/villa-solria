@@ -1,5 +1,6 @@
 import { pageMetadata } from '@/lib/seo';
 import { getTranslations } from 'next-intl/server';
+import { getChannelRatings } from '@/lib/channel-ratings';
 import {
   Calendar,
   CalendarDays,
@@ -102,6 +103,12 @@ function isSeasonActive(s: { start_date: string; end_date: string }): boolean {
 export default async function PricingPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'pricing' });
+  const tRatings = await getTranslations({ locale, namespace: 'channelRatings' });
+  // Booking is the channel with the most reviews, so it carries the badge.
+  const bookingScore = (await getChannelRatings()).find((c) => c.name === 'Booking.com');
+  const ratingLabel = bookingScore
+    ? `${bookingScore.rating}/10 Booking.com${bookingScore.count ? ` · ${tRatings('reviews', { count: bookingScore.count })}` : ''}`
+    : null;
 
   // Fetch seasons from Supabase
   const supabase = createServerClient();
@@ -280,11 +287,15 @@ export default async function PricingPage({ params }: Props) {
             </a>
           )}
           <div className="flex items-center justify-center gap-3 mt-3 text-sm text-gray-500">
-            <span className="inline-flex items-center gap-1">
-              <Star size={14} className="fill-amber-400 text-amber-400" />
-              {t('ratingBadge')}
-            </span>
-            <span className="text-gray-300">|</span>
+            {ratingLabel && (
+              <>
+                <span className="inline-flex items-center gap-1">
+                  <Star size={14} className="fill-amber-400 text-amber-400" />
+                  {ratingLabel}
+                </span>
+                <span className="text-gray-300">|</span>
+              </>
+            )}
             <span className="inline-flex items-center gap-1">
               <MapPin size={14} />
               {t('pillLocation')}
@@ -397,11 +408,15 @@ export default async function PricingPage({ params }: Props) {
               {t('trustInstant')}
             </span>
             <span className="hidden sm:inline text-gray-200">|</span>
-            <span className="inline-flex items-center gap-1.5">
-              <Star size={15} className="text-amber-400 fill-amber-400" />
-              {t('trustRating')}
-            </span>
-            <span className="hidden sm:inline text-gray-200">|</span>
+            {ratingLabel && (
+              <>
+                <span className="inline-flex items-center gap-1.5">
+                  <Star size={15} className="text-amber-400 fill-amber-400" />
+                  {ratingLabel}
+                </span>
+                <span className="hidden sm:inline text-gray-200">|</span>
+              </>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <Clock size={15} className="text-violet-500" />
               {t('trustSupport')}

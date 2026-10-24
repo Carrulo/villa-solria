@@ -117,6 +117,17 @@ const SECTIONS: SettingSection[] = [
     ],
   },
   {
+    title: 'Notas nas plataformas',
+    fields: [
+      // Shown as badges across the site (src/lib/channel-ratings.ts). The
+      // review count only appears when filled in — copy it from the listing.
+      { key: 'booking_rating', label: 'Nota Booking (0-10)', placeholder: '9.8' },
+      { key: 'booking_review_count', label: 'Nº de avaliações Booking', placeholder: '12' },
+      { key: 'airbnb_rating', label: 'Nota Airbnb (0-5)', placeholder: '4.9' },
+      { key: 'airbnb_review_count', label: 'Nº de avaliações Airbnb', placeholder: '10' },
+    ],
+  },
+  {
     title: 'Aviso de reserva por email',
     fields: [
       // Second channel next to Telegram: every paid site booking is also

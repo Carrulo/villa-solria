@@ -464,5 +464,8 @@
     "boatRia": "Bootsfahrten auf der Ria",
     "boatSea": "Meeresausflüge",
     "padel": "Stand-up-Paddling"
+  },
+  "channelRatings": {
+    "reviews": "{count, plural, one {# Bewertung} other {# Bewertungen}}"
   }
 }

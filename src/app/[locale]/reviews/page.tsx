@@ -1,6 +1,7 @@
 import { pageMetadata } from '@/lib/seo';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import { getChannelRatings } from '@/lib/channel-ratings';
 import { Star } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
 import { createServerClient } from '@/lib/supabase-server';
@@ -44,11 +45,12 @@ export default async function ReviewsPage({ params }: Props) {
           { name: t('review3Name'), country: t('review3Country'), text: t('review3Text'), rating: t('review3Rating') },
         ];
 
-  // Calculate average rating
-  const avgRating =
-    dbReviews && dbReviews.length > 0
-      ? ((dbReviews as Review[]).reduce((sum, r) => sum + r.rating, 0) / dbReviews.length).toFixed(1)
-      : '9.8';
+  // The badge is labelled Booking.com, so it shows Booking's own score.
+  // It used to average the reviews stored here — a mix of Booking, Airbnb
+  // and Facebook on different scales — under that label.
+  const tRatings = await getTranslations({ locale, namespace: 'channelRatings' });
+  const bookingScore = (await getChannelRatings()).find((c) => c.name === 'Booking.com');
+  const avgRating = bookingScore?.rating ?? '9.8';
 
   return (
     <div className="py-12 lg:py-20">
@@ -70,7 +72,9 @@ export default async function ReviewsPage({ params }: Props) {
             <div className="h-12 w-px bg-gray-200" />
             <div className="text-left">
               <p className="text-sm font-medium text-gray-900">Booking.com</p>
-              <p className="text-xs text-gray-500">{t('rating')}</p>
+              <p className="text-xs text-gray-500">
+                {bookingScore?.count ? `${avgRating}/10 · ${tRatings('reviews', { count: bookingScore.count })}` : t('rating')}
+              </p>
             </div>
           </div>
         </div>

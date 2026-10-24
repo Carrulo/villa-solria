@@ -464,5 +464,8 @@
     "boatRia": "Ria boat trips",
     "boatSea": "Sea outings",
     "padel": "Paddleboard"
+  },
+  "channelRatings": {
+    "reviews": "{count, plural, one {# review} other {# reviews}}"
   }
 }

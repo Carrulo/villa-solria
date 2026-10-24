@@ -464,5 +464,8 @@
     "boatRia": "Paseos por la Ría",
     "boatSea": "Salidas al mar",
     "padel": "Paddle Surf"
+  },
+  "channelRatings": {
+    "reviews": "{count, plural, one {# opinión} other {# opiniones}}"
   }
 }
