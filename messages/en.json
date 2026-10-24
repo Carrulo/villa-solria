@@ -298,9 +298,9 @@
     "cribDesc": "We provide a baby crib at no extra cost",
     "cribRequested": "Crib requested",
     "cancellationTitle": "Free cancellation up to 14 days before check-in",
-    "cancellationDesc": "After this period, the conditions described in the Terms and Conditions apply. This booking is a request; it is only confirmed after our reply.",
-    "paymentDeadlineTitle": "You have 24 hours to complete payment",
-    "paymentDeadlineDesc": "Pay by card, MB WAY or Multibanco reference. If payment is not completed within 24h, the booking will be cancelled automatically.",
+    "cancellationDesc": "After this period, the conditions described in the Terms and Conditions apply.",
+    "paymentDeadlineTitle": "Instant confirmation",
+    "paymentDeadlineDesc": "Pay by card or MB WAY. Your booking is confirmed as soon as payment is complete.",
     "acceptTerms": "I have read and accept the <terms>Terms and Conditions</terms> and the <privacy>Privacy Policy</privacy>. I authorize the processing of my data to manage this booking request."
   },
   "faq": {
