@@ -434,7 +434,7 @@
     "midStayTitle": "Zwischenreinigung",
     "midStayHint": "{price}€ pro Reinigung, mit frischer Bettwäsche und Handtüchern. Wählen Sie die Wochen; den genauen Tag stimmen wir mit Ihnen ab.",
     "weekN": "Woche {n}",
-    "petHint": "{fee}€ Reinigungsgebühr + {deposit}€ Kaution, nach Abreise erstattet."
+    "petHint": "{fee}€ Reinigungsgebühr. Dazu {deposit}€ Kaution, die wir Ihnen am Ende des Aufenthalts zurückerstatten."
   },
   "host": {
     "title": "Ihr Gastgeber",

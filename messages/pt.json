@@ -434,7 +434,7 @@
     "midStayTitle": "Limpeza a meio da estadia",
     "midStayHint": "{price}€ por limpeza, com troca de roupa de cama e toalhas. Escolha as semanas; o dia exacto é combinado consigo.",
     "weekN": "Semana {n}",
-    "petHint": "Taxa de limpeza {fee}€ + caução {deposit}€, devolvida após a saída."
+    "petHint": "Taxa de limpeza de {fee}€. Mais uma caução de {deposit}€, que lhe devolvemos no fim da estadia."
   },
   "host": {
     "title": "O seu anfitrião",

@@ -434,7 +434,7 @@
     "midStayTitle": "Mid-stay cleaning",
     "midStayHint": "{price}€ per cleaning, with fresh bed linen and towels. Pick the weeks; we'll agree the exact day with you.",
     "weekN": "Week {n}",
-    "petHint": "{fee}€ cleaning fee + {deposit}€ deposit, refunded after checkout."
+    "petHint": "{fee}€ pet cleaning fee. Plus a {deposit}€ deposit, which we refund at the end of your stay."
   },
   "host": {
     "title": "Your host",

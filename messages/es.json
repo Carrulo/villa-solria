@@ -434,7 +434,7 @@
     "midStayTitle": "Limpieza durante la estancia",
     "midStayHint": "{price}€ por limpieza, con cambio de sábanas y toallas. Elija las semanas; el día exacto lo acordamos con usted.",
     "weekN": "Semana {n}",
-    "petHint": "Tasa de limpieza {fee}€ + fianza {deposit}€, devuelta tras la salida."
+    "petHint": "Tasa de limpieza de {fee}€. Más una fianza de {deposit}€, que le devolvemos al final de la estancia."
   },
   "host": {
     "title": "Su anfitrión",
