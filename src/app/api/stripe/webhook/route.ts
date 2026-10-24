@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripeFromSettings } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase-server';
-import { generateBookingReference, sendBookingConfirmationEmail, sendAbandonmentEmail } from '@/lib/email';
+import { generateBookingReference, sendBookingConfirmationEmail, sendAbandonmentEmail, sendOwnerBookingEmail } from '@/lib/email';
 import { sendTelegramNotification, buildNewBookingMessage, buildCancellationMessage } from '@/lib/telegram';
 import { sendMetaEvent, eventIdFor } from '@/lib/meta-capi';
 import Stripe from 'stripe';
@@ -259,6 +259,10 @@ export async function POST(request: NextRequest) {
         ),
         sendTelegramNotification(buildNewBookingMessage(telegramData)).catch((e) =>
           console.error('Telegram failed:', e)
+        ),
+        // Same news by email, so a failed Telegram is not a missed booking.
+        sendOwnerBookingEmail({ ...telegramData, language: booking.language }).catch((e) =>
+          console.error('Owner email failed:', e)
         ),
         capiPromise,
       ]);

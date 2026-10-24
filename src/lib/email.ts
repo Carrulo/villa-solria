@@ -553,6 +553,95 @@ export async function sendBookingConfirmationEmail(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Owner notification — new paid booking                              */
+/* ------------------------------------------------------------------ */
+
+export interface OwnerBookingEmailData {
+  reference: string;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string | null;
+  checkin_date: string;
+  checkout_date: string;
+  num_nights: number;
+  num_guests: number;
+  total_price: number;
+  language?: string | null;
+}
+
+/**
+ * Tells the host a paid booking came in. Sent alongside the Telegram
+ * message on purpose: on 23 Oct 2026 a 5 511 € booking produced no
+ * Telegram and the host only found it later. Two channels, so one
+ * failing is not a missed booking. Recipient: settings.notify_owner_email.
+ */
+export async function sendOwnerBookingEmail(
+  data: OwnerBookingEmailData,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerClient();
+  const { data: rows } = await supabase
+    .from('settings')
+    .select('key, value')
+    .in('key', ['resend_api_key', 'email_from_address', 'notify_owner_email']);
+
+  const settings: Record<string, string> = {};
+  for (const row of rows ?? []) {
+    settings[row.key] = typeof row.value === 'string' ? row.value : String(row.value ?? '');
+  }
+
+  const apiKey = settings['resend_api_key'];
+  const to = settings['notify_owner_email']?.trim();
+  if (!apiKey || !to) {
+    console.warn('[email] owner notification skipped — resend key or notify_owner_email missing');
+    return { success: false, error: 'not configured' };
+  }
+
+  const fromAddress = settings['email_from_address'] || 'Villa Solria <reservas@villasolria.com>';
+  const nights = `${data.num_nights} noite${data.num_nights === 1 ? '' : 's'}`;
+  const guests = `${data.num_guests} hóspede${data.num_guests === 1 ? '' : 's'}`;
+  const total = Number(data.total_price || 0).toFixed(2);
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding:6px 12px 6px 0;color:#6b7280;font-size:14px;">${label}</td><td style="padding:6px 0;font-size:14px;color:#111827;">${value}</td></tr>`;
+
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;">
+    <h1 style="margin:0 0 4px;font-size:20px;color:#111827;">Nova reserva paga</h1>
+    <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">${escapeHtml(data.reference)} · pagamento recebido via Stripe</p>
+    <table style="border-collapse:collapse;width:100%;">
+      ${row('Hóspede', escapeHtml(data.guest_name))}
+      ${row('Email', escapeHtml(data.guest_email))}
+      ${data.guest_phone ? row('Telefone', escapeHtml(data.guest_phone)) : ''}
+      ${row('Datas', `${escapeHtml(data.checkin_date)} → ${escapeHtml(data.checkout_date)}`)}
+      ${row('Estadia', `${nights} · ${guests}`)}
+      ${row('Idioma', escapeHtml((data.language || 'pt').toUpperCase()))}
+      ${row('Total', `<strong>${total} &euro;</strong>`)}
+    </table>
+    <p style="margin:20px 0 0;"><a href="https://villasolria.com/admin/bookings" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Abrir no admin</a></p>
+  </div></body></html>`;
+
+  try {
+    const resend = new Resend(apiKey);
+    // Resend reports API failures in the return value, not by throwing.
+    const { error } = await resend.emails.send({
+      from: fromAddress,
+      to,
+      replyTo: data.guest_email || undefined,
+      subject: `Nova reserva ${data.reference} — ${data.guest_name} · ${data.checkin_date} → ${data.checkout_date} · ${total} €`,
+      html,
+    });
+    if (error) {
+      console.error('[email] owner notification failed:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[email] owner notification failed:', message);
+    return { success: false, error: message };
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  HTML abandonment email template                                    */
 /* ------------------------------------------------------------------ */
 

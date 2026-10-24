@@ -117,6 +117,14 @@ const SECTIONS: SettingSection[] = [
     ],
   },
   {
+    title: 'Aviso de reserva por email',
+    fields: [
+      // Second channel next to Telegram: every paid site booking is also
+      // emailed here, so a Telegram that fails does not mean a missed booking.
+      { key: 'notify_owner_email', label: 'Enviar aviso de nova reserva para', placeholder: 'nome@exemplo.com' },
+    ],
+  },
+  {
     title: 'Notificações Telegram',
     fields: [
       { key: 'telegram_bot_token', label: 'Bot Token', placeholder: '123456:ABC-DEF...' },
