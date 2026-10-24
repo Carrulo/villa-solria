@@ -3,11 +3,20 @@ import { createServerClient } from './supabase-server';
 /**
  * Send a Telegram notification to the property owner.
  * Reads bot token and chat ID from settings table, with env var fallback.
- * Silently fails — notifications are never critical.
+ * Never throws — a failed notification must not fail a payment webhook.
+ *
+ * Until 2026-10-24 this fired one fetch and never looked at the answer.
+ * The 23 Oct booking (VS-2026-0027, 5 511 €) went through end to end —
+ * confirmed, dates blocked, guest emailed — and no Telegram arrived, with
+ * nothing anywhere to say why: Vercel keeps function logs for about a day.
+ * Now it checks the response, retries once, drops Markdown if Telegram
+ * cannot parse it (a guest named `Ana_Maria` would break the whole
+ * message), and on final failure leaves a row in `notifications`, which
+ * the admin bell shows and which outlives the logs.
  */
 export async function sendTelegramNotification(message: string): Promise<void> {
+  const supabase = createServerClient();
   try {
-    const supabase = createServerClient();
     const { data: rows } = await supabase
       .from('settings')
       .select('key, value')
@@ -22,21 +31,63 @@ export async function sendTelegramNotification(message: string): Promise<void> {
     const chatId = settings['telegram_chat_id'] || process.env.TELEGRAM_CHAT_ID;
 
     if (!botToken || !chatId) {
-      console.warn('[telegram] Bot token or chat ID not configured — skipping notification');
+      await recordFailure(supabase, message, 'token ou chat ID do Telegram em falta');
       return;
     }
 
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        parse_mode: 'Markdown',
-        text: message,
-      }),
-    });
+    let parseMode: 'Markdown' | undefined = 'Markdown';
+    let lastError = '';
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            ...(parseMode ? { parse_mode: parseMode } : {}),
+          }),
+          // The Stripe webhook has maxDuration 30 s for email + Telegram.
+          signal: AbortSignal.timeout(8000),
+        });
+        if (res.ok) return;
+
+        const body = await res.text();
+        lastError = `HTTP ${res.status}: ${body.slice(0, 300)}`;
+        console.error('[telegram] send failed:', lastError);
+
+        if (res.status === 400 && parseMode && /parse entities/i.test(body)) {
+          parseMode = undefined; // same text, no formatting
+          continue;
+        }
+        if (res.status < 500 && res.status !== 429) break; // retrying will not help
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+        console.error('[telegram] send error:', lastError);
+      }
+    }
+
+    await recordFailure(supabase, message, lastError);
   } catch (err) {
     console.error('[telegram] Failed to send notification:', err);
+    await recordFailure(supabase, message, err instanceof Error ? err.message : String(err));
+  }
+}
+
+async function recordFailure(
+  supabase: ReturnType<typeof createServerClient>,
+  message: string,
+  reason: string
+): Promise<void> {
+  try {
+    const firstLine = message.split('\n')[0].replace(/[*_`]/g, '').trim();
+    await supabase.from('notifications').insert({
+      type: 'telegram_failed',
+      title: `Telegram falhou — ${firstLine}`.slice(0, 200),
+      body: `${reason}\n\n${message.replace(/[*_`]/g, '')}`.slice(0, 2000),
+    });
+  } catch (err) {
+    console.error('[telegram] could not record failure:', err);
   }
 }
 
