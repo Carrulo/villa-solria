@@ -2,6 +2,8 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { checkStayRules, describeViolation } from '@/lib/stay-rules';
+import { midStayCleaningDates, offersMidStayCleaning } from '@/lib/mid-stay';
+import { supabase } from '@/lib/supabase';
 import { COUNTRIES } from '@/lib/countries';
 import { useEffect, useMemo, useState } from 'react';
 import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
@@ -70,8 +72,27 @@ export default function BookingForm() {
   const [range, setRange] = useState<DateRange>({ checkIn: null, checkOut: null });
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(true);
-  const [midStayOptIn, setMidStayOptIn] = useState<boolean | null>(null);
+  // Weekly cleanings are an opt-in extra (off until the guest ticks it).
+  const [midStayOptIn, setMidStayOptIn] = useState(false);
+  const [petOptIn, setPetOptIn] = useState(false);
+  const [petFee, setPetFee] = useState(0);
+  const [petDeposit, setPetDeposit] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Pet fee and refundable deposit — the server reads the same settings
+  // and is what actually charges them.
+  useEffect(() => {
+    supabase
+      .from('settings')
+      .select('key, value')
+      .in('key', ['pet_fee', 'pet_deposit'])
+      .then(({ data }) => {
+        for (const row of data ?? []) {
+          if (row.key === 'pet_fee') setPetFee(Number(row.value) || 0);
+          if (row.key === 'pet_deposit') setPetDeposit(Number(row.value) || 0);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     fetch('/api/seasons')
@@ -174,18 +195,25 @@ export default function BookingForm() {
     return { extra, percent: next.tierPct, savings: delta };
   }, [nights, pricePerNight, weeklyDiscount, biweeklyDiscount, monthlyDiscount, discountPercent, discountAmount]);
 
-  // Mid-stay cleaning logic
-  // Mid-stay cleaning is the direct-booking perk: the pricing page has
-  // always promised it "included" on 14+ night stays, and now the
-  // checkout honours that instead of adding 75 EUR a week on top. The
-  // guest can still decline having anyone in the house.
-  const midStayCount = Math.floor(nights / 7);
-  const midStayEligible = nights >= midStayThreshold && midStayCount > 0;
-  const midStayEnabled = midStayEligible && (midStayOptIn ?? true);
-  const midStayIncluded = midStayEligible;
-  const midStayTotal = midStayEnabled && !midStayIncluded ? midStayCount * midStayFee : 0;
+  // Weekly cleanings during long stays — an optional extra, priced per
+  // cleaning by the season. Same dates and count the server charges
+  // (src/lib/mid-stay.ts). They used to be shown as "included" and were
+  // never scheduled.
+  const midStayDates = useMemo(
+    () =>
+      range.checkIn && range.checkOut && offersMidStayCleaning(nights, midStayThreshold)
+        ? midStayCleaningDates(range.checkIn, range.checkOut)
+        : [],
+    [range.checkIn, range.checkOut, nights, midStayThreshold]
+  );
+  const midStayCount = midStayDates.length;
+  const midStayEligible = midStayCount > 0 && midStayFee > 0;
+  const midStayEnabled = midStayEligible && midStayOptIn;
+  const midStayTotal = midStayEnabled ? midStayCount * midStayFee : 0;
 
-  const total = subTotal - discountAmount + cleaningFee + midStayTotal;
+  const petTotal = petOptIn ? petFee + petDeposit : 0;
+
+  const total = subTotal - discountAmount + cleaningFee + midStayTotal + petTotal;
 
   const minNightsViolated = nights > 0 && nights < minNights;
   const datesComplete = Boolean(range.checkIn && range.checkOut);
@@ -237,8 +265,8 @@ export default function BookingForm() {
       cleaning_fee: cleaningFee,
       discount_percent: discountPercent,
       discount_amount: discountAmount,
-      mid_stay_cleaning_count: midStayEnabled ? midStayCount : 0,
-      mid_stay_cleaning_total: midStayTotal,
+      midStayCleaning: midStayEnabled,
+      pet: petOptIn,
       total_price: total,
     };
 
@@ -436,17 +464,34 @@ export default function BookingForm() {
                     onChange={(e) => setMidStayOptIn(e.target.checked)}
                     className="w-4 h-4 accent-accent rounded cursor-pointer"
                   />
-                  <span>
-                    {tp('midStayCleaning')} ({midStayCount}×)
-                  </span>
+                  <span>{tp('addWeeklyCleaning', { count: midStayCount, price: midStayFee })}</span>
                 </label>
-                <span className={midStayEnabled && midStayIncluded ? 'text-green-600 font-medium' : ''}>
-                  {midStayEnabled
-                    ? midStayIncluded
-                      ? tp('included')
-                      : `+${midStayTotal.toFixed(0)}€`
-                    : '0€'}
-                </span>
+                <span>{midStayEnabled ? `+${midStayTotal.toFixed(0)}€` : '—'}</span>
+              </div>
+            )}
+            {petFee + petDeposit > 0 && (
+              <div className="text-gray-600">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={petOptIn}
+                    onChange={(e) => setPetOptIn(e.target.checked)}
+                    className="w-4 h-4 accent-accent rounded cursor-pointer"
+                  />
+                  <span>{tp('bringingDog')}</span>
+                </label>
+                {petOptIn && (
+                  <div className="mt-1 pl-6 space-y-1">
+                    <div className="flex justify-between">
+                      <span>{tp('petFee')}</span>
+                      <span>+{petFee.toFixed(0)}&euro;</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>{tp('petDeposit')}</span>
+                      <span>+{petDeposit.toFixed(0)}&euro;</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="border-t border-gray-200 my-2" />

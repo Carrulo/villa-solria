@@ -105,6 +105,9 @@ export function buildNewBookingMessage(booking: {
   num_nights: number;
   num_guests: number;
   total_price: number;
+  mid_stay_cleanings?: number;
+  has_pet?: boolean;
+  pet_deposit?: number;
 }): string {
   return [
     '🎉 *Nova Reserva Confirmada!*',
@@ -117,6 +120,8 @@ export function buildNewBookingMessage(booking: {
     `📅 ${booking.checkin_date} → ${booking.checkout_date}`,
     `🌙 ${booking.num_nights} noite${booking.num_nights > 1 ? 's' : ''} · ${booking.num_guests} hóspede${booking.num_guests > 1 ? 's' : ''}`,
     `💰 *${booking.total_price.toFixed(0)}€*`,
+    booking.mid_stay_cleanings ? `🧹 ${booking.mid_stay_cleanings} limpeza(s) semanal(is) agendadas` : '',
+    booking.has_pet ? `🐕 Traz animal — caução ${Number(booking.pet_deposit || 0).toFixed(0)}€ a devolver após a saída` : '',
     '',
     '✅ Pagamento recebido via Stripe',
   ].filter(Boolean).join('\n');

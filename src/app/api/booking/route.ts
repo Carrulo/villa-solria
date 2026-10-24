@@ -3,11 +3,16 @@ import { createServerClient } from '@/lib/supabase-server';
 import { countryToLanguage } from '@/lib/countries';
 import { checkStayRules, describeViolation } from '@/lib/stay-rules';
 import { findAvailabilityConflict } from '@/lib/availability';
+import { midStayCleaningDates, offersMidStayCleaning } from '@/lib/mid-stay';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { name, email, phone, country, locale, checkIn, checkOut, guests, message } = body;
+    // Only the guest's choice is taken from the client; what it costs is
+    // worked out here from the season.
+    const wantsMidStayCleaning = body.midStayCleaning === true;
+    const hasPet = body.pet === true;
 
     if (!name || !email || !checkIn || !checkOut || !guests) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -61,7 +66,7 @@ export async function POST(request: NextRequest) {
     const { data: seasons } = await supabase
       .from('seasons')
       .select(
-        'name, start_date, end_date, price_per_night, min_nights, allowed_checkin_days, enforce_stay_rules, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount'
+        'name, start_date, end_date, price_per_night, min_nights, allowed_checkin_days, enforce_stay_rules, cleaning_fee, weekly_discount, biweekly_discount, monthly_discount, mid_stay_cleaning_fee, mid_stay_cleaning_auto_threshold'
       )
       .lte('start_date', checkOut)
       .gte('end_date', checkIn);
@@ -78,6 +83,8 @@ export async function POST(request: NextRequest) {
       weekly_discount: number | null;
       biweekly_discount: number | null;
       monthly_discount: number | null;
+      mid_stay_cleaning_fee: number | null;
+      mid_stay_cleaning_auto_threshold: number | null;
     };
     const seasonRows = (seasons || []) as SeasonRow[];
     const seasonFor = (iso: string) =>
@@ -139,7 +146,31 @@ export async function POST(request: NextRequest) {
 
     const subTotal = subTotalNights;
     const discountAmount = Math.round(subTotal * (discountPercent / 100));
-    const totalPrice = subTotal - discountAmount + cleaningFee;
+
+    // Optional weekly cleanings on long stays (src/lib/mid-stay.ts).
+    const midStayDates =
+      wantsMidStayCleaning && offersMidStayCleaning(nights, arrivalSeason.mid_stay_cleaning_auto_threshold)
+        ? midStayCleaningDates(checkIn, checkOut)
+        : [];
+    const midStayFee = Number(arrivalSeason.mid_stay_cleaning_fee) || 0;
+    const midStayTotal = midStayFee > 0 ? midStayDates.length * midStayFee : 0;
+
+    // Dogs: fixed fee plus a refundable damage deposit, both from settings.
+    let petFee = 0;
+    let petDeposit = 0;
+    if (hasPet) {
+      const { data: petRows } = await supabase
+        .from('settings')
+        .select('key, value')
+        .in('key', ['pet_fee', 'pet_deposit']);
+      for (const row of petRows ?? []) {
+        const v = Number(row.value) || 0;
+        if (row.key === 'pet_fee') petFee = v;
+        if (row.key === 'pet_deposit') petDeposit = v;
+      }
+    }
+
+    const totalPrice = subTotal - discountAmount + cleaningFee + midStayTotal + petFee + petDeposit;
 
     // Language: country override wins; otherwise use the site locale the
     // guest was browsing. Falls back to English for safety.
@@ -165,6 +196,11 @@ export async function POST(request: NextRequest) {
         // Blended nightly rate when the stay crosses seasons.
         price_per_night: nights > 0 ? Math.round(subTotalNights / nights) : 0,
         cleaning_fee: cleaningFee,
+        mid_stay_cleanings: midStayTotal > 0 ? midStayDates.length : 0,
+        mid_stay_cleaning_total: midStayTotal,
+        has_pet: hasPet,
+        pet_fee: petFee,
+        pet_deposit: petDeposit,
         total_price: Math.round(totalPrice * 100) / 100,
         status: 'pending',
         payment_status: 'pending',

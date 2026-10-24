@@ -5,6 +5,7 @@ import { generateBookingReference, sendBookingConfirmationEmail, sendAbandonment
 import { sendTelegramNotification, buildNewBookingMessage, buildCancellationMessage } from '@/lib/telegram';
 import { sendMetaEvent, eventIdFor } from '@/lib/meta-capi';
 import Stripe from 'stripe';
+import { midStayCleaningDates } from '@/lib/mid-stay';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -187,6 +188,44 @@ export async function POST(request: NextRequest) {
         console.error('Failed to create cleaning_task for booking:', err);
       }
 
+      // Weekly cleanings the guest paid for. Same shape the admin's manual
+      // route uses for mid-stay cleanings: no booking_id (that column is
+      // unique to the exit cleaning), the stay named in guest_name and the
+      // reference in notes. Safe from webhook retries — fulfillBooking only
+      // gets this far once per booking.
+      if (Number(booking.mid_stay_cleanings) > 0) {
+        try {
+          const { data: feeRow } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'cleaning_base_fee')
+            .maybeSingle();
+          const baseFee = Number(feeRow?.value ?? 50) || 50;
+          const dates = midStayCleaningDates(booking.checkin_date, booking.checkout_date).slice(
+            0,
+            Number(booking.mid_stay_cleanings)
+          );
+          if (dates.length > 0) {
+            await supabase.from('cleaning_tasks').insert(
+              dates.map((d) => ({
+                cleaning_date: d,
+                checkin_date: d,
+                stay_checkout_date: d,
+                kind: 'midstay',
+                guest_name: `${booking.guest_name || 'Hóspede'} (limpeza intermédia)`,
+                num_guests: booking.num_guests ?? null,
+                cleaning_fee_snapshot: baseFee,
+                laundry_fee_snapshot: 0,
+                rooms_with_laundry: 0,
+                notes: `Ref: ${reference}`,
+              }))
+            );
+          }
+        } catch (err) {
+          console.error('Failed to create mid-stay cleaning tasks:', err);
+        }
+      }
+
       // Email + Telegram in parallel
       const emailData = {
         reference,
@@ -211,6 +250,9 @@ export async function POST(request: NextRequest) {
         num_nights: booking.num_nights || 1,
         num_guests: booking.num_guests || 1,
         total_price: booking.total_price || 0,
+        mid_stay_cleanings: Number(booking.mid_stay_cleanings) || 0,
+        has_pet: !!booking.has_pet,
+        pet_deposit: Number(booking.pet_deposit) || 0,
       };
 
       // Meta CAPI Purchase — server-side, dedup with browser via deterministic event_id.
@@ -231,7 +273,8 @@ export async function POST(request: NextRequest) {
         },
         {
           currency: 'EUR',
-          value: Number(booking.total_price) || 0,
+          // The pet deposit is handed back after the stay — not revenue.
+          value: (Number(booking.total_price) || 0) - (Number(booking.pet_deposit) || 0),
           contentName: 'Villa Solria Booking',
           contentCategory: 'vacation_rental',
           contentIds: [bookingId],

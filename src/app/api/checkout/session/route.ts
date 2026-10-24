@@ -16,30 +16,45 @@ const t: Record<SupportedLocale, {
   accommodation: string;
   nights: (n: number) => string;
   cleaningFee: string;
+  midStayCleaning: (n: number) => string;
+  petFee: string;
+  petDeposit: string;
   depositNote: (pct: number) => string;
 }> = {
   pt: {
     accommodation: 'Villa Solria — Estadia',
     nights: (n) => `${n} noite${n > 1 ? 's' : ''}`,
     cleaningFee: 'Taxa de limpeza',
+    midStayCleaning: (n) => `Limpeza semanal (${n}×)`,
+    petFee: 'Taxa de animal de estimação',
+    petDeposit: 'Caução de danos (reembolsável)',
     depositNote: (pct) => `(${pct}% depósito — restante na chegada)`,
   },
   en: {
     accommodation: 'Villa Solria — Accommodation',
     nights: (n) => `${n} night${n > 1 ? 's' : ''}`,
     cleaningFee: 'Cleaning fee',
+    midStayCleaning: (n) => `Weekly cleaning (${n}×)`,
+    petFee: 'Pet fee',
+    petDeposit: 'Damage deposit (refundable)',
     depositNote: (pct) => `(${pct}% deposit — remainder due on arrival)`,
   },
   es: {
     accommodation: 'Villa Solria — Estancia',
     nights: (n) => `${n} noche${n > 1 ? 's' : ''}`,
     cleaningFee: 'Tasa de limpieza',
+    midStayCleaning: (n) => `Limpieza semanal (${n}×)`,
+    petFee: 'Tasa por mascota',
+    petDeposit: 'Fianza por daños (reembolsable)',
     depositNote: (pct) => `(${pct}% depósito — resto a la llegada)`,
   },
   de: {
     accommodation: 'Villa Solria — Unterkunft',
     nights: (n) => `${n} ${n > 1 ? 'Nächte' : 'Nacht'}`,
     cleaningFee: 'Reinigungsgebühr',
+    midStayCleaning: (n) => `Wöchentliche Reinigung (${n}×)`,
+    petFee: 'Haustiergebühr',
+    petDeposit: 'Schadenskaution (erstattbar)',
     depositNote: (pct) => `(${pct}% Anzahlung — Rest bei Anreise)`,
   },
 };
@@ -198,7 +213,13 @@ export async function POST(request: NextRequest) {
     // outside peak season would have been charged without its long-stay
     // discount (12-20 Oct 2026: 1 320 € instead of 1 260 €).
     const totalPrice = Number(booking.total_price);
-    const accommodationTotal = Math.round((totalPrice - cleaningFee) * 100) / 100;
+    // Extras get their own lines so the receipt says what was bought.
+    const midStayCount: number = Number(booking.mid_stay_cleanings) || 0;
+    const midStayTotal: number = Number(booking.mid_stay_cleaning_total) || 0;
+    const petFee: number = Number(booking.pet_fee) || 0;
+    const petDeposit: number = Number(booking.pet_deposit) || 0;
+    const accommodationTotal =
+      Math.round((totalPrice - cleaningFee - midStayTotal - petFee - petDeposit) * 100) / 100;
     if (!(accommodationTotal > 0)) {
       return NextResponse.json({ error: 'Invalid booking total' }, { status: 400 });
     }
@@ -242,6 +263,23 @@ export async function POST(request: NextRequest) {
           currency: 'eur',
           product_data: { name: i18n.cleaningFee },
           unit_amount: Math.round(cleaningFee * depositMultiplier * 100),
+        },
+        quantity: 1,
+      });
+    }
+
+    const extras: [string, number][] = [
+      [i18n.midStayCleaning(midStayCount), midStayTotal],
+      [i18n.petFee, petFee],
+      [i18n.petDeposit, petDeposit],
+    ];
+    for (const [name, amount] of extras) {
+      if (amount <= 0) continue;
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: { name },
+          unit_amount: Math.round(amount * depositMultiplier * 100),
         },
         quantity: 1,
       });

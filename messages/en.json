@@ -96,7 +96,7 @@
       "checkIn": "Check-in: 4:00 PM (self check-in with digital lock)",
       "checkOut": "Check-out: 10:30 AM",
       "noSmoking": "No smoking",
-      "noPets": "No pets allowed",
+      "noPets": "Dogs welcome (€150 fee + €200 refundable deposit)",
       "noParties": "No parties or events",
       "maxGuests": "Maximum 6 guests"
     }
@@ -235,7 +235,7 @@
     "discount14Desc": "Stay longer, save more",
     "discount28Title": "28+ Nights",
     "discount28Desc": "Best value",
-    "cleaningIncluded": "+ Mid-stay cleaning included",
+    "cleaningIncluded": "+ Optional weekly cleaning",
     "availabilityTitle": "Check Availability",
     "availabilitySubtitle": "Select your dates and see the price in real time",
     "pricingTableTitle": "Seasonal Rates",
@@ -261,11 +261,11 @@
     "cta": "Check availability",
     "footnote": "Discounts based on the current season rate. Applied automatically.",
     "addNightsNudge": "Add {count} more night(s) to unlock −{percent}% — save an extra {amount}€.",
-    "cleaningIncluded": "Mid-stay cleaning included"
+    "cleaningIncluded": "Weekly cleaning available (optional)"
   },
   "midStayCleaning": {
     "label": "Weekly mid-stay cleaning",
-    "description": "Automatically included for stays of {threshold}+ nights",
+    "description": "Available as an optional extra for stays of {threshold}+ nights",
     "optional": "Add mid-stay cleaning (+{price}€)",
     "countSuffix": "×"
   },
@@ -313,7 +313,7 @@
     "q3": "How far is the beach?",
     "a3": "A 700-metre walk (about 5 minutes) takes you to the boat pier across the Ria. The crossing takes ~3 minutes and drops you straight on Cabanas Island beach — golden sand and calm waters, perfect for families.",
     "q4": "Are pets allowed?",
-    "a4": "Unfortunately, pets are not allowed at Villa Solria.",
+    "a4": "Yes, dogs are welcome. There is a €150 pet cleaning fee and a €200 damage deposit, refunded after checkout. Just tick \"I'm bringing a dog\" when booking.",
     "q5": "Does the villa have air conditioning?",
     "a5": "Yes, all bedrooms and the living room have air conditioning.",
     "q6": "How do I get to the villa from the airport?",
@@ -428,7 +428,11 @@
     "discount": "Discount ({percent}%)",
     "midStayCleaning": "Mid-stay cleaning",
     "longStayDiscount": "Long-stay discount",
-    "included": "Included"
+    "included": "Included",
+    "addWeeklyCleaning": "Add weekly cleaning ({count}× {price}€)",
+    "bringingDog": "I'm bringing a dog",
+    "petFee": "Pet fee",
+    "petDeposit": "Damage deposit (refunded after checkout)"
   },
   "host": {
     "title": "Your host",

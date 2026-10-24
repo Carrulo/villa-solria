@@ -567,6 +567,9 @@ export interface OwnerBookingEmailData {
   num_guests: number;
   total_price: number;
   language?: string | null;
+  mid_stay_cleanings?: number;
+  has_pet?: boolean;
+  pet_deposit?: number;
 }
 
 /**
@@ -614,6 +617,8 @@ export async function sendOwnerBookingEmail(
       ${row('Datas', `${escapeHtml(data.checkin_date)} → ${escapeHtml(data.checkout_date)}`)}
       ${row('Estadia', `${nights} · ${guests}`)}
       ${row('Idioma', escapeHtml((data.language || 'pt').toUpperCase()))}
+      ${data.mid_stay_cleanings ? row('Limpezas semanais', `${data.mid_stay_cleanings} agendadas`) : ''}
+      ${data.has_pet ? row('Animal', `Sim — caução de ${Number(data.pet_deposit || 0).toFixed(0)} € a devolver após a saída`) : ''}
       ${row('Total', `<strong>${total} &euro;</strong>`)}
     </table>
     <p style="margin:20px 0 0;"><a href="https://villasolria.com/admin/bookings" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Abrir no admin</a></p>

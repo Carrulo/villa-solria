@@ -96,7 +96,7 @@
       "checkIn": "Entrada: 16:00 (auto check-in con cerradura digital)",
       "checkOut": "Salida: 10:30",
       "noSmoking": "Prohibido fumar",
-      "noPets": "No se permiten mascotas",
+      "noPets": "Se admiten perros (tasa de 150 € + fianza reembolsable de 200 €)",
       "noParties": "No se permiten fiestas",
       "maxGuests": "Máximo 6 huéspedes"
     }
@@ -235,7 +235,7 @@
     "discount14Desc": "Más tiempo, más descuento",
     "discount28Title": "28+ Noches",
     "discount28Desc": "Mejor valor",
-    "cleaningIncluded": "+ Limpieza intermedia incluida",
+    "cleaningIncluded": "+ Limpieza semanal opcional",
     "availabilityTitle": "Ver Disponibilidad",
     "availabilitySubtitle": "Seleccione sus fechas y vea el precio en tiempo real",
     "pricingTableTitle": "Tarifas por Temporada",
@@ -261,11 +261,11 @@
     "cta": "Ver disponibilidad",
     "footnote": "Descuentos calculados sobre el precio de la temporada actual. Se aplican automáticamente.",
     "addNightsNudge": "Añade {count} noche(s) más y desbloquea −{percent}% — ahorra {amount}€ extra.",
-    "cleaningIncluded": "Limpieza intermedia incluida"
+    "cleaningIncluded": "Limpieza semanal disponible (opcional)"
   },
   "midStayCleaning": {
     "label": "Limpieza intermedia semanal",
-    "description": "Incluida automáticamente en estancias de {threshold}+ noches",
+    "description": "Disponible como extra opcional para estancias de {threshold}+ noches",
     "optional": "Añadir limpieza intermedia (+{price}€)",
     "countSuffix": "×"
   },
@@ -313,7 +313,7 @@
     "q3": "¿A qué distancia está la playa?",
     "a3": "A 700 metros (unos 5 minutos a pie) llega al embarcadero del barco que cruza la Ría. La travesía dura ~3 minutos y le deja directamente en la playa de la Isla de Cabanas — arena dorada y aguas tranquilas, ideales para familias.",
     "q4": "¿Se permiten mascotas?",
-    "a4": "Lamentablemente, no se permiten mascotas en Villa Solria.",
+    "a4": "Sí, admitimos perros. Hay una tasa de limpieza de 150 € y una fianza de 200 € por daños, que se devuelve tras la salida. Solo tiene que marcar \"Viajo con un perro\" al reservar.",
     "q5": "¿La villa tiene aire acondicionado?",
     "a5": "Sí, todas las habitaciones y el salón tienen aire acondicionado.",
     "q6": "¿Cómo llego a la villa desde el aeropuerto?",
@@ -428,7 +428,11 @@
     "discount": "Descuento ({percent}%)",
     "midStayCleaning": "Limpieza intermedia",
     "longStayDiscount": "Descuento estancia larga",
-    "included": "Incluida"
+    "included": "Incluida",
+    "addWeeklyCleaning": "Añadir limpieza semanal ({count}× {price}€)",
+    "bringingDog": "Viajo con un perro",
+    "petFee": "Tasa por mascota",
+    "petDeposit": "Fianza por daños (se devuelve tras la salida)"
   },
   "host": {
     "title": "Su anfitrión",

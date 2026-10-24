@@ -564,6 +564,41 @@ export default function AdminBookingsPage() {
     }
   }
 
+  // Pet bookings: the damage deposit is charged with the booking and
+  // handed back here after checkout (partial Stripe refund).
+  type PetFields = { has_pet?: boolean; pet_deposit?: number | string; pet_deposit_refunded_at?: string | null };
+  const [refundingDeposit, setRefundingDeposit] = useState<string | null>(null);
+  function depositOwed(b: Booking): number {
+    const p = b as Booking & PetFields;
+    const amount = Number(p.pet_deposit) || 0;
+    return b.payment_status === 'paid' && amount > 0 && !p.pet_deposit_refunded_at ? amount : 0;
+  }
+  async function handleDepositRefund(b: Booking) {
+    const amount = depositOwed(b);
+    if (!amount || !confirm(`Devolver a caução de ${amount}€ a ${b.guest_name}? O reembolso é feito no Stripe.`)) return;
+    setRefundingDeposit(b.id);
+    try {
+      const res = await adminFetch('/api/bookings/refund-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: b.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Erro ao devolver caução', 'error');
+        return;
+      }
+      setBookings((prev) =>
+        prev.map((x) => (x.id === b.id ? ({ ...x, pet_deposit_refunded_at: new Date().toISOString() } as Booking) : x))
+      );
+      showToast(`Caução de ${data.amount}€ devolvida`, 'success');
+    } catch {
+      showToast('Erro de rede ao devolver caução', 'error');
+    } finally {
+      setRefundingDeposit(null);
+    }
+  }
+
   function showToast(message: string, type: 'success' | 'error') {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -855,6 +890,16 @@ export default function AdminBookingsPage() {
                         {refunding === booking.id ? '...' : 'Refund'}
                       </button>
                     )}
+                    {!isExternal && depositOwed(booking) > 0 && (
+                      <button
+                        onClick={() => handleDepositRefund(booking)}
+                        disabled={refundingDeposit === booking.id}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs font-medium disabled:opacity-50"
+                        title="Devolver a caução do animal (reembolso parcial no Stripe)"
+                      >
+                        {refundingDeposit === booking.id ? '...' : `Caução ${depositOwed(booking)}€`}
+                      </button>
+                    )}
                     {!isExternal && booking.payment_status === 'refunded' && (
                       <span className="text-[11px] text-gray-500">reembolsado</span>
                     )}
@@ -1072,6 +1117,16 @@ export default function AdminBookingsPage() {
                             title="Reembolsar via Stripe"
                           >
                             {refunding === booking.id ? '...' : 'Refund'}
+                          </button>
+                        )}
+                    {depositOwed(booking) > 0 && (
+                          <button
+                            onClick={() => handleDepositRefund(booking)}
+                            disabled={refundingDeposit === booking.id}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors text-xs font-medium disabled:opacity-50"
+                            title="Devolver a caução do animal (reembolso parcial no Stripe)"
+                          >
+                            {refundingDeposit === booking.id ? '...' : `Caução ${depositOwed(booking)}€`}
                           </button>
                         )}
                         {booking.payment_status === 'refunded' && (

@@ -96,7 +96,7 @@
       "checkIn": "Check-in: 16:00 (self check-in com fechadura digital)",
       "checkOut": "Check-out: 10:30",
       "noSmoking": "Proibido fumar",
-      "noPets": "Não são permitidos animais",
+      "noPets": "Cães aceites (taxa de 150 € + caução reembolsável de 200 €)",
       "noParties": "Não são permitidas festas",
       "maxGuests": "Máximo 6 hóspedes"
     }
@@ -235,7 +235,7 @@
     "discount14Desc": "Mais tempo, mais desconto",
     "discount28Title": "28+ Noites",
     "discount28Desc": "Melhor valor",
-    "cleaningIncluded": "+ Limpeza intermédia incluída",
+    "cleaningIncluded": "+ Limpeza semanal opcional",
     "availabilityTitle": "Verifique Disponibilidade",
     "availabilitySubtitle": "Selecione as suas datas e veja o preço em tempo real",
     "pricingTableTitle": "Preços por Época",
@@ -261,11 +261,11 @@
     "cta": "Ver disponibilidade",
     "footnote": "Descontos calculados sobre o preço da época em curso. Aplicados automaticamente.",
     "addNightsNudge": "Adiciona {count} noite(s) e desbloqueia −{percent}% — poupas mais {amount}€.",
-    "cleaningIncluded": "Limpeza intermédia incluída"
+    "cleaningIncluded": "Limpeza semanal disponível (opcional)"
   },
   "midStayCleaning": {
     "label": "Limpeza intermédia semanal",
-    "description": "Incluída automaticamente para estadias de {threshold}+ noites",
+    "description": "Disponível como extra opcional para estadias de {threshold}+ noites",
     "optional": "Adicionar limpeza intermédia (+{price}€)",
     "countSuffix": "×"
   },
@@ -313,7 +313,7 @@
     "q3": "A que distância fica a praia?",
     "a3": "A 700 metros (cerca de 5 minutos a pé) chega ao embarcadouro do barco que atravessa a Ria. A travessia demora ~3 minutos e leva-o diretamente à praia da Ilha de Cabanas — areia dourada e águas calmas, ideais para famílias.",
     "q4": "São permitidos animais de estimação?",
-    "a4": "Infelizmente não são permitidos animais de estimação na Villa Solria.",
+    "a4": "Sim, aceitamos cães. Há uma taxa de limpeza de 150 € e uma caução de 200 € para danos, devolvida depois da saída. Basta assinalar \"Levo um cão\" ao reservar.",
     "q5": "A moradia tem ar condicionado?",
     "a5": "Sim, todos os quartos e a sala de estar têm ar condicionado.",
     "q6": "Como chego à moradia desde o aeroporto?",
@@ -428,7 +428,11 @@
     "discount": "Desconto ({percent}%)",
     "midStayCleaning": "Limpeza intermédia",
     "longStayDiscount": "Desconto estadia longa",
-    "included": "Incluída"
+    "included": "Incluída",
+    "addWeeklyCleaning": "Adicionar limpeza semanal ({count}× {price}€)",
+    "bringingDog": "Levo um cão",
+    "petFee": "Taxa de animal",
+    "petDeposit": "Caução de danos (devolvida após a saída)"
   },
   "host": {
     "title": "O seu anfitrião",
