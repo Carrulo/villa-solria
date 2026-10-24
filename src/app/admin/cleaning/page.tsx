@@ -63,6 +63,11 @@ interface OwnerInstructionsPatch {
   room_plan: Record<string, number> | null;
   towels_override: number | null;
   needs_cot: boolean;
+  // Mid-stay cleanings only: the day agreed with the cleaner and guest.
+  // A mid-stay task is a one-day job, so all three dates move together.
+  cleaning_date?: string;
+  checkin_date?: string;
+  stay_checkout_date?: string;
 }
 
 export default function AdminCleaningPage() {
@@ -1560,6 +1565,7 @@ function OwnerInstructions({
   );
   const [kind, setKind] = useState<'turnover' | 'midstay'>(task.kind ?? 'turnover');
   const [needsCot, setNeedsCot] = useState<boolean>(task.needs_cot === true);
+  const [dateDraft, setDateDraft] = useState<string>(task.cleaning_date);
 
   const guests = allOptions.reduce((sum, n) => sum + (plan[n] || 0), 0);
   const usedRooms = allOptions.filter((n) => (plan[n] || 0) > 0);
@@ -1603,6 +1609,9 @@ function OwnerInstructions({
           ? parsedTowels
           : null,
       needs_cot: needsCot,
+      ...(kind === 'midstay' && dateDraft && dateDraft !== task.cleaning_date
+        ? { cleaning_date: dateDraft, checkin_date: dateDraft, stay_checkout_date: dateDraft }
+        : {}),
     });
     setOpen(false);
   }
@@ -1634,6 +1643,7 @@ function OwnerInstructions({
           setTowels(task.towels_override != null ? String(task.towels_override) : '');
           setKind(task.kind ?? 'turnover');
           setNeedsCot(task.needs_cot === true);
+          setDateDraft(task.cleaning_date);
           setOpen(true);
         }}
         className={`mt-1 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition-colors ${
@@ -1688,6 +1698,19 @@ function OwnerInstructions({
                 Só lençóis, toalhas e casas de banho. A mensagem avisa que os hóspedes
                 estão na casa e que a hora é combinada com eles.
               </p>
+            )}
+            {kind === 'midstay' && (
+              <label className="block mb-4">
+                <span className="block text-xs text-gray-400 mb-1">
+                  Dia combinado (o site marca a semana; acerte aqui o dia com a empregada e o hóspede)
+                </span>
+                <input
+                  type="date"
+                  value={dateDraft}
+                  onChange={(e) => setDateDraft(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                />
+              </label>
             )}
 
             <span className="block text-xs text-gray-400 mb-2">

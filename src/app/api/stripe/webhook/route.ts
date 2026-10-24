@@ -201,10 +201,11 @@ export async function POST(request: NextRequest) {
             .eq('key', 'cleaning_base_fee')
             .maybeSingle();
           const baseFee = Number(feeRow?.value ?? 50) || 50;
-          const dates = midStayCleaningDates(booking.checkin_date, booking.checkout_date).slice(
-            0,
-            Number(booking.mid_stay_cleanings)
-          );
+          // The weeks the guest picked; older bookings only stored a count.
+          const dates: string[] =
+            Array.isArray(booking.mid_stay_dates) && booking.mid_stay_dates.length > 0
+              ? booking.mid_stay_dates
+              : midStayCleaningDates(booking.checkin_date, booking.checkout_date, Number(booking.mid_stay_cleanings));
           if (dates.length > 0) {
             await supabase.from('cleaning_tasks').insert(
               dates.map((d) => ({

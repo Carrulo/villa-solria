@@ -11,7 +11,18 @@ export async function POST(request: NextRequest) {
     const { name, email, phone, country, locale, checkIn, checkOut, guests, message } = body;
     // Only the guest's choice is taken from the client; what it costs is
     // worked out here from the season.
-    const wantsMidStayCleaning = body.midStayCleaning === true;
+    // Which weekly cleanings the guest picked. Only dates from the stay's
+    // own weekly schedule are accepted (checked below); a count or the
+    // older `midStayCleaning: true` are still understood.
+    const requestedDates: string[] = Array.isArray(body.midStayDates)
+      ? body.midStayDates.filter((d: unknown) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+      : [];
+    const requestedCleanings =
+      Number.isInteger(body.midStayCleanings) && body.midStayCleanings > 0
+        ? (body.midStayCleanings as number)
+        : body.midStayCleaning === true
+          ? Number.MAX_SAFE_INTEGER
+          : 0;
     const hasPet = body.pet === true;
 
     if (!name || !email || !checkIn || !checkOut || !guests) {
@@ -148,10 +159,16 @@ export async function POST(request: NextRequest) {
     const discountAmount = Math.round(subTotal * (discountPercent / 100));
 
     // Optional weekly cleanings on long stays (src/lib/mid-stay.ts).
-    const midStayDates =
-      wantsMidStayCleaning && offersMidStayCleaning(nights, arrivalSeason.mid_stay_cleaning_auto_threshold)
-        ? midStayCleaningDates(checkIn, checkOut)
-        : [];
+    let midStayDates: string[] = [];
+    if (offersMidStayCleaning(nights, arrivalSeason.mid_stay_cleaning_auto_threshold)) {
+      const schedule = midStayCleaningDates(checkIn, checkOut);
+      if (requestedDates.length > 0) {
+        const allowed = new Set(schedule);
+        midStayDates = [...new Set(requestedDates)].filter((d) => allowed.has(d)).sort();
+      } else if (requestedCleanings > 0) {
+        midStayDates = midStayCleaningDates(checkIn, checkOut, requestedCleanings);
+      }
+    }
     const midStayFee = Number(arrivalSeason.mid_stay_cleaning_fee) || 0;
     const midStayTotal = midStayFee > 0 ? midStayDates.length * midStayFee : 0;
 
@@ -198,6 +215,7 @@ export async function POST(request: NextRequest) {
         cleaning_fee: cleaningFee,
         mid_stay_cleanings: midStayTotal > 0 ? midStayDates.length : 0,
         mid_stay_cleaning_total: midStayTotal,
+        mid_stay_dates: midStayTotal > 0 ? midStayDates : null,
         has_pet: hasPet,
         pet_fee: petFee,
         pet_deposit: petDeposit,

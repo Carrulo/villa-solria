@@ -429,10 +429,12 @@
     "midStayCleaning": "Zwischenreinigung",
     "longStayDiscount": "Langzeitrabatt",
     "included": "Inklusive",
-    "addWeeklyCleaning": "Wöchentliche Reinigung hinzufügen ({count}× {price}€)",
     "bringingDog": "Ich bringe einen Hund mit",
-    "petFee": "Haustiergebühr",
-    "petDeposit": "Schadenskaution (nach Abreise erstattet)"
+    "extras": "Extras",
+    "midStayTitle": "Zwischenreinigung",
+    "midStayHint": "{price}€ pro Reinigung, mit frischer Bettwäsche und Handtüchern. Wählen Sie die Wochen; den genauen Tag stimmen wir mit Ihnen ab.",
+    "weekN": "Woche {n}",
+    "petHint": "{fee}€ Reinigungsgebühr + {deposit}€ Kaution, nach Abreise erstattet."
   },
   "host": {
     "title": "Ihr Gastgeber",

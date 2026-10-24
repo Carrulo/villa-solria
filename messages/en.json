@@ -429,10 +429,12 @@
     "midStayCleaning": "Mid-stay cleaning",
     "longStayDiscount": "Long-stay discount",
     "included": "Included",
-    "addWeeklyCleaning": "Add weekly cleaning ({count}× {price}€)",
     "bringingDog": "I'm bringing a dog",
-    "petFee": "Pet fee",
-    "petDeposit": "Damage deposit (refunded after checkout)"
+    "extras": "Extras",
+    "midStayTitle": "Mid-stay cleaning",
+    "midStayHint": "{price}€ per cleaning, with fresh bed linen and towels. Pick the weeks; we'll agree the exact day with you.",
+    "weekN": "Week {n}",
+    "petHint": "{fee}€ cleaning fee + {deposit}€ deposit, refunded after checkout."
   },
   "host": {
     "title": "Your host",

@@ -6,7 +6,7 @@ import { midStayCleaningDates, offersMidStayCleaning } from '@/lib/mid-stay';
 import { supabase } from '@/lib/supabase';
 import { COUNTRIES } from '@/lib/countries';
 import { useEffect, useMemo, useState } from 'react';
-import { Send, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Send, AlertCircle, ShieldCheck, Sparkles, PawPrint, Check } from 'lucide-react';
 import AvailabilityCalendar, { type DateRange } from './AvailabilityCalendar';
 import { trackGA4Event, trackMetaEvent } from './Analytics';
 import TrustStrip from './TrustStrip';
@@ -72,8 +72,8 @@ export default function BookingForm() {
   const [range, setRange] = useState<DateRange>({ checkIn: null, checkOut: null });
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonsLoading, setSeasonsLoading] = useState(true);
-  // Weekly cleanings are an opt-in extra (off until the guest ticks it).
-  const [midStayOptIn, setMidStayOptIn] = useState(false);
+  // Weekly cleanings are an opt-in extra: the guest picks which weeks.
+  const [midStayPicked, setMidStayPicked] = useState<string[]>([]);
   const [petOptIn, setPetOptIn] = useState(false);
   const [petFee, setPetFee] = useState(0);
   const [petDeposit, setPetDeposit] = useState(0);
@@ -206,10 +206,18 @@ export default function BookingForm() {
         : [],
     [range.checkIn, range.checkOut, nights, midStayThreshold]
   );
-  const midStayCount = midStayDates.length;
-  const midStayEligible = midStayCount > 0 && midStayFee > 0;
-  const midStayEnabled = midStayEligible && midStayOptIn;
-  const midStayTotal = midStayEnabled ? midStayCount * midStayFee : 0;
+  const midStayEligible = midStayDates.length > 0 && midStayFee > 0;
+  // Picks from other dates fall away when the stay changes.
+  const midStaySelected = midStayEligible ? midStayDates.filter((d) => midStayPicked.includes(d)) : [];
+  const midStayCount = midStaySelected.length;
+  const midStayTotal = midStayCount * midStayFee;
+  const toggleMidStay = (date: string) =>
+    setMidStayPicked((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]));
+  const shortDate = (iso: string) =>
+    new Date(`${iso}T00:00:00Z`).toLocaleDateString(
+      { pt: 'pt-PT', en: 'en-GB', es: 'es-ES', de: 'de-DE' }[locale] || 'en-GB',
+      { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }
+    );
 
   const petTotal = petOptIn ? petFee + petDeposit : 0;
 
@@ -265,7 +273,7 @@ export default function BookingForm() {
       cleaning_fee: cleaningFee,
       discount_percent: discountPercent,
       discount_amount: discountAmount,
-      midStayCleaning: midStayEnabled,
+      midStayDates: midStaySelected,
       pet: petOptIn,
       total_price: total,
     };
@@ -455,42 +463,76 @@ export default function BookingForm() {
               <span>{tp('cleaningFee')}</span>
               <span>+{cleaningFee.toFixed(0)}&euro;</span>
             </div>
-            {midStayEligible && (
-              <div className="flex justify-between items-center text-gray-600">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={midStayEnabled}
-                    onChange={(e) => setMidStayOptIn(e.target.checked)}
-                    className="w-4 h-4 accent-accent rounded cursor-pointer"
-                  />
-                  <span>{tp('addWeeklyCleaning', { count: midStayCount, price: midStayFee })}</span>
-                </label>
-                <span>{midStayEnabled ? `+${midStayTotal.toFixed(0)}€` : '—'}</span>
-              </div>
-            )}
-            {petFee + petDeposit > 0 && (
-              <div className="text-gray-600">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={petOptIn}
-                    onChange={(e) => setPetOptIn(e.target.checked)}
-                    className="w-4 h-4 accent-accent rounded cursor-pointer"
-                  />
-                  <span>{tp('bringingDog')}</span>
-                </label>
-                {petOptIn && (
-                  <div className="mt-1 pl-6 space-y-1">
-                    <div className="flex justify-between">
-                      <span>{tp('petFee')}</span>
-                      <span>+{petFee.toFixed(0)}&euro;</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{tp('petDeposit')}</span>
-                      <span>+{petDeposit.toFixed(0)}&euro;</span>
+            {(midStayEligible || petFee + petDeposit > 0) && (
+              <div className="pt-3 mt-1 space-y-2.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{tp('extras')}</p>
+
+                {midStayEligible && (
+                  <div className="rounded-xl border border-gray-200 p-3.5">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                        <Sparkles size={16} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="font-medium text-gray-900">{tp('midStayTitle')}</p>
+                          <span className="shrink-0 text-gray-900">
+                            {midStayTotal > 0 ? `+${midStayTotal.toFixed(0)}€` : ''}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">{tp('midStayHint', { price: midStayFee })}</p>
+                        <div className="mt-2.5 flex flex-wrap gap-2">
+                          {midStayDates.map((d, i) => {
+                            const on = midStaySelected.includes(d);
+                            return (
+                              <button
+                                key={d}
+                                type="button"
+                                onClick={() => toggleMidStay(d)}
+                                aria-pressed={on}
+                                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                                  on
+                                    ? 'border-accent bg-accent text-white'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:border-accent/60'
+                                }`}
+                              >
+                                {on && <Check size={12} />}
+                                <span className="font-medium">{tp('weekN', { n: i + 1 })}</span>
+                                <span className={on ? 'text-white/80' : 'text-gray-400'}>· {shortDate(d)}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                )}
+
+                {petFee + petDeposit > 0 && (
+                  <label
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
+                      petOptIn ? 'border-accent bg-accent/5' : 'border-gray-200'
+                    }`}
+                  >
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                      <PawPrint size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium text-gray-900">{tp('bringingDog')}</span>
+                        <span className="shrink-0 text-gray-900">{petOptIn ? `+${(petFee + petDeposit).toFixed(0)}€` : ''}</span>
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        {tp('petHint', { fee: petFee, deposit: petDeposit })}
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={petOptIn}
+                      onChange={(e) => setPetOptIn(e.target.checked)}
+                      className="mt-2 h-4 w-4 shrink-0 cursor-pointer rounded accent-accent"
+                    />
+                  </label>
                 )}
               </div>
             )}

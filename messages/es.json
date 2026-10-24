@@ -429,10 +429,12 @@
     "midStayCleaning": "Limpieza intermedia",
     "longStayDiscount": "Descuento estancia larga",
     "included": "Incluida",
-    "addWeeklyCleaning": "Añadir limpieza semanal ({count}× {price}€)",
     "bringingDog": "Viajo con un perro",
-    "petFee": "Tasa por mascota",
-    "petDeposit": "Fianza por daños (se devuelve tras la salida)"
+    "extras": "Extras",
+    "midStayTitle": "Limpieza durante la estancia",
+    "midStayHint": "{price}€ por limpieza, con cambio de sábanas y toallas. Elija las semanas; el día exacto lo acordamos con usted.",
+    "weekN": "Semana {n}",
+    "petHint": "Tasa de limpieza {fee}€ + fianza {deposit}€, devuelta tras la salida."
   },
   "host": {
     "title": "Su anfitrión",
