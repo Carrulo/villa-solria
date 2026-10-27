@@ -418,7 +418,16 @@ export default async function GuidePage({
   // Door code MUST come from the booking row, not the global setting —
   // otherwise an old guest still inside their own active window would
   // see the code that was rotated for the next guest.
-  const doorCode = (b.door_code && b.door_code.trim()) || 'a comunicar em breve';
+  // Shown until the host sets the code — in the guest's language, not
+  // always Portuguese.
+  const codePending: Record<Locale, string> = {
+    pt: 'a comunicar em breve',
+    en: 'to be sent shortly',
+    es: 'se le comunicará en breve',
+    de: 'folgt in Kürze',
+    fr: 'communiqué prochainement',
+  };
+  const doorCode = (b.door_code && b.door_code.trim()) || codePending[locale];
   function resolvePlaceholders(body: string): string {
     return body
       .replace(/\{\{door_code\}\}/g, doorCode)
