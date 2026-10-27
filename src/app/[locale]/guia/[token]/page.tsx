@@ -5,7 +5,10 @@ import SuggestionBox from './SuggestionBox';
 
 export const dynamic = 'force-dynamic';
 
-type Locale = 'pt' | 'en' | 'es' | 'de';
+// French exists only in the guide, not on the rest of the site (next-intl
+// routes pt/en/es/de). A French guest gets /en/guia/<token>?lang=fr, or
+// French automatically when the booking's language is 'fr'.
+type Locale = 'pt' | 'en' | 'es' | 'de' | 'fr';
 
 interface GuideSection {
   id: string;
@@ -208,6 +211,27 @@ const T: Record<Locale, T> = {
     suggestions_thanks: 'Obrigado! A sua mensagem foi recebida.',
     suggestions_error: 'Não foi possível enviar. Tente novamente.',
   },
+  fr: {
+    inactive_title: "Ce guide n'est pas encore disponible",
+    inactive_before: "Le guide s'ouvre une semaine avant votre arrivée.",
+    inactive_after: 'Ce guide a expiré. Merci pour votre séjour !',
+    hello: 'Bonjour',
+    welcome_subtitle: 'Votre guide personnel de la Villa Solria',
+    stay_dates: 'Votre séjour',
+    local_tips: 'À visiter à proximité',
+    types: { beach: 'Plages', restaurant: 'Restaurants', shop: 'Commerces et supermarchés', activity: 'Activités', transport: 'Transports' },
+    distance: 'km',
+    emergency_note: 'Pour toute question, nous sommes à un message de vous.',
+    follow_us: 'Suivez la Villa Solria sur Facebook',
+    suggestions_title: 'Suggestions et avis',
+    suggestions_subtitle: "Aidez-nous à améliorer votre expérience. Quelque chose vous a manqué ? Quelque chose vous a plu ?",
+    suggestions_placeholder: 'Dites-nous ce que vous en avez pensé ou ce que nous pouvons améliorer…',
+    suggestions_rating_label: 'Comment évaluez-vous votre séjour ?',
+    suggestions_send: 'Envoyer la suggestion',
+    suggestions_sending: 'Envoi…',
+    suggestions_thanks: 'Merci ! Votre message a bien été reçu.',
+    suggestions_error: "L'envoi a échoué. Veuillez réessayer.",
+  },
   en: {
     inactive_title: 'This guide is not available yet',
     inactive_before: 'The guide opens a week before your check-in.',
@@ -283,8 +307,9 @@ export default async function GuidePage({
   const { locale: rawLocale, token } = await params;
   const sp = await searchParams;
   const isPreview = sp?.preview === '1';
-  const locale = (['pt', 'en', 'es', 'de'].includes(rawLocale) ? rawLocale : 'en') as Locale;
-  const t = T[locale];
+  const urlLocale = (['pt', 'en', 'es', 'de'].includes(rawLocale) ? rawLocale : 'en') as Locale;
+  const requestedLang = typeof sp?.lang === 'string' && sp.lang in T ? (sp.lang as Locale) : null;
+  let locale: Locale = requestedLang ?? urlLocale;
 
   const isPreviewToken = token === 'preview';
   if (!isPreviewToken && (!token || token.length < 8)) notFound();
@@ -312,6 +337,10 @@ export default async function GuidePage({
     if (!booking || booking.status === 'cancelled') notFound();
     b = booking as Booking & { status?: string };
   }
+  // No language picked in the link: a French booking reads in French.
+  if (!requestedLang && (b.language || '').toLowerCase() === 'fr') locale = 'fr';
+  const t = T[locale];
+
   const today = todayIso();
   // Open the guide a week before so guests have time to read the
   // arrival info, and keep it open for a month after — the checkout
@@ -424,12 +453,16 @@ export default async function GuidePage({
   }, {});
   const typeOrder = ['beach', 'restaurant', 'shop', 'activity', 'transport'];
 
-  const previewQuery = isPreview ? '?preview=1' : '';
+  // Each language link names its language explicitly, so EN on a French
+  // booking really shows English. French rides on the /en/ path.
+  const langHref = (code: Locale) =>
+    `/${code === 'fr' ? 'en' : code}/guia/${token}?lang=${code}${isPreview ? '&preview=1' : ''}`;
   const localeBar: Array<{ code: Locale; label: string; flag: string }> = [
     { code: 'pt', label: 'PT', flag: '🇵🇹' },
     { code: 'en', label: 'EN', flag: '🇬🇧' },
     { code: 'es', label: 'ES', flag: '🇪🇸' },
     { code: 'de', label: 'DE', flag: '🇩🇪' },
+    { code: 'fr', label: 'FR', flag: '🇫🇷' },
   ];
 
   return (
@@ -444,7 +477,7 @@ export default async function GuidePage({
                 return (
                   <a
                     key={opt.code}
-                    href={`/${opt.code}/guia/${token}${previewQuery}`}
+                    href={langHref(opt.code)}
                     className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full transition-colors ${
                       active
                         ? 'bg-stone-900 text-white'
@@ -533,6 +566,7 @@ export default async function GuidePage({
                     {locale === 'en' && 'Your host'}
                     {locale === 'es' && 'Su anfitrión'}
                     {locale === 'de' && 'Ihr Gastgeber'}
+                    {locale === 'fr' && 'Votre hôte'}
                   </p>
                 </div>
               )}

@@ -218,7 +218,7 @@ export async function POST(req: Request) {
       source: isEnrichingExternal
         ? (body.link_external!.external_source as string).replace(/_ical$/, '')
         : 'manual',
-      language: ['pt', 'en', 'es', 'de'].includes((body.language || '').toLowerCase())
+      language: ['pt', 'en', 'es', 'de', 'fr'].includes((body.language || '').toLowerCase())
         ? (body.language || '').toLowerCase()
         : 'pt',
       message: messageBlob || null,
@@ -382,7 +382,7 @@ export async function POST(req: Request) {
       num_guests,
       total_price,
       language:
-        ['pt', 'en', 'es', 'de'].includes((body.language || '').toLowerCase())
+        ['pt', 'en', 'es', 'de', 'fr'].includes((body.language || '').toLowerCase())
           ? (body.language || '').toLowerCase()
           : 'pt',
     }).catch((e) => console.error('[manual-booking] confirmation email failed:', e));

@@ -7,6 +7,13 @@ import { CheckCircle, XCircle, Filter, Plus, X as XIcon, ChevronLeft, ChevronRig
 import { COUNTRIES, countryToLanguage, countryFlag } from '@/lib/countries';
 import { adminFetch } from '@/lib/admin-fetch';
 
+// The guide speaks French, the rest of the site doesn't (next-intl routes
+// pt/en/es/de only), so a French guide lives at /en/guia/<token>?lang=fr.
+const GUIDE_LANGS = ['pt', 'en', 'es', 'de', 'fr'] as const;
+function guideUrl(origin: string, lang: string, token: string): string {
+  return lang === 'fr' ? `${origin}/en/guia/${token}?lang=fr` : `${origin}/${lang}/guia/${token}`;
+}
+
 interface BlockedDateRow {
   id: string;
   date: string;
@@ -1737,7 +1744,7 @@ function BookingDetailModal({
       return raw;
     })()
   );
-  const [qLanguage, setQLanguage] = useState<'pt' | 'en' | 'es' | 'de'>('pt');
+  const [qLanguage, setQLanguage] = useState<'pt' | 'en' | 'es' | 'de' | 'fr'>('pt');
   const [qPhone, setQPhone] = useState(booking.guest_phone || '');
   const [qEmail, setQEmail] = useState(booking.guest_email || '');
   const [qDoorCode, setQDoorCode] = useState('');
@@ -1933,8 +1940,8 @@ function BookingDetailModal({
                 onClick={async () => {
                   const bAny = booking as Booking & { guide_token?: string; language?: string };
                   const tok = bAny.guide_token;
-                  const lang = bAny.language && ['pt', 'en', 'es', 'de'].includes(bAny.language) ? bAny.language : 'pt';
-                  const url = `${window.location.origin}/${lang}/guia/${tok}`;
+                  const lang = bAny.language && (GUIDE_LANGS as readonly string[]).includes(bAny.language) ? bAny.language : 'pt';
+                  const url = guideUrl(window.location.origin, lang, tok || '');
                   try {
                     await navigator.clipboard.writeText(url);
                     setMsg('Link do guia copiado');
@@ -1981,7 +1988,7 @@ function BookingDetailModal({
               <label className="block sm:col-span-2">
                 <span className="block text-xs text-gray-400 mb-1">Idioma do guia</span>
                 <div className="flex gap-2">
-                  {(['pt', 'en', 'es', 'de'] as const).map((lang) => (
+                  {GUIDE_LANGS.map((lang) => (
                     <button
                       key={lang}
                       type="button"
@@ -2699,7 +2706,7 @@ function ManualBookingModal({
   const [totalPrice, setTotalPrice] = useState(0);
   const [deposit, setDeposit] = useState(0);
   const [depositDate, setDepositDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
-  const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'de'>(() => preset?.language || 'pt');
+  const [language, setLanguage] = useState<'pt' | 'en' | 'es' | 'de' | 'fr'>(() => preset?.language || 'pt');
   const [country, setCountry] = useState<string>('');
   const [languageTouched, setLanguageTouched] = useState(false);
   const [notes, setNotes] = useState('');
@@ -2956,6 +2963,7 @@ function ManualBookingModal({
               <option value="en">English</option>
               <option value="es">Español</option>
               <option value="de">Deutsch</option>
+              <option value="fr">Français</option>
             </select>
           </Field>
           <Field label="Código da fechadura (PIN)" className="sm:col-span-2">
@@ -3298,9 +3306,9 @@ function ShareGuideModal({
 
   if (!data.guide_token) return null;
 
-  const lang = ['pt', 'en', 'es', 'de'].includes(data.language) ? data.language : 'pt';
+  const lang = (GUIDE_LANGS as readonly string[]).includes(data.language) ? data.language : 'pt';
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const url = `${origin}/${lang}/guia/${data.guide_token}`;
+  const url = guideUrl(origin, lang, data.guide_token);
 
   const firstName = (data.guest_name || '').trim().split(/\s+/)[0] || '';
 
@@ -3325,6 +3333,8 @@ function ShareGuideModal({
   const outEs = fmtDate(data.checkout_date, 'es-ES');
   const inDe = fmtDate(data.checkin_date, 'de-DE');
   const outDe = fmtDate(data.checkout_date, 'de-DE');
+  const inFr = fmtDate(data.checkin_date, 'fr-FR');
+  const outFr = fmtDate(data.checkout_date, 'fr-FR');
 
   const doorLine = pin
     ? {
@@ -3332,20 +3342,23 @@ function ShareGuideModal({
         en: `\n\n🔑 Door code: ${pin}`,
         es: `\n\n🔑 Código de la puerta: ${pin}`,
         de: `\n\n🔑 Türcode: ${pin}`,
+        fr: `\n\n🔑 Code de la porte : ${pin}`,
       }
-    : { pt: '', en: '', es: '', de: '' };
+    : { pt: '', en: '', es: '', de: '', fr: '' };
 
   const messages: Record<string, string> = {
     pt: `Olá ${firstName}! 👋\n\nBem-vindo(a) à Villa Solria 😊\n\nAqui está o seu guia com todas as informações necessárias para a sua estadia de ${inPt} até ${outPt}:\n\n${url}${doorLine.pt}\n\nO check-in está disponível a partir das 16h e o check-out deverá ser feito até às 11h.\n\nSe precisar de alguma coisa antes ou durante a estadia, basta enviar mensagem.\n\nAté já!\nBruno`,
     en: `Hi ${firstName}! 👋\n\nWelcome to Villa Solria 😊\n\nHere is your guide with everything you need for your stay from ${inEn} to ${outEn}:\n\n${url}${doorLine.en}\n\nCheck-in is available from 4 pm and check-out should be done by 11 am.\n\nIf you need anything before or during your stay, just send me a message.\n\nSee you soon!\nBruno`,
     es: `¡Hola ${firstName}! 👋\n\n¡Bienvenido(a) a Villa Solria! 😊\n\nAquí tiene su guía con toda la información necesaria para su estancia del ${inEs} al ${outEs}:\n\n${url}${doorLine.es}\n\nEl check-in está disponible a partir de las 16h y el check-out deberá hacerse hasta las 11h.\n\nSi necesita algo antes o durante la estancia, solo tiene que enviarme un mensaje.\n\n¡Hasta pronto!\nBruno`,
     de: `Hallo ${firstName}! 👋\n\nWillkommen in der Villa Solria 😊\n\nHier ist Ihr Leitfaden mit allen Informationen für Ihren Aufenthalt vom ${inDe} bis zum ${outDe}:\n\n${url}${doorLine.de}\n\nDer Check-in ist ab 16:00 Uhr möglich und der Check-out sollte bis 11:00 Uhr erfolgen.\n\nWenn Sie vor oder während Ihres Aufenthalts etwas brauchen, schreiben Sie mir einfach.\n\nBis bald!\nBruno`,
+    fr: `Bonjour ${firstName} ! 👋\n\nBienvenue à la Villa Solria 😊\n\nVoici votre guide avec toutes les informations utiles pour votre séjour du ${inFr} au ${outFr} :\n\n${url}${doorLine.fr}\n\nL'arrivée est possible à partir de 16h et le départ doit se faire avant 11h.\n\nSi vous avez besoin de quoi que ce soit avant ou pendant votre séjour, envoyez-moi simplement un message.\n\nÀ très bientôt !\nBruno`,
   };
   const subjects: Record<string, string> = {
     pt: 'O seu guia da Villa Solria',
     en: 'Your Villa Solria guide',
     es: 'Su guía de Villa Solria',
     de: 'Ihr Villa Solria Leitfaden',
+    fr: 'Votre guide de la Villa Solria',
   };
   const message = messages[lang] || messages.pt;
   const subject = subjects[lang] || subjects.pt;
