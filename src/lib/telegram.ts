@@ -194,3 +194,27 @@ export function buildGuestSuggestionMessage(s: {
     .filter(Boolean)
     .join('\n');
 }
+
+export function buildGuestReviewMessage(r: {
+  guest_name: string | null;
+  stars: number;
+  comment: string;
+  checkin_date?: string | null;
+  checkout_date?: string | null;
+}): string {
+  const stay = r.checkin_date && r.checkout_date ? `${r.checkin_date} → ${r.checkout_date}` : '';
+  const body = r.comment.length > 800 ? r.comment.slice(0, 800) + '…' : r.comment;
+  return [
+    '⭐ *Nova avaliação no site*',
+    '',
+    `👤 ${r.guest_name || 'Sem nome'}`,
+    stay ? `📅 ${stay}` : '',
+    `${'⭐'.repeat(r.stars)} (${r.stars}/5)`,
+    '',
+    body,
+    '',
+    'Fica escondida até a aprovares em /admin/reviews.',
+  ]
+    .filter((l, i, a) => l !== '' || (i > 0 && a[i - 1] !== ''))
+    .join('\n');
+}

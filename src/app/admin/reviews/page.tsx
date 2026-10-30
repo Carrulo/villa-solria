@@ -132,8 +132,13 @@ export default function AdminReviewsPage() {
                     <span className="text-xs px-2 py-0.5 bg-white/5 rounded-full text-gray-400">
                       {review.source}
                     </span>
+                    {review.verified && (
+                      <span className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full">✓ Estadia verificada</span>
+                    )}
                     {!review.visible && (
-                      <span className="text-xs px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full">Oculta</span>
+                      <span className="text-xs px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full">
+                        {review.verified ? 'Por aprovar — carrega no olho para publicar' : 'Oculta'}
+                      </span>
                     )}
                   </div>
                   <p className="text-sm text-gray-300 leading-relaxed">{review.comment}</p>

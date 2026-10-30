@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
       { source: '/cleaning/:path*', headers: NOINDEX },
       { source: '/guia/:path*', headers: NOINDEX },
       { source: '/:locale(en|es|de)/guia/:path*', headers: NOINDEX },
+      { source: '/avaliar/:path*', headers: NOINDEX },
+      { source: '/:locale(en|es|de)/avaliar/:path*', headers: NOINDEX },
       { source: '/booking/:path*', headers: NOINDEX },
       { source: '/:locale(en|es|de)/booking/:path*', headers: NOINDEX },
     ];

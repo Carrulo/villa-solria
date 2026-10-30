@@ -330,6 +330,7 @@
   "reviews": {
     "title": "Reviews",
     "subtitle": "What our guests say",
+    "verifiedStay": "Verified stay",
     "rating": "9.8/10 on Booking.com",
     "review1Name": "Ana",
     "review1Country": "Portugal",

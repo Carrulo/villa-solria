@@ -330,6 +330,7 @@
   "reviews": {
     "title": "Opiniones",
     "subtitle": "Lo que dicen nuestros huéspedes",
+    "verifiedStay": "Estancia verificada",
     "rating": "9.8/10 en Booking.com",
     "review1Name": "Ana",
     "review1Country": "Portugal",

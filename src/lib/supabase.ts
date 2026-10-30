@@ -33,6 +33,9 @@ export interface Review {
   comment: string;
   source: string;
   visible: boolean;
+  /** Left by the guest through the booking's private link. */
+  verified?: boolean;
+  booking_id?: string | null;
   created_at: string;
 }
 

@@ -187,6 +187,9 @@ interface T {
   suggestions_sending: string;
   suggestions_thanks: string;
   suggestions_error: string;
+  review_title: string;
+  review_body: string;
+  review_cta: string;
 }
 
 const T: Record<Locale, T> = {
@@ -210,6 +213,9 @@ const T: Record<Locale, T> = {
     suggestions_sending: 'A enviar…',
     suggestions_thanks: 'Obrigado! A sua mensagem foi recebida.',
     suggestions_error: 'Não foi possível enviar. Tente novamente.',
+    review_title: 'Gostou da estadia?',
+    review_body: 'Deixe uma avaliação no nosso site — ajuda outras famílias a encontrar-nos.',
+    review_cta: 'Deixar avaliação',
   },
   fr: {
     inactive_title: "Ce guide n'est pas encore disponible",
@@ -231,6 +237,9 @@ const T: Record<Locale, T> = {
     suggestions_sending: 'Envoi…',
     suggestions_thanks: 'Merci ! Votre message a bien été reçu.',
     suggestions_error: "L'envoi a échoué. Veuillez réessayer.",
+    review_title: 'Vous avez aimé votre séjour ?',
+    review_body: 'Laissez un avis sur notre site — cela aide d’autres familles à nous trouver.',
+    review_cta: 'Laisser un avis',
   },
   en: {
     inactive_title: 'This guide is not available yet',
@@ -252,6 +261,9 @@ const T: Record<Locale, T> = {
     suggestions_sending: 'Sending…',
     suggestions_thanks: 'Thank you! Your message has been received.',
     suggestions_error: 'Could not send. Please try again.',
+    review_title: 'Enjoyed your stay?',
+    review_body: 'Leave a review on our website — it helps other families find us.',
+    review_cta: 'Leave a review',
   },
   es: {
     inactive_title: 'Esta guía aún no está disponible',
@@ -273,6 +285,9 @@ const T: Record<Locale, T> = {
     suggestions_sending: 'Enviando…',
     suggestions_thanks: '¡Gracias! Hemos recibido su mensaje.',
     suggestions_error: 'No se pudo enviar. Inténtelo de nuevo.',
+    review_title: '¿Le gustó la estancia?',
+    review_body: 'Deje una opinión en nuestra web — ayuda a otras familias a encontrarnos.',
+    review_cta: 'Dejar una opinión',
   },
   de: {
     inactive_title: 'Dieser Leitfaden ist noch nicht verfügbar',
@@ -294,6 +309,9 @@ const T: Record<Locale, T> = {
     suggestions_sending: 'Wird gesendet…',
     suggestions_thanks: 'Danke! Ihre Nachricht ist angekommen.',
     suggestions_error: 'Senden fehlgeschlagen. Bitte erneut versuchen.',
+    review_title: 'Hat Ihnen der Aufenthalt gefallen?',
+    review_body: 'Hinterlassen Sie eine Bewertung auf unserer Website — das hilft anderen Familien, uns zu finden.',
+    review_cta: 'Bewertung schreiben',
   },
 };
 
@@ -677,6 +695,22 @@ export default async function GuidePage({
             ))}
           </div>
         </section>
+
+        {/* From the last night: invite a review on the site, through the
+            same private token (see /avaliar). */}
+        {(isPreview || today >= addDays(b.checkout_date, -1)) && (
+          <section className="bg-amber-50 border border-amber-200 rounded-2xl p-5 sm:p-6 text-center">
+            <p className="text-2xl mb-1">⭐</p>
+            <h2 className="text-lg font-serif font-semibold text-stone-900">{t.review_title}</h2>
+            <p className="text-sm text-stone-600 mt-1 mb-4">{t.review_body}</p>
+            <a
+              href={`/${locale === 'fr' ? 'en' : locale}/avaliar/${token}${locale === 'fr' ? '?lang=fr' : ''}`}
+              className="inline-block rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-5 py-2.5"
+            >
+              {t.review_cta}
+            </a>
+          </section>
+        )}
 
         {/* Suggestion box — guest → host feedback */}
         <SuggestionBox

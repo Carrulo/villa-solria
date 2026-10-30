@@ -49,16 +49,20 @@ interface ReviewCardProps {
   text: string;
   rating: string;
   source?: string;
+  /** Set for reviews left through the booking's private link. */
+  verifiedLabel?: string;
 }
 
-export default function ReviewCard({ name, country, text, rating, source }: ReviewCardProps) {
+export default function ReviewCard({ name, country, text, rating, source, verifiedLabel }: ReviewCardProps) {
   return (
     <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <Quote size={24} className="text-sand/40" />
         <div className="flex items-center gap-2">
-          {source && (
-            <span className="text-xs text-gray-400 font-medium">{source}</span>
+          {verifiedLabel ? (
+            <span className="text-xs text-emerald-700 font-medium">✓ {verifiedLabel}</span>
+          ) : (
+            source && <span className="text-xs text-gray-400 font-medium">{source}</span>
           )}
           <div className="flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-full">
             <Star size={14} className="text-accent fill-accent" />
@@ -73,7 +77,7 @@ export default function ReviewCard({ name, country, text, rating, source }: Revi
         </div>
         <div>
           <p className="font-medium text-gray-900 text-sm">{name}</p>
-          <p className="text-gray-400 text-xs">{getCountryFlag(country)} {country}</p>
+          {country && <p className="text-gray-400 text-xs">{getCountryFlag(country)} {country}</p>}
         </div>
       </div>
     </div>

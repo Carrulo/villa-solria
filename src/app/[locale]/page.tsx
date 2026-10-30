@@ -6,6 +6,7 @@ import ScrollGallery from '@/components/ScrollGallery';
 import Reveal from '@/components/Reveal';
 import { BedDouble, Users, Waves, Umbrella, Star, ArrowRight, BadgePercent, Clock, MessageCircle } from 'lucide-react';
 import ReviewCard from '@/components/ReviewCard';
+import { getChannelRatings } from '@/lib/channel-ratings';
 import EmailCapture from '@/components/EmailCapture';
 import LongStayDiscountsCard from '@/components/LongStayDiscountsCard';
 import TrustBadges from '@/components/TrustBadges';
@@ -134,36 +135,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     .order('created_at', { ascending: false })
     .limit(3);
 
-  const reviews =
-    dbReviews && dbReviews.length > 0
-      ? (dbReviews as Review[]).map((rv) => ({
-          name: rv.guest_name,
-          country: rv.guest_country,
-          text: rv.comment,
-          rating: String(rv.rating),
-          source: rv.source,
-        }))
-      : [
-          { name: r('review1Name'), country: r('review1Country'), text: r('review1Text'), rating: r('review1Rating') },
-          { name: r('review2Name'), country: r('review2Country'), text: r('review2Text'), rating: r('review2Rating') },
-          { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
-        ];
+  // DB reviews first, topped up with the translated Booking ones — a single
+  // review left on the site must not push the other three off the homepage.
+  const fallbackReviews = [
+    { name: r('review1Name'), country: r('review1Country'), text: r('review1Text'), rating: r('review1Rating') },
+    { name: r('review2Name'), country: r('review2Country'), text: r('review2Text'), rating: r('review2Rating') },
+    { name: r('review3Name'), country: r('review3Country'), text: r('review3Text'), rating: r('review3Rating') },
+  ];
+  const dbShown = ((dbReviews || []) as Review[]).map((rv) => ({
+    name: rv.guest_name,
+    country: rv.guest_country,
+    text: rv.comment,
+    rating: String(rv.rating),
+    source: rv.source,
+    verifiedLabel: rv.verified ? r('verifiedStay') : undefined,
+  }));
+  const reviews = [
+    ...dbShown,
+    ...fallbackReviews.filter((f) => !dbShown.some((d) => d.name === f.name)),
+  ].slice(0, 3);
 
-  // Fetch review stats for JSON-LD (all visible reviews, not just top 3)
-  const { data: allReviewRatings, count: reviewCount } = await supabase
-    .from('reviews')
-    .select('rating', { count: 'exact' })
-    .eq('visible', true);
-
-  let jsonLdRatingValue = '9.8';
-  let jsonLdRatingCount = '3';
-
-  if (allReviewRatings && reviewCount && reviewCount > 0) {
-    const avgRating =
-      allReviewRatings.reduce((sum, rv) => sum + Number(rv.rating), 0) / reviewCount;
-    jsonLdRatingValue = avgRating.toFixed(1);
-    jsonLdRatingCount = String(reviewCount);
-  }
+  // JSON-LD rating: the Booking.com score and its review count, the same
+  // figure the badges show. Averaging this table instead would have
+  // reported 10/10 from a single review once guests start leaving them here.
+  const bookingScore = (await getChannelRatings()).find((c) => c.name === 'Booking.com');
+  const jsonLdRatingValue = bookingScore?.rating ?? '9.8';
+  const jsonLdRatingCount = String(bookingScore?.count ?? 3);
 
   // Fetch current season price (active today) — fallback to lowest
   const { data: seasonsData } = await supabase
@@ -431,8 +428,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           </Reveal>
           <Reveal stagger staggerDelay={0.12} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {reviews.map((review) => (
-              <ReviewCard key={review.name} {...review} />
+            {reviews.map((review, i) => (
+              <ReviewCard key={`${review.name}-${i}`} {...review} />
             ))}
           </Reveal>
         </div>

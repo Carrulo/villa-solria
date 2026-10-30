@@ -29,21 +29,25 @@ export default async function ReviewsPage({ params }: Props) {
     .eq('visible', true)
     .order('created_at', { ascending: false });
 
-  // Use DB reviews if available, otherwise fallback to translated hardcoded ones
-  const reviews: { name: string; country: string; text: string; rating: string; source?: string }[] =
-    dbReviews && dbReviews.length > 0
-      ? (dbReviews as Review[]).map((r) => ({
-          name: r.guest_name,
-          country: r.guest_country,
-          text: r.comment,
-          rating: String(r.rating),
-          source: r.source,
-        }))
-      : [
-          { name: t('review1Name'), country: t('review1Country'), text: t('review1Text'), rating: t('review1Rating') },
-          { name: t('review2Name'), country: t('review2Country'), text: t('review2Text'), rating: t('review2Rating') },
-          { name: t('review3Name'), country: t('review3Country'), text: t('review3Text'), rating: t('review3Rating') },
-        ];
+  // Reviews stored in the DB first, then the translated ones from Booking
+  // that the site has always shown. These used to vanish as soon as the
+  // table held a single row — the first review a guest left on the site
+  // would have replaced all three.
+  type ShownReview = { name: string; country: string; text: string; rating: string; source?: string; verifiedLabel?: string };
+  const fromDb: ShownReview[] = ((dbReviews || []) as Review[]).map((r) => ({
+    name: r.guest_name,
+    country: r.guest_country,
+    text: r.comment,
+    rating: String(r.rating),
+    source: r.source,
+    verifiedLabel: r.verified ? t('verifiedStay') : undefined,
+  }));
+  const fallback: ShownReview[] = [
+    { name: t('review1Name'), country: t('review1Country'), text: t('review1Text'), rating: t('review1Rating') },
+    { name: t('review2Name'), country: t('review2Country'), text: t('review2Text'), rating: t('review2Rating') },
+    { name: t('review3Name'), country: t('review3Country'), text: t('review3Text'), rating: t('review3Rating') },
+  ];
+  const reviews = [...fromDb, ...fallback.filter((f) => !fromDb.some((d) => d.name === f.name))];
 
   // The badge is labelled Booking.com, so it shows Booking's own score.
   // It used to average the reviews stored here — a mix of Booking, Airbnb
@@ -80,8 +84,8 @@ export default async function ReviewsPage({ params }: Props) {
         </div>
 
         <div className="space-y-6">
-          {reviews.map((review) => (
-            <ReviewCard key={review.name} {...review} />
+          {reviews.map((review, i) => (
+            <ReviewCard key={`${review.name}-${i}`} {...review} />
           ))}
         </div>
       </div>

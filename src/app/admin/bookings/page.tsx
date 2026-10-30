@@ -14,6 +14,11 @@ function guideUrl(origin: string, lang: string, token: string): string {
   return lang === 'fr' ? `${origin}/en/guia/${token}?lang=fr` : `${origin}/${lang}/guia/${token}`;
 }
 
+/** Where the guest reviews the stay — same private token as the guide. */
+function reviewUrl(origin: string, lang: string, token: string): string {
+  return lang === 'fr' ? `${origin}/en/avaliar/${token}?lang=fr` : `${origin}/${lang}/avaliar/${token}`;
+}
+
 interface BlockedDateRow {
   id: string;
   date: string;
@@ -1945,6 +1950,28 @@ function BookingDetailModal({
                   try {
                     await navigator.clipboard.writeText(url);
                     setMsg('Link do guia copiado');
+                    setTimeout(() => setMsg(null), 1500);
+                  } catch {
+                    prompt('Copia o link:', url);
+                  }
+                }}
+                className="text-xs text-blue-300 hover:text-blue-200 underline"
+              >
+                copiar link
+              </button>
+            </div>
+          )}
+          {(booking as Booking & { guide_token?: string | null }).guide_token && (
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-gray-400">Avaliação no site</span>
+              <button
+                onClick={async () => {
+                  const bAny = booking as Booking & { guide_token?: string; language?: string };
+                  const lang = bAny.language && (GUIDE_LANGS as readonly string[]).includes(bAny.language) ? bAny.language : 'pt';
+                  const url = reviewUrl(window.location.origin, lang, bAny.guide_token || '');
+                  try {
+                    await navigator.clipboard.writeText(url);
+                    setMsg('Link de avaliação copiado');
                     setTimeout(() => setMsg(null), 1500);
                   } catch {
                     prompt('Copia o link:', url);
